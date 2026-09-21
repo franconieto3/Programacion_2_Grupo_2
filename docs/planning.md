@@ -25,7 +25,7 @@ No hay código heredado ni restricciones previas.
 | Tema | Decisión |
 |---|---|
 | Naturaleza | TP ahora, producto después → arquitectura desacoplada (API + SPA) |
-| Restricción de stack | Backend en Python obligatorio; frontend libre |
+| Restricción de stack | Backend en Python obligatorio, framework de APIs **FastAPI**; frontend libre |
 | Plataforma | Web responsive **mobile-first**. Sin app nativa ni PWA en el MVP |
 | Equipo / plazo | 3-5 personas, dedicación parcial, 4-8 semanas |
 | Alcance geográfico | **Multi-ciudad por diseño**, sin ciudad hardcodeada |
@@ -43,37 +43,42 @@ No hay código heredado ni restricciones previas.
 
 ## 2. Stack tecnológico propuesto
 
-### Backend — **Django 5 + Django REST Framework**, Python 3.12
+### Backend — **FastAPI + SQLAlchemy + Alembic + Pydantic**, Python 3.12
 
-La restricción es backend Python y el equipo **no tiene experiencia en backend Python**. Con ese
-dato, el criterio de selección no es la elegancia del framework sino cuánto trabajo te evita
-escribir. Django trae resueltos, sin código propio, exactamente los cuatro bloques que el MVP
-necesita y que en otro framework habría que construir: autenticación con hashing seguro de
-contraseñas, migraciones de esquema versionadas, ORM sobre SQL (terreno que el equipo *sí*
-domina) y un **panel de administración autogenerado**.
+Requisito no funcional fijado por el equipo: el framework de las APIs es **FastAPI**. Es además
+la opción más alineada con las preferencias declaradas (Pydantic, async, tipado): validación por
+tipos, documentación OpenAPI automática y async nativo.
 
-Ese panel merece un párrafo aparte porque resuelve un problema de producto, no solo técnico: es
-la herramienta con la que el equipo va a cargar el seed manual de eventos y con la que se van a
-moderar publicaciones. Sin él, el seed se carga por scripts o hay que construir un backoffice.
-Son días de trabajo que Django te regala.
+A diferencia de Django, FastAPI no trae resuelto de fábrica ninguno de los cuatro bloques que el
+MVP necesita, así que hay que decidir explícitamente cómo se cubre cada uno:
+
+- **Autenticación y hashing.** Se implementa a mano sobre `passlib`/`argon2-cffi` para el hash de
+  contraseñas y `python-jose` (o `pyjwt`) para emitir y validar JWT, usando las utilidades de
+  seguridad de FastAPI (`OAuth2PasswordBearer`, dependencias de autenticación) como esqueleto.
+- **Migraciones de esquema.** Alembic sobre los modelos de SQLAlchemy. No hay generación
+  automática "gratis" como en Django; cada migración se revisa a mano.
+- **ORM sobre SQL.** SQLAlchemy 2.0 (estilo declarativo), terreno que el equipo ya domina en SQL
+  aunque no en el ORM específico.
+- **Panel de administración.** FastAPI no trae uno autogenerado. Se cubre con **SQLAdmin**
+  (panel de administración para SQLAlchemy, montable directo sobre la app de FastAPI) para el
+  seed manual de eventos y la moderación de publicaciones. Si SQLAdmin no alcanza para algún
+  flujo puntual, la alternativa de respaldo es un script de carga (`scripts/seed.py`) más un
+  endpoint protegido de moderación.
+
+**Costo aceptado de esta decisión:** estos cuatro bloques representan trabajo adicional real
+frente a Django (estimado en 1,5-2 semanas sobre un plazo de 4-8 semanas) para un equipo que
+además está aprendiendo Python web. El async de FastAPI no aporta demasiado en este proyecto — la
+carga es I/O contra una sola base de datos con pocos usuarios concurrentes, no hay mucho que
+paralelizar —, pero se adopta igual porque es el modelo de programación nativo del framework.
 
 **Alternativas evaluadas y descartadas:**
 
-- **FastAPI + SQLAlchemy + Alembic + Pydantic.** Es la opción más alineada con tus preferencias
-  declaradas (pydantic, asyncio, tipado) y técnicamente la más limpia: validación por tipos,
-  OpenAPI automático, async nativo. **Se descarta por plazo**: obliga a implementar a mano
-  registro, hashing, emisión y refresco de tokens, y el backoffice de carga. Estimo 1,5-2
-  semanas adicionales sobre un plazo de 4-8 — entre un 25% y un 50% del proyecto — a cargo de un
-  equipo que además está aprendiendo Python web. El async, además, no aporta acá: la carga es
-  I/O contra una sola base de datos con pocos usuarios concurrentes, no hay nada que paralelizar.
-  **Es la opción correcta para la fase 2**, si el proyecto sigue vivo y el equipo ya tiene
-  rodaje en Python.
-- **Flask.** Minimalista; arrastra las mismas carencias que FastAPI (auth, migraciones,
-  backoffice) sin ofrecer a cambio el tipado ni la documentación automática. Peor en ambos ejes.
-- **Django con templates, sin DRF (monolito).** Sería aún más rápido de entregar, pero choca con
-  dos definiciones tuyas: el equipo sabe React y no sabe Python, así que el trabajo de frontend
-  rendiría mucho menos; y cierra la puerta a una app nativa futura, que es justamente el motivo
-  por el que elegiste "TP ahora, producto después".
+- **Django 5 + Django REST Framework.** Habría resuelto auth, migraciones y panel de
+  administración sin código propio, a costa de no cumplir el requisito de framework fijado
+  (FastAPI). Queda descartado por esa restricción, no por mérito técnico.
+- **Flask.** Minimalista; arrastra las mismas carencias que FastAPI en auth, migraciones y
+  backoffice, sin ofrecer a cambio tipado ni documentación automática. Peor en ambos ejes frente
+  a FastAPI.
 - **Next.js full-stack.** Descartado directamente por la restricción de backend en Python.
 
 ### Base de datos — **PostgreSQL 16, sin PostGIS**
@@ -119,7 +124,7 @@ consideración. Vite por velocidad de arranque y cero configuración.
 
 ### Calidad y CI/CD (criterio de evaluación explícito de la cátedra)
 
-- **Tests: pytest + pytest-django + factory_boy.** El foco de cobertura va sobre la lógica de
+- **Tests: pytest + httpx (`AsyncClient`/`TestClient` de FastAPI) + factory_boy.** El foco de cobertura va sobre la lógica de
   búsqueda y filtrado, que es donde de verdad se rompen las cosas (bordes del viewport,
   antimeridiano, rangos de fecha invertidos, filtro de hora que cruza medianoche).
 - **Lint/format: Ruff** (reemplaza flake8 + black + isort en una sola herramienta).
@@ -138,13 +143,13 @@ Convención: nombres en español para coincidir con el dominio y la documentaci�
 Todos los timestamps se almacenan en **UTC** y se presentan en hora local.
 
 ### `Usuario`
-Modelo base de autenticación (`AbstractBaseUser` de Django), con el email como identificador.
+Modelo de autenticación propio (tabla SQLAlchemy), con el email como identificador.
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | UUID | PK. UUID y no autoincremental: no filtra volumen de usuarios ni permite enumeración |
 | `email` | str | **único**, login |
-| `password_hash` | str | gestionado por Django (PBKDF2/Argon2). Nunca en texto plano |
+| `password_hash` | str | hash generado con `argon2-cffi`/`passlib`. Nunca en texto plano |
 | `nombre` | str | |
 | `rol` | enum | `DEMANDANTE` \| `OFERENTE`. **Excluyente** (decisión: cuentas separadas) |
 | `activo`, `creado_en` | bool, datetime | |
@@ -198,6 +203,24 @@ taller · aire libre · otro.
 `evento_id`, `categoria_id`. PK compuesta. Habilita varias categorías por evento (decisión
 tomada) y el filtro es un `IN` sobre esta tabla.
 
+### Tablas de soporte de autenticación (agregadas al implementar `/login`, `/register`,
+### `/recover-password`, `/verify-session` y `/logout`)
+
+No estaban en la versión original de este documento; surgieron al implementar el módulo de auth
+sobre el diagrama de clases de la cátedra (`Auth` + Strategy + Factory) y se documentan acá para
+que el modelo de datos quede sincronizado con el código (`backend/app/models/`).
+
+- **`RefreshToken`**: `id` (UUID), `usuario_id` (FK), `token_hash` (SHA-256, nunca el token
+  crudo), `expires_at`, `revoked_at` (nullable), `creado_en`. Habilita que `verify-session`
+  sobreviva a un F5 del navegador (el access token vive solo en memoria, RNF-04.2) y que
+  `logout` sea una revocación real, no solo un borrado del lado del cliente.
+- **`PasswordResetToken`**: `id` (UUID), `usuario_id` (FK), `token_hash` (SHA-256), `expires_at`,
+  `used_at` (nullable), `creado_en`. Igual criterio que `RefreshToken`: nunca se persiste el
+  token en texto plano.
+- **`AuditLog`**: `id` (UUID), `event_type`, `email` (nullable), `detalle`, `ocurrido_en`. Rastro
+  de auditoría de seguridad (RNF-04) escrito por el observer `AuditLogObserver` ante cada evento
+  de auth (registro, login exitoso/fallido, recuperación de contraseña, verificación de sesión).
+
 ### Decisiones de modelado que conviene tener explícitas
 
 1. **No existe entidad `Lugar` en el MVP.** La dirección y las coordenadas viven denormalizadas
@@ -222,8 +245,8 @@ tomada) y el filtro es un `IN` sobre esta tabla.
 
 **Autenticación y cuentas**
 - Registro con email + contraseña, eligiendo rol (demandante u oferente) en el registro
-- Login / logout con JWT (`djangorestframework-simplejwt`); el access token se mantiene en
-  memoria, nunca en `localStorage`
+- Login / logout con JWT (emisión y validación propia con `python-jose`, sobre las dependencias
+  de seguridad de FastAPI); el access token se mantiene en memoria, nunca en `localStorage`
 - Perfil básico editable
 
 **Oferente**
@@ -250,7 +273,7 @@ tomada) y el filtro es un `IN` sobre esta tabla.
 - Ficha de detalle del evento con datos del oferente
 
 **Contenido y operación**
-- Seed manual del equipo vía panel de administración de Django, marcado con `origen = SEED_EQUIPO`
+- Seed manual del equipo vía panel de administración (SQLAdmin), marcado con `origen = SEED_EQUIPO`
 - Moderación reactiva: un admin puede pasar cualquier evento a `OCULTO` desde el panel
 
 **Ingeniería (evaluable)**
@@ -291,7 +314,7 @@ no rediseñar el esquema.
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| **Nadie en el equipo sabe backend Python** | Alto — es el riesgo de cronograma dominante | Django justamente por esto. Reservar la semana 1 completa a tutorial + esqueleto. Emparejar a quien tenga más afinidad con Python en el backend |
+| **Nadie en el equipo sabe backend Python** | Alto — es el riesgo de cronograma dominante, agravado porque FastAPI no resuelve auth/migraciones/admin de fábrica | Reservar la semana 1 completa a tutorial + esqueleto (FastAPI, SQLAlchemy, Alembic). Emparejar a quien tenga más afinidad con Python en el backend. Presupuestar explícitamente las 1,5-2 semanas de trabajo manual de auth y backoffice en el cronograma |
 | **Mapa vacío** (sin ETL) | Alto para el producto, medio para el TP | El seed manual tiene que cubrir bien 1-2 zonas: 30 eventos concentrados se ven vivos, 30 dispersos por el país se ven muertos. Priorizar densidad sobre cobertura |
 | **Política de uso de tiles de OSM** | Medio | El volumen de un TP está dentro de lo aceptable, pero la política prohíbe uso pesado. Si el producto crece, hay que pasar a un proveedor de tiles |
 | **Spam / eventos falsos** | Bajo hoy, alto al abrir | Hoy lo contiene el volumen bajo + moderación manual por panel. Antes de cualquier apertura real hacen falta reportes y verificación |
@@ -303,11 +326,11 @@ no rediseñar el esquema.
 
 | Semana | Backend | Frontend | Transversal |
 |---|---|---|---|
-| 1 | Setup Django + Postgres, modelos, migraciones | Setup Vite + React + ruteo | **CI andando desde el día 1**, `main` protegida |
-| 2 | Auth (registro/login/JWT) | Pantallas de auth, cliente de API | Primeros tests |
+| 1 | Setup FastAPI + Postgres, modelos SQLAlchemy, Alembic | Setup Vite + React + ruteo | **CI andando desde el día 1**, `main` protegida |
+| 2 | Auth manual (registro/login/JWT, hashing) | Pantallas de auth, cliente de API | Primeros tests |
 | 3 | CRUD de eventos + endpoint de búsqueda | Formulario de carga con pin en mapa | Tests de búsqueda |
 | 4 | Filtros, índices, paginación | Vista mapa con viewport y marcadores | Seed manual cargado |
-| 5 | Ajustes, panel de admin | Vista lista, filtros, buscador de ciudad | Tests de integración |
+| 5 | Ajustes, panel de admin (SQLAdmin) | Vista lista, filtros, buscador de ciudad | Tests de integración |
 | 6 | — | Estados vacíos, responsive, pulido | README, documentación, ensayo de demo |
 
 Regla de oro: **el CI tiene que estar verde desde la semana 1**. Es un ítem evaluado y montarlo

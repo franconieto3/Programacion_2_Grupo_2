@@ -45,6 +45,7 @@
 |---|---|
 | RNF-05.1 | El uso del servicio de mapas y geocodificación (OpenStreetMap / Nominatim) debe respetar sus políticas de uso (límite de 1 solicitud por segundo, identificación mediante *User-Agent*, prohibición de geocodificación masiva). |
 | RNF-05.2 | El entorno de desarrollo, pruebas y producción debe utilizar el mismo motor de base de datos (PostgreSQL) en desarrollo y producción, para evitar divergencias de comportamiento; SQLite se admite únicamente para la suite de tests automatizados. |
+| RNF-05.3 | El backend debe exponer sus APIs mediante el framework **FastAPI** (Python), con documentación OpenAPI autogenerada y validación de esquemas mediante Pydantic. |
 
 ## RNF-06 · Mantenibilidad y calidad de código
 
