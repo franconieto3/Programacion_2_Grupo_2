@@ -12,13 +12,19 @@ class CredentialsData(TypedDict, total=False):
     password: str | None
     nombre: str
     rol: RolEnum
+    # Datos de proveedores OAuth (Google/Facebook). Opcionales (total=False):
+    # EmailCredentials no los emite y las credenciales OAuth no emiten
+    # `password`, sin romper el contrato get_credentials() -> CredentialsData.
+    oauth_token: str
+    provider: str
 
 
 class Credentials(ABC):
     """Abstraccion que permite a cada estrategia (Behavior) operar sobre
     credenciales sin conocer su representacion concreta. Hoy solo existe
-    EmailCredentials; el dia que se agregue, por ejemplo, autenticacion por
-    telefono u OAuth, las estrategias no cambian (OCP/DIP)."""
+    EmailCredentials; las credenciales OAuth (GoogleCredentials,
+    FacebookCredentials) las crea la fabrica de su familia
+    (app/auth/factories.py) y las estrategias existentes no cambian (OCP/DIP)."""
 
     @abstractmethod
     def get_credentials(self) -> CredentialsData: ...

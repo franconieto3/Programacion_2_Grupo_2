@@ -37,3 +37,13 @@ class InvalidTokenError(AuthError):
 
 class TokenExpiredError(AuthError):
     """El token es valido en forma pero ya vencio."""
+
+
+class PasswordRecoveryNotSupportedError(AuthError):
+    """Levantada por UnsupportedRecovery (Null Object): las cuentas de
+    proveedores OAuth (Google, Facebook) no tienen contrasena local que
+    recuperar."""
+
+    def __init__(self, provider: str) -> None:
+        super().__init__(f"El proveedor {provider!r} no admite recuperacion de contrasena")
+        self.provider = provider

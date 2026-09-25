@@ -2,6 +2,11 @@
 implementaciones concretas (SQLAlchemy, argon2, jose). Auth y las estrategias
 solo ven Protocols; FastAPI resuelve el arbol de dependencias por request via
 `Depends`.
+
+La familia de productos de cada proveedor (credenciales + 4 estrategias) se
+crea a traves de un Abstract Factory (app/auth/factories.py): el router y
+`get_auth` reciben la MISMA fabrica por request, asi que nunca se mezclan
+credenciales de un proveedor con estrategias de otro.
 """
 
 from datetime import timedelta
@@ -10,12 +15,9 @@ from fastapi import Cookie, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.auth import Auth
-from app.auth.behaviors.email_recovery import EmailRecovery
-from app.auth.behaviors.email_register import EmailRegister
-from app.auth.behaviors.email_signin import EmailSignIn
-from app.auth.behaviors.email_verify import EmailVerify
 from app.auth.decorators.rate_limited_signin import InMemoryLoginAttemptsStore, RateLimitedSignIn
 from app.auth.events.publisher import AuthEventPublisher
+from app.auth.factories import AuthProviderFactory, EmailAuthFactory
 from app.auth.repository import SQLAlchemyUserRepository, UserRepository
 from app.auth.token_repository import (
     SQLAlchemyPasswordResetTokenRepository,
@@ -74,67 +76,64 @@ def get_reset_token_repository(
     return SQLAlchemyPasswordResetTokenRepository(session)
 
 
-def get_register_behavior(
-    user_repository: UserRepository = Depends(get_user_repository),
-    password_hasher: PasswordHasher = Depends(get_password_hasher),
-    event_publisher: AuthEventPublisher = Depends(get_auth_event_publisher),
-) -> EmailRegister:
-    return EmailRegister(user_repository, password_hasher, event_publisher)
-
-
-def get_sign_in_behavior(
+def get_auth_factory(
     user_repository: UserRepository = Depends(get_user_repository),
     password_hasher: PasswordHasher = Depends(get_password_hasher),
     token_service: TokenService = Depends(get_token_service),
-    event_publisher: AuthEventPublisher = Depends(get_auth_event_publisher),
-    attempts_store: InMemoryLoginAttemptsStore = Depends(get_login_attempts_store),
-    settings: Settings = Depends(get_settings),
-) -> RateLimitedSignIn:
-    """El Decorator se ensambla aca: `Auth` recibe el SignInBehavior ya
-    envuelto en RateLimitedSignIn y no se entera (LSP + OCP)."""
-    base = EmailSignIn(user_repository, password_hasher, token_service, event_publisher)
-    return RateLimitedSignIn(
-        base,
-        attempts_store,
-        max_attempts=settings.login_max_attempts,
-        lockout_window=timedelta(minutes=settings.login_lockout_minutes),
-    )
-
-
-def get_recovery_behavior(
-    user_repository: UserRepository = Depends(get_user_repository),
     reset_token_repository: SQLAlchemyPasswordResetTokenRepository = Depends(
         get_reset_token_repository
     ),
     event_publisher: AuthEventPublisher = Depends(get_auth_event_publisher),
     settings: Settings = Depends(get_settings),
-) -> EmailRecovery:
-    return EmailRecovery(
-        user_repository,
-        reset_token_repository,
-        event_publisher,
-        reset_token_ttl=timedelta(minutes=settings.password_reset_token_ttl_minutes),
-    )
-
-
-def get_verify_behavior(
-    token_service: TokenService = Depends(get_token_service),
-    event_publisher: AuthEventPublisher = Depends(get_auth_event_publisher),
     authorization: str | None = Header(default=None),
     refresh_token: str | None = Cookie(default=None),
-) -> EmailVerify:
-    """`verifySession()` no toma argumentos (fiel al diagrama): la sesion se
-    extrae ACA, al construir la estrategia, no dentro del metodo."""
+) -> AuthProviderFactory:
+    """Resuelve la fabrica concreta (Abstract Factory) de la familia del
+    proveedor de autenticacion. FastAPI cachea las dependencias por request,
+    asi que el router y `get_auth` reciben la MISMA instancia.
+
+    Punto de extension: hoy solo existe la familia Email. Para sumar OAuth se
+    agrega un parametro que identifique al proveedor (ej. path/query
+    `provider`) y se retorna `GoogleAuthFactory(...)` o
+    `FacebookAuthFactory(...)` segun corresponda; ni Auth, ni el router, ni
+    las estrategias existentes cambian (OCP).
+
+    `verifySession()` no toma argumentos (fiel al diagrama): la sesion se
+    extrae ACA y se le pasa a la fabrica, que la inyecta al construir la
+    estrategia de verificacion."""
     access_token = None
     if authorization and authorization.lower().startswith("bearer "):
         access_token = authorization.split(" ", 1)[1].strip()
-    return EmailVerify(token_service, event_publisher, access_token, refresh_token)
+    return EmailAuthFactory(
+        user_repository,
+        password_hasher,
+        token_service,
+        reset_token_repository,
+        event_publisher,
+        reset_token_ttl=timedelta(minutes=settings.password_reset_token_ttl_minutes),
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
 
 
 def get_auth(
-    sign_in_behavior: RateLimitedSignIn = Depends(get_sign_in_behavior),
-    register_behavior: EmailRegister = Depends(get_register_behavior),
-    verify_behavior: EmailVerify = Depends(get_verify_behavior),
-    recovery_behavior: EmailRecovery = Depends(get_recovery_behavior),
+    factory: AuthProviderFactory = Depends(get_auth_factory),
+    attempts_store: InMemoryLoginAttemptsStore = Depends(get_login_attempts_store),
+    settings: Settings = Depends(get_settings),
 ) -> Auth:
-    return Auth(sign_in_behavior, register_behavior, verify_behavior, recovery_behavior)
+    """Las 4 estrategias salen de la misma fabrica. El Decorator se ensambla
+    aca, sobre el producto de la fabrica: `Auth` recibe el SignInBehavior ya
+    envuelto en RateLimitedSignIn y no se entera (LSP + OCP), y cualquier
+    proveedor futuro hereda el rate limiting sin hacer nada."""
+    sign_in_behavior = RateLimitedSignIn(
+        factory.create_sign_in_behavior(),
+        attempts_store,
+        max_attempts=settings.login_max_attempts,
+        lockout_window=timedelta(minutes=settings.login_lockout_minutes),
+    )
+    return Auth(
+        sign_in_behavior,
+        factory.create_register_behavior(),
+        factory.create_verify_behavior(),
+        factory.create_recovery_behavior(),
+    )

@@ -1,13 +1,16 @@
 """Endpoints HTTP del modulo de auth. El router es deliberadamente delgado:
-arma Credentials via CredentialsFactory, delega en Auth, y traduce el
-resultado a un schema Pydantic. El manejo de errores esta centralizado en
-app/auth/error_handlers.py (registrado en app/main.py)."""
+arma Credentials con la fabrica del proveedor (AuthProviderFactory, Abstract
+Factory), delega en Auth, y traduce el resultado a un schema Pydantic. La
+fabrica y Auth salen del mismo `Depends(get_auth_factory)` (cacheado por
+request), asi que credenciales y estrategias son siempre de la misma familia.
+El manejo de errores esta centralizado en app/auth/error_handlers.py
+(registrado en app/main.py)."""
 
 from fastapi import APIRouter, Cookie, Depends, Response, status
 
 from app.auth.auth import Auth
-from app.auth.credentials_factory import CredentialsFactory
-from app.auth.dependencies import get_auth, get_token_service
+from app.auth.dependencies import get_auth, get_auth_factory, get_token_service
+from app.auth.factories import AuthProviderFactory
 from app.auth.schemas import (
     GenericMessageResponse,
     LoginRequest,
@@ -40,8 +43,12 @@ def _set_refresh_cookie(response: Response, refresh_token: str, settings: Settin
 
 
 @router.post("/register", response_model=UsuarioPublic, status_code=status.HTTP_201_CREATED)
-async def register(peticion: RegisterRequest, auth: Auth = Depends(get_auth)) -> UsuarioPublic:
-    credentials = CredentialsFactory.create_credentials(peticion)
+async def register(
+    peticion: RegisterRequest,
+    auth: Auth = Depends(get_auth),
+    factory: AuthProviderFactory = Depends(get_auth_factory),
+) -> UsuarioPublic:
+    credentials = factory.create_credentials(peticion)
     resultado = await auth.register(credentials)
     return UsuarioPublic(
         id=resultado.usuario_id,
@@ -56,9 +63,10 @@ async def login(
     peticion: LoginRequest,
     response: Response,
     auth: Auth = Depends(get_auth),
+    factory: AuthProviderFactory = Depends(get_auth_factory),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
-    credentials = CredentialsFactory.create_credentials(peticion)
+    credentials = factory.create_credentials(peticion)
     resultado = await auth.sign_in(credentials)
     _set_refresh_cookie(response, resultado.refresh_token, settings)
     return TokenResponse(
@@ -78,9 +86,11 @@ async def login(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def recover_password(
-    peticion: RecoverPasswordRequest, auth: Auth = Depends(get_auth)
+    peticion: RecoverPasswordRequest,
+    auth: Auth = Depends(get_auth),
+    factory: AuthProviderFactory = Depends(get_auth_factory),
 ) -> GenericMessageResponse:
-    credentials = CredentialsFactory.create_credentials(peticion)
+    credentials = factory.create_credentials(peticion)
     await auth.recover_password(credentials)
     # Mensaje identico exista o no el email registrado: evita enumeracion de
     # usuarios (ver EmailRecovery y el plan, seccion 9).

@@ -15,9 +15,13 @@ Peticion = RegisterRequest | LoginRequest | RecoverPasswordRequest
 
 
 class CredentialsFactory:
-    """Simple Factory: hoy solo produce EmailCredentials. Agregar un nuevo
-    tipo de peticion (ej. login por telefono) es un `isinstance` mas en este
-    metodo, sin tocar Auth ni las estrategias (OCP)."""
+    """Simple Factory original: traduce el DTO a EmailCredentials.
+
+    Ya no se usa directamente desde el router: la creacion de credenciales
+    paso a ser responsabilidad del Abstract Factory de cada proveedor
+    (app/auth/factories.py). `EmailAuthFactory.create_credentials` delega
+    aca, y se conserva el metodo estatico por compatibilidad con los tests
+    y consumidores existentes."""
 
     @staticmethod
     def create_credentials(peticion: Peticion) -> Credentials:

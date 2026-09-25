@@ -1,7 +1,7 @@
 """Traduce las excepciones del dominio de auth (app/auth/exceptions.py) a
 respuestas HTTP. Centralizado aca (en vez de try/except repetido en cada
 endpoint de app/auth/router.py) para que el router se limite a orquestar
-CredentialsFactory + Auth + la respuesta de exito."""
+AuthProviderFactory + Auth + la respuesta de exito."""
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -12,6 +12,7 @@ from app.auth.exceptions import (
     InactiveAccountError,
     InvalidCredentialsError,
     InvalidTokenError,
+    PasswordRecoveryNotSupportedError,
     SessionNotFoundError,
     TokenExpiredError,
 )
@@ -24,6 +25,7 @@ _STATUS_BY_EXCEPTION = {
     SessionNotFoundError: status.HTTP_401_UNAUTHORIZED,
     InvalidTokenError: status.HTTP_401_UNAUTHORIZED,
     TokenExpiredError: status.HTTP_401_UNAUTHORIZED,
+    PasswordRecoveryNotSupportedError: status.HTTP_400_BAD_REQUEST,
 }
 
 _GENERIC_MESSAGE_BY_EXCEPTION = {
@@ -34,6 +36,10 @@ _GENERIC_MESSAGE_BY_EXCEPTION = {
     SessionNotFoundError: "No hay una sesion activa.",
     InvalidTokenError: "La sesion no es valida. Inicia sesion nuevamente.",
     TokenExpiredError: "La sesion expiro. Inicia sesion nuevamente.",
+    PasswordRecoveryNotSupportedError: (
+        "Esta cuenta usa un proveedor externo (Google/Facebook): "
+        "recupera el acceso desde ese proveedor."
+    ),
 }
 
 

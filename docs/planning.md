@@ -81,6 +81,153 @@ paralelizar —, pero se adopta igual porque es el modelo de programación nativ
   a FastAPI.
 - **Next.js full-stack.** Descartado directamente por la restricción de backend en Python.
 
+### Diseño del módulo de autenticación (`backend/app/auth/`)
+
+El módulo implementa el diagrama de clases de la cátedra con varios patrones GoF:
+
+- **Strategy:** `Auth` es el contexto y compone 4 interfaces (`SignInBehavior`,
+  `RegisterBehavior`, `VerifyBehavior`, `RecoveryBehavior`, definidas como `typing.Protocol`).
+- **Abstract Factory:** `AuthProviderFactory` crea la familia completa de un proveedor
+  (credenciales + las 4 estrategias). Hoy existe `EmailAuthFactory` (`app/auth/factories.py`).
+- **Decorator:** `RateLimitedSignIn` envuelve cualquier `SignInBehavior` para limitar intentos.
+- **Null Object:** `UnsupportedRecovery` cumple `RecoveryBehavior` en proveedores sin contraseña
+  local y lanza `PasswordRecoveryNotSupportedError` (HTTP 400) en vez de dejar un `None` en `Auth`.
+- **Observer + Singleton:** `AuthEventPublisher` publica los eventos de dominio de auth.
+
+#### De Simple Factory a Abstract Factory
+
+La versión inicial usaba un **Simple Factory** (`CredentialsFactory.create_credentials`) llamado
+desde el router, mientras que las estrategias se ensamblaban por separado en
+`dependencies.get_auth()`. Mientras solo existía Email no había problema, pero al proyectar
+proveedores OAuth las credenciales y las estrategias pasan a ser **familias de productos
+relacionados y dependientes**:
+
+| Familia  | Credenciales          | SignIn           | Register           | Verify        | Recovery              |
+|----------|-----------------------|------------------|--------------------|---------------|-----------------------|
+| Email    | `EmailCredentials`    | `EmailSignIn`    | `EmailRegister`    | `EmailVerify` | `EmailRecovery`       |
+| Google   | `GoogleCredentials`   | `GoogleSignIn`   | `GoogleRegister`   | `EmailVerify` | `UnsupportedRecovery` |
+| Facebook | `FacebookCredentials` | `FacebookSignIn` | `FacebookRegister` | `EmailVerify` | `UnsupportedRecovery` |
+
+Con dos puntos de creación desconectados, nada impedía que el router creara
+`GoogleCredentials` mientras `get_auth` inyectaba `EmailSignIn`. El **Abstract Factory** resuelve
+eso: `get_auth_factory()` resuelve **una** fábrica por request (FastAPI cachea la dependencia), y
+de ella salen tanto las credenciales (en el router) como las estrategias (en `get_auth`). Sumar
+Google o Facebook es crear `GoogleAuthFactory`/`FacebookAuthFactory` y elegirla en
+`get_auth_factory()` según el proveedor, sin tocar `Auth`, el router ni las estrategias
+existentes (OCP). Como `RateLimitedSignIn` se aplica en `get_auth` sobre el producto de la
+fábrica, todo proveedor nuevo hereda el rate limiting automáticamente. `CredentialsFactory` se
+conserva: `EmailAuthFactory.create_credentials` le delega la traducción DTO → `EmailCredentials`.
+
+`CredentialsData` (`TypedDict`, `total=False`) suma los campos opcionales `oauth_token` y
+`provider`, así que las credenciales OAuth cumplen el mismo contrato `get_credentials()` que
+`EmailCredentials` (LSP).
+
+#### Correcciones al diagrama UML original
+
+1. **Relación `Router` – `Auth`:** el rombo de agregación va del lado de `Router`, que es quien
+   usa/contiene a `Auth` (equivale a una asociación dirigida `Router --> Auth`). En el original
+   estaba del lado de `Auth`.
+2. **Decorator `RateLimitedSignIn`:** su caja de clase explicita el atributo privado envuelto
+   (`- _wrapped: SignInBehavior`) y los parámetros de configuración (`- _max_attempts: int`,
+   `- _lockout_window: timedelta`, además del `- _attempts_store: LoginAttemptsStore`).
+3. **Tipos de retorno explícitos**, tanto en `Auth` como en las interfaces:
+   `+signIn(credentials: Credentials): AuthResult`,
+   `+register(credentials: Credentials): RegisteredUser`, `+verifySession(): SessionInfo` y
+   `+recoverPassword(credentials: Credentials): void`.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Router
+    class Auth {
+        -signInBehavior: SignInBehavior
+        -registerBehavior: RegisterBehavior
+        -verifyBehavior: VerifyBehavior
+        -recoveryBehavior: RecoveryBehavior
+        +signIn(credentials: Credentials) AuthResult
+        +register(credentials: Credentials) RegisteredUser
+        +verifySession() SessionInfo
+        +recoverPassword(credentials: Credentials) void
+    }
+
+    class SignInBehavior {
+        <<interface>>
+        +signIn(credentials: Credentials) AuthResult
+    }
+    class RegisterBehavior {
+        <<interface>>
+        +register(credentials: Credentials) RegisteredUser
+    }
+    class VerifyBehavior {
+        <<interface>>
+        +verifySession() SessionInfo
+    }
+    class RecoveryBehavior {
+        <<interface>>
+        +recoverPassword(credentials: Credentials) void
+    }
+
+    class EmailSignIn
+    class EmailRegister
+    class EmailVerify
+    class EmailRecovery
+    class UnsupportedRecovery {
+        -provider: str
+        +recoverPassword(credentials: Credentials) void
+    }
+
+    class RateLimitedSignIn {
+        -_wrapped: SignInBehavior
+        -_attemptsStore: LoginAttemptsStore
+        -_maxAttempts: int
+        -_lockoutWindow: timedelta
+        +signIn(credentials: Credentials) AuthResult
+    }
+
+    class Credentials {
+        <<abstract>>
+        +getCredentials() CredentialsData
+    }
+    class EmailCredentials {
+        -usuario: str
+        -password: str
+    }
+
+    class AuthProviderFactory {
+        <<interface>>
+        +createCredentials(peticion: Peticion) Credentials
+        +createSignInBehavior() SignInBehavior
+        +createRegisterBehavior() RegisterBehavior
+        +createVerifyBehavior() VerifyBehavior
+        +createRecoveryBehavior() RecoveryBehavior
+    }
+    class EmailAuthFactory
+
+    Router o-- Auth
+    Router ..> AuthProviderFactory : usa
+    Auth o-- SignInBehavior
+    Auth o-- RegisterBehavior
+    Auth o-- VerifyBehavior
+    Auth o-- RecoveryBehavior
+
+    SignInBehavior <|.. EmailSignIn
+    SignInBehavior <|.. RateLimitedSignIn
+    RateLimitedSignIn o-- SignInBehavior : _wrapped
+    RegisterBehavior <|.. EmailRegister
+    VerifyBehavior <|.. EmailVerify
+    RecoveryBehavior <|.. EmailRecovery
+    RecoveryBehavior <|.. UnsupportedRecovery
+
+    Credentials <|-- EmailCredentials
+    AuthProviderFactory <|.. EmailAuthFactory
+    EmailAuthFactory ..> EmailCredentials : crea
+    EmailAuthFactory ..> EmailSignIn : crea
+    EmailAuthFactory ..> EmailRegister : crea
+    EmailAuthFactory ..> EmailVerify : crea
+    EmailAuthFactory ..> EmailRecovery : crea
+```
+
 ### Base de datos — **PostgreSQL 16, sin PostGIS**
 
 Esto es contraintuitivo y conviene entender por qué. Al elegir búsqueda **por viewport**, la
@@ -207,7 +354,7 @@ tomada) y el filtro es un `IN` sobre esta tabla.
 ### `/recover-password`, `/verify-session` y `/logout`)
 
 No estaban en la versión original de este documento; surgieron al implementar el módulo de auth
-sobre el diagrama de clases de la cátedra (`Auth` + Strategy + Factory) y se documentan acá para
+sobre el diagrama de clases de la cátedra (`Auth` + Strategy + Abstract Factory) y se documentan acá para
 que el modelo de datos quede sincronizado con el código (`backend/app/models/`).
 
 - **`RefreshToken`**: `id` (UUID), `usuario_id` (FK), `token_hash` (SHA-256, nunca el token
