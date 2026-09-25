@@ -1,0 +1,40 @@
+# --- Python / backend (FastAPI) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# entornos virtuales
+.venv/
+venv/
+env/
+
+# variables de entorno / secretos (nunca commitear un .env real)
+.env
+.env.*
+!.env.example
+
+# bases de datos locales de desarrollo/tests
+*.db
+*.sqlite
+*.sqlite3
+
+# caches de herramientas
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Frontend (React/Vite), para cuando se agregue ---
+node_modules/
+dist/
+.vite/
+
+# --- Editor / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
