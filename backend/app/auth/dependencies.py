@@ -3,10 +3,10 @@ implementaciones concretas (SQLAlchemy, argon2, jose). Auth y las estrategias
 solo ven Protocols; FastAPI resuelve el arbol de dependencias por request via
 `Depends`.
 
-La familia de productos de cada proveedor (credenciales + 4 estrategias) se
-crea a traves de un Abstract Factory (app/auth/factories.py): el router y
-`get_auth` reciben la MISMA fabrica por request, asi que nunca se mezclan
-credenciales de un proveedor con estrategias de otro.
+`get_auth` ensambla directamente las 4 estrategias de email + contrasena
+local. Los endpoints /auth/register, /auth/login y /auth/recover-password son
+exclusivos de esta estrategia; un proveedor externo futuro (OAuth) tendra sus
+propios endpoints y su propia dependencia que construya otra instancia de Auth.
 """
 
 from datetime import timedelta
@@ -15,9 +15,13 @@ from fastapi import Cookie, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.auth import Auth
+from app.auth.behaviors.email_recovery import EmailRecovery
+from app.auth.behaviors.email_register import EmailRegister
+from app.auth.behaviors.email_signin import EmailSignIn
+from app.auth.behaviors.email_verify import EmailVerify
+from app.auth.credentials import EmailCredentials, EmailRecoveryRequest, EmailRegistration
 from app.auth.decorators.rate_limited_signin import InMemoryLoginAttemptsStore, RateLimitedSignIn
 from app.auth.events.publisher import AuthEventPublisher
-from app.auth.factories import AuthProviderFactory, EmailAuthFactory
 from app.auth.repository import SQLAlchemyUserRepository, UserRepository
 from app.auth.token_repository import (
     SQLAlchemyPasswordResetTokenRepository,
@@ -34,6 +38,9 @@ from app.db.session import get_db_session
 # el rate limiting funcione, por eso vive a nivel de modulo.
 _password_hasher = Argon2PasswordHasher()
 _login_attempts_store = InMemoryLoginAttemptsStore()
+
+
+EmailAuth = Auth[EmailCredentials, EmailRegistration, EmailRecoveryRequest]
 
 
 def get_password_hasher() -> PasswordHasher:
@@ -76,7 +83,7 @@ def get_reset_token_repository(
     return SQLAlchemyPasswordResetTokenRepository(session)
 
 
-def get_auth_factory(
+def get_auth(
     user_repository: UserRepository = Depends(get_user_repository),
     password_hasher: PasswordHasher = Depends(get_password_hasher),
     token_service: TokenService = Depends(get_token_service),
@@ -84,56 +91,35 @@ def get_auth_factory(
         get_reset_token_repository
     ),
     event_publisher: AuthEventPublisher = Depends(get_auth_event_publisher),
+    attempts_store: InMemoryLoginAttemptsStore = Depends(get_login_attempts_store),
     settings: Settings = Depends(get_settings),
     authorization: str | None = Header(default=None),
     refresh_token: str | None = Cookie(default=None),
-) -> AuthProviderFactory:
-    """Resuelve la fabrica concreta (Abstract Factory) de la familia del
-    proveedor de autenticacion. FastAPI cachea las dependencias por request,
-    asi que el router y `get_auth` reciben la MISMA instancia.
+) -> EmailAuth:
+    """Ensambla Auth con las 4 estrategias de email + contrasena local.
 
-    Punto de extension: hoy solo existe la familia Email. Para sumar OAuth se
-    agrega un parametro que identifique al proveedor (ej. path/query
-    `provider`) y se retorna `GoogleAuthFactory(...)` o
-    `FacebookAuthFactory(...)` segun corresponda; ni Auth, ni el router, ni
-    las estrategias existentes cambian (OCP).
+    El Decorator se aplica aca: `Auth` recibe el SignInBehavior ya envuelto
+    en RateLimitedSignIn y no se entera (LSP + OCP).
 
     `verifySession()` no toma argumentos (fiel al diagrama): la sesion se
-    extrae ACA y se le pasa a la fabrica, que la inyecta al construir la
-    estrategia de verificacion."""
+    extrae ACA (access token del header Authorization, refresh token de la
+    cookie) y se inyecta al construir la estrategia de verificacion."""
     access_token = None
     if authorization and authorization.lower().startswith("bearer "):
         access_token = authorization.split(" ", 1)[1].strip()
-    return EmailAuthFactory(
-        user_repository,
-        password_hasher,
-        token_service,
-        reset_token_repository,
-        event_publisher,
-        reset_token_ttl=timedelta(minutes=settings.password_reset_token_ttl_minutes),
-        access_token=access_token,
-        refresh_token=refresh_token,
-    )
 
-
-def get_auth(
-    factory: AuthProviderFactory = Depends(get_auth_factory),
-    attempts_store: InMemoryLoginAttemptsStore = Depends(get_login_attempts_store),
-    settings: Settings = Depends(get_settings),
-) -> Auth:
-    """Las 4 estrategias salen de la misma fabrica. El Decorator se ensambla
-    aca, sobre el producto de la fabrica: `Auth` recibe el SignInBehavior ya
-    envuelto en RateLimitedSignIn y no se entera (LSP + OCP), y cualquier
-    proveedor futuro hereda el rate limiting sin hacer nada."""
     sign_in_behavior = RateLimitedSignIn(
-        factory.create_sign_in_behavior(),
+        EmailSignIn(user_repository, password_hasher, token_service, event_publisher),
         attempts_store,
         max_attempts=settings.login_max_attempts,
         lockout_window=timedelta(minutes=settings.login_lockout_minutes),
     )
-    return Auth(
-        sign_in_behavior,
-        factory.create_register_behavior(),
-        factory.create_verify_behavior(),
-        factory.create_recovery_behavior(),
+    register_behavior = EmailRegister(user_repository, password_hasher, event_publisher)
+    verify_behavior = EmailVerify(token_service, event_publisher, access_token, refresh_token)
+    recovery_behavior = EmailRecovery(
+        user_repository,
+        reset_token_repository,
+        event_publisher,
+        reset_token_ttl=timedelta(minutes=settings.password_reset_token_ttl_minutes),
     )
+    return Auth(sign_in_behavior, register_behavior, verify_behavior, recovery_behavior)

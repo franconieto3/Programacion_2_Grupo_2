@@ -118,9 +118,11 @@ existentes (OCP). Como `RateLimitedSignIn` se aplica en `get_auth` sobre el prod
 fábrica, todo proveedor nuevo hereda el rate limiting automáticamente. `CredentialsFactory` se
 conserva: `EmailAuthFactory.create_credentials` le delega la traducción DTO → `EmailCredentials`.
 
-`CredentialsData` (`TypedDict`, `total=False`) suma los campos opcionales `oauth_token` y
-`provider`, así que las credenciales OAuth cumplen el mismo contrato `get_credentials()` que
-`EmailCredentials` (LSP).
+`Credentials` es un tipo base abstracto cuyo único contrato común es `identifier` (la clave
+que usa `RateLimitedSignIn`). Cada subclase declara sus propios atributos tipados
+(`EmailCredentials`, `EmailRegistration`, `EmailRecoveryRequest`) y los Protocols de estrategia
+son genéricos en las credenciales que aceptan (`SignInBehavior[EmailCredentials]`), así que
+pasar credenciales de otro método de autenticación es un error de tipos.
 
 #### Correcciones al diagrama UML original
 
@@ -226,6 +228,75 @@ classDiagram
     EmailAuthFactory ..> EmailRegister : crea
     EmailAuthFactory ..> EmailVerify : crea
     EmailAuthFactory ..> EmailRecovery : crea
+```
+
+#### Diagrama de secuencia: registro (`POST /auth/register`)
+
+El router arma las credenciales con `CredentialsFactory` y delega en `Auth`, que a su vez
+delega en `EmailRegister`. La sesión de base de datos es una por request: se hace `commit` al
+terminar el endpoint sin errores y `rollback` si se lanzó una excepción.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant FastAPI as FastAPI (Pydantic)
+    participant Deps as dependencies.get_auth
+    participant Router as router.register
+    participant CF as CredentialsFactory
+    participant Auth as EmailAuth
+    participant Reg as EmailRegister
+    participant Repo as SQLAlchemyUserRepository
+    participant Hasher as Argon2PasswordHasher
+    participant Pub as AuthEventPublisher
+    participant Obs as Observers (EmailNotification, AuditLog)
+    participant DB as AsyncSession / PostgreSQL
+
+    Cliente->>FastAPI: POST /auth/register {email, password, nombre, rol}
+    FastAPI->>FastAPI: valida RegisterRequest (EmailStr, password 8..128, rol)
+    alt body invalido
+        FastAPI-->>Cliente: 422 Unprocessable Entity
+    end
+
+    FastAPI->>Deps: resolver Depends(get_auth)
+    Deps->>DB: get_db_session() abre sesion (1 por request)
+    Deps->>Deps: arma RateLimitedSignIn(EmailSignIn), EmailRegister, EmailVerify, EmailRecovery
+    Deps-->>FastAPI: Auth[EmailCredentials, EmailRegistration, EmailRecoveryRequest]
+
+    FastAPI->>Router: register(peticion, auth)
+    Router->>CF: create_credentials(peticion: RegisterRequest)
+    CF-->>Router: EmailRegistration(email, password, nombre, rol)
+    Router->>Auth: register(credentials: EmailRegistration)
+    Auth->>Reg: register(credentials)
+    Reg->>Repo: get_by_email(credentials.email)
+    Repo->>DB: SELECT usuario WHERE email = ?
+    DB-->>Repo: fila | None
+    Repo-->>Reg: Usuario | None
+
+    alt email ya registrado
+        Reg-->>Auth: raise EmailAlreadyRegisteredError
+        Auth-->>Router: propaga
+        Router-->>FastAPI: propaga
+        FastAPI->>DB: rollback()
+        FastAPI-->>Cliente: 409 Conflict "El email ya esta registrado."
+    else email disponible
+        Reg->>Hasher: hash(credentials.password)
+        Hasher-->>Reg: password_hash (argon2)
+        Reg->>Repo: create(email, password_hash, nombre, rol)
+        Repo->>DB: add(usuario) + flush() (INSERT)
+        DB-->>Repo: usuario con id
+        Repo-->>Reg: Usuario
+        Reg->>Pub: publish(UserRegistered(usuario_id, email, nombre))
+        loop cada observer suscripto (fallos aislados)
+            Pub->>Obs: handle(evento)
+            Note right of Obs: EmailNotification: email de bienvenida<br/>AuditLog: registra el alta
+        end
+        Reg-->>Auth: RegisteredUser(usuario_id, email, nombre, rol)
+        Auth-->>Router: RegisteredUser
+        Router-->>FastAPI: UsuarioPublic(id, email, nombre, rol)
+        FastAPI->>DB: commit() al cerrar get_db_session
+        FastAPI-->>Cliente: 201 Created UsuarioPublic
+    end
 ```
 
 ### Base de datos — **PostgreSQL 16, sin PostGIS**

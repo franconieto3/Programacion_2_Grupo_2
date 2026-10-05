@@ -37,7 +37,7 @@ async def test_locks_account_after_max_attempts():
     decorated = RateLimitedSignIn(
         _AlwaysFailingSignIn(), store, max_attempts=3, lockout_window=timedelta(minutes=15)
     )
-    credentials = EmailCredentials(usuario="a@a.com", password="x")
+    credentials = EmailCredentials(email="a@a.com", password="x")
 
     for _ in range(3):
         with pytest.raises(InvalidCredentialsError):
@@ -52,7 +52,7 @@ async def test_successful_login_resets_the_counter():
     decorated = RateLimitedSignIn(
         _FailsOnceThenSucceeds(), store, max_attempts=3, lockout_window=timedelta(minutes=15)
     )
-    credentials = EmailCredentials(usuario="a@a.com", password="x")
+    credentials = EmailCredentials(email="a@a.com", password="x")
 
     with pytest.raises(InvalidCredentialsError):
         await decorated.sign_in(credentials)

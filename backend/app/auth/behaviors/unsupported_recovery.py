@@ -1,10 +1,12 @@
-"""UnsupportedRecovery implements RecoveryBehavior (Null Object).
+"""UnsupportedRecovery implements RecoveryBehavior[Credentials] (Null Object).
 
 Los proveedores OAuth (Google, Facebook) no gestionan contrasenas locales, asi
 que la recuperacion de contrasena no aplica. En vez de inyectar `None` en
-`Auth` (y obligarlo a chequearlo antes de delegar), las fabricas de esas
-familias inyectan esta estrategia, que cumple el mismo contrato y responde con
-una excepcion de dominio clara (traducida a HTTP en app/auth/error_handlers.py).
+`Auth` (y obligarlo a chequearlo antes de delegar), la dependencia que arme
+el Auth de esos proveedores inyecta esta estrategia, que cumple el mismo
+contrato y responde con una excepcion de dominio clara (traducida a HTTP en
+app/auth/error_handlers.py). Acepta cualquier `Credentials`, asi que sirve
+como RecoveryBehavior de cualquier proveedor.
 """
 
 from app.auth.credentials import Credentials

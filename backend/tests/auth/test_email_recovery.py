@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from app.auth.behaviors.email_recovery import EmailRecovery
 from app.auth.behaviors.email_register import EmailRegister
-from app.auth.credentials import EmailCredentials
+from app.auth.credentials import EmailRecoveryRequest, EmailRegistration
 from app.auth.events.auth_events import PasswordRecoveryRequested
 from app.models.usuario import RolEnum
 
@@ -20,7 +20,7 @@ async def test_recover_password_for_existing_user_creates_token_and_publishes_ev
 ):
     register = EmailRegister(user_repository, password_hasher, event_publisher)
     await register.register(
-        EmailCredentials(usuario="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE)
+        EmailRegistration(email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE)
     )
     spy = _SpyObserver()
     event_publisher.subscribe(spy)
@@ -28,7 +28,7 @@ async def test_recover_password_for_existing_user_creates_token_and_publishes_ev
         user_repository, reset_token_repository, event_publisher, reset_token_ttl=timedelta(minutes=30)
     )
 
-    await behavior.recover_password(EmailCredentials(usuario="a@a.com"))
+    await behavior.recover_password(EmailRecoveryRequest(email="a@a.com"))
 
     assert len(reset_token_repository.created) == 1
     evento = spy.received[-1]
@@ -46,7 +46,7 @@ async def test_recover_password_for_unknown_email_does_not_create_token(
         user_repository, reset_token_repository, event_publisher, reset_token_ttl=timedelta(minutes=30)
     )
 
-    await behavior.recover_password(EmailCredentials(usuario="nadie@a.com"))
+    await behavior.recover_password(EmailRecoveryRequest(email="nadie@a.com"))
 
     assert reset_token_repository.created == []
     evento = spy.received[-1]

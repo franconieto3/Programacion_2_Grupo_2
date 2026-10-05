@@ -4,9 +4,14 @@ RegisterBehavior, VerifyBehavior, RecoveryBehavior), en Python.
 Se usan `typing.Protocol` (no `ABC`): son contratos puros sin estado ni logica
 compartida, y `Protocol` permite que los decoradores (app/auth/decorators/*.py)
 implementen la misma interfaz por estructura, sin encadenar herencia con la
-estrategia concreta que envuelven (ver RateLimitedSignIn). `Credentials`, en
-cambio, es `ABC` porque el diagrama la marca explicitamente como
-`<<abstracta>>`, no como interfaz.
+estrategia concreta que envuelven (ver RateLimitedSignIn).
+
+Las interfaces que reciben credenciales son genericas en `C`: cada estrategia
+declara las credenciales concretas que acepta (ej. EmailSignIn cumple
+`SignInBehavior[EmailCredentials]`), asi el type checker rechaza pasarle
+credenciales de otro metodo de autenticacion. `C` solo aparece como parametro,
+por lo que es contravariante: una estrategia que acepta cualquier
+`Credentials` (ej. UnsupportedRecovery) sirve para cualquier `C`.
 """
 
 from typing import Protocol, runtime_checkable
@@ -16,13 +21,13 @@ from app.auth.results import AuthResult, RegisteredUser, SessionInfo
 
 
 @runtime_checkable
-class SignInBehavior(Protocol):
-    async def sign_in(self, credentials: Credentials) -> AuthResult: ...
+class SignInBehavior[C: Credentials](Protocol):
+    async def sign_in(self, credentials: C) -> AuthResult: ...
 
 
 @runtime_checkable
-class RegisterBehavior(Protocol):
-    async def register(self, credentials: Credentials) -> RegisteredUser: ...
+class RegisterBehavior[C: Credentials](Protocol):
+    async def register(self, credentials: C) -> RegisteredUser: ...
 
 
 @runtime_checkable
@@ -31,5 +36,5 @@ class VerifyBehavior(Protocol):
 
 
 @runtime_checkable
-class RecoveryBehavior(Protocol):
-    async def recover_password(self, credentials: Credentials) -> None: ...
+class RecoveryBehavior[C: Credentials](Protocol):
+    async def recover_password(self, credentials: C) -> None: ...

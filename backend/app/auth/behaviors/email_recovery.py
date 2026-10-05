@@ -1,16 +1,14 @@
-"""EmailRecovery implements RecoveryBehavior, tal como el diagrama.
+"""EmailRecovery implements RecoveryBehavior[EmailRecoveryRequest].
 
-`recoverPassword` en el diagrama recibe `credentials: Credentials`, pero para
-este flujo solo hay email: `password` viaja en None (ver
-app/auth/credentials.py y la seccion 3 del plan de auth para la
-justificacion). Nunca se lee `password` de `get_credentials()` aca.
+Para este flujo solo se conoce el email, por eso recibe
+`EmailRecoveryRequest` (sin contrasena) en vez de `EmailCredentials`.
 """
 
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from app.auth.credentials import Credentials
+from app.auth.credentials import EmailRecoveryRequest
 from app.auth.events.auth_events import PasswordRecoveryRequested
 from app.auth.events.publisher import AuthEventPublisher
 from app.auth.repository import UserRepository
@@ -30,8 +28,8 @@ class EmailRecovery:
         self._event_publisher = event_publisher
         self._reset_token_ttl = reset_token_ttl
 
-    async def recover_password(self, credentials: Credentials) -> None:
-        email = credentials.get_credentials()["usuario"]
+    async def recover_password(self, credentials: EmailRecoveryRequest) -> None:
+        email = credentials.email
 
         usuario = await self._user_repository.get_by_email(email)
 

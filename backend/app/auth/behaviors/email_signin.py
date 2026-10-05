@@ -1,6 +1,6 @@
-"""EmailSignIn implements SignInBehavior, tal como el diagrama."""
+"""EmailSignIn implements SignInBehavior[EmailCredentials], tal como el diagrama."""
 
-from app.auth.credentials import Credentials
+from app.auth.credentials import EmailCredentials
 from app.auth.events.auth_events import LoginFailed, LoginSucceeded
 from app.auth.events.publisher import AuthEventPublisher
 from app.auth.exceptions import InactiveAccountError, InvalidCredentialsError
@@ -23,10 +23,9 @@ class EmailSignIn:
         self._token_service = token_service
         self._event_publisher = event_publisher
 
-    async def sign_in(self, credentials: Credentials) -> AuthResult:
-        data = credentials.get_credentials()
-        email = data["usuario"]
-        password = data["password"] or ""
+    async def sign_in(self, credentials: EmailCredentials) -> AuthResult:
+        email = credentials.email
+        password = credentials.password
 
         usuario = await self._user_repository.get_by_email(email)
         if usuario is None:
@@ -35,7 +34,11 @@ class EmailSignIn:
             )
             raise InvalidCredentialsError()
 
-        if not await self._password_hasher.verify(password, usuario.password_hash):
+        # Un usuario sin contrasena local (ej. registrado via un proveedor
+        # externo) no puede autenticarse por email + contrasena.
+        if not usuario.password_hash or not await self._password_hasher.verify(
+            password, usuario.password_hash
+        ):
             await self._event_publisher.publish(
                 LoginFailed(email=email, reason="password_incorrecta")
             )
