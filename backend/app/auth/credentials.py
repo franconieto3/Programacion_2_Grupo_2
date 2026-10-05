@@ -1,63 +1,58 @@
-"""Credentials <<abstracta>> / EmailCredentials, tal como los define el
-diagrama de clases entregado por la catedra."""
+"""`Credentials` (tipo base abstracto) y las credenciales concretas de email.
+
+Cada metodo de autenticacion tiene datos muy distintos (email + contrasena,
+token OAuth, etc.), asi que `Credentials` NO intenta unificarlos en un
+diccionario comun: cada subclase declara sus propios atributos tipados y cada
+estrategia declara, via genericos, que credenciales concretas acepta (ver
+app/auth/behaviors/base.py). Lo unico comun es `identifier`, la identidad de
+quien intenta autenticarse (la usa RateLimitedSignIn como clave).
+"""
 
 from abc import ABC, abstractmethod
-from typing import TypedDict
+from dataclasses import dataclass, field
 
 from app.models.usuario import RolEnum
 
 
-class CredentialsData(TypedDict, total=False):
-    usuario: str
-    password: str | None
+class Credentials(ABC):
+    @property
+    @abstractmethod
+    def identifier(self) -> str:
+        """Identidad de quien se autentica (ej. el email)."""
+
+
+@dataclass(frozen=True, slots=True)
+class EmailCredentials(Credentials):
+    """Login con email + contrasena local."""
+
+    email: str
+    password: str = field(repr=False)
+
+    @property
+    def identifier(self) -> str:
+        return self.email
+
+
+@dataclass(frozen=True, slots=True)
+class EmailRegistration(Credentials):
+    """Alta con email + contrasena local, mas los datos del perfil."""
+
+    email: str
+    password: str = field(repr=False)
     nombre: str
     rol: RolEnum
-    # Datos de proveedores OAuth (Google/Facebook). Opcionales (total=False):
-    # EmailCredentials no los emite y las credenciales OAuth no emiten
-    # `password`, sin romper el contrato get_credentials() -> CredentialsData.
-    oauth_token: str
-    provider: str
+
+    @property
+    def identifier(self) -> str:
+        return self.email
 
 
-class Credentials(ABC):
-    """Abstraccion que permite a cada estrategia (Behavior) operar sobre
-    credenciales sin conocer su representacion concreta. Hoy solo existe
-    EmailCredentials; las credenciales OAuth (GoogleCredentials,
-    FacebookCredentials) las crea la fabrica de su familia
-    (app/auth/factories.py) y las estrategias existentes no cambian (OCP/DIP)."""
+@dataclass(frozen=True, slots=True)
+class EmailRecoveryRequest(Credentials):
+    """Pedido de recuperacion de contrasena: solo se conoce el email."""
 
-    @abstractmethod
-    def get_credentials(self) -> CredentialsData: ...
+    email: str
 
-
-class EmailCredentials(Credentials):
-    """Fiel al diagrama: atributos privados `usuario` (el email) y
-    `password`. Se agregan `nombre`/`rol` opcionales para poder transportar
-    los datos de alta de RegisterRequest sin crear una clase de credenciales
-    nueva no contemplada en el diagrama (ver docs/planning.md / plan de auth,
-    seccion 3, para la justificacion completa).
-
-    Para recover-password, `password` queda en None: `usuario` sigue
-    interpretandose siempre como el email en los tres flujos que usan esta
-    clase (login, registro, recuperacion).
-    """
-
-    def __init__(
-        self,
-        usuario: str,
-        password: str | None = None,
-        nombre: str | None = None,
-        rol: RolEnum | None = None,
-    ) -> None:
-        self._usuario = usuario
-        self._password = password
-        self._nombre = nombre
-        self._rol = rol
-
-    def get_credentials(self) -> CredentialsData:
-        data: CredentialsData = {"usuario": self._usuario, "password": self._password}
-        if self._nombre is not None:
-            data["nombre"] = self._nombre
-        if self._rol is not None:
-            data["rol"] = self._rol
-        return data
+    @property
+    def identifier(self) -> str:
+        return self.email

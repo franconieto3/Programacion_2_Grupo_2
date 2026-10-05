@@ -1,6 +1,8 @@
 """Decorator: agrega throttling por intentos fallidos a CUALQUIER
 SignInBehavior, sin modificar EmailSignIn ni Auth (OCP). Implementa
-SignInBehavior por estructura (Protocol), envolviendo otro SignInBehavior.
+SignInBehavior[C] por estructura (Protocol), envolviendo otro
+SignInBehavior[C]; la clave de throttling es `credentials.identifier`, el unico
+dato comun a todas las credenciales.
 
 Mitigacion de fuerza bruta, RNF-04. Se descarto un `LoggingBehaviorDecorator`
 generico adicional: AuditLogObserver ya cubre el registro estructurado de
@@ -51,10 +53,10 @@ class InMemoryLoginAttemptsStore:
             self._failures[key] = [ts for ts in attempts if ts >= cutoff]
 
 
-class RateLimitedSignIn:
+class RateLimitedSignIn[C: Credentials]:
     def __init__(
         self,
-        wrapped: SignInBehavior,
+        wrapped: SignInBehavior[C],
         attempts_store: LoginAttemptsStore,
         max_attempts: int = 5,
         lockout_window: timedelta = timedelta(minutes=15),
@@ -64,8 +66,8 @@ class RateLimitedSignIn:
         self._max_attempts = max_attempts
         self._lockout_window = lockout_window
 
-    async def sign_in(self, credentials: Credentials) -> AuthResult:
-        key = credentials.get_credentials()["usuario"]
+    async def sign_in(self, credentials: C) -> AuthResult:
+        key = credentials.identifier
 
         if await self._attempts_store.is_locked(key, self._max_attempts, self._lockout_window):
             raise AccountTemporarilyLockedError(key)

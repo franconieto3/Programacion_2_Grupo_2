@@ -8,32 +8,49 @@ a mano dentro de la factory. Es una suposicion de diseno documentada en el
 plan de implementacion.
 """
 
-from app.auth.credentials import Credentials, EmailCredentials
+from typing import overload
+
+from app.auth.credentials import (
+    Credentials,
+    EmailCredentials,
+    EmailRecoveryRequest,
+    EmailRegistration,
+)
 from app.auth.schemas import LoginRequest, RecoverPasswordRequest, RegisterRequest
 
 Peticion = RegisterRequest | LoginRequest | RecoverPasswordRequest
 
 
 class CredentialsFactory:
-    """Simple Factory original: traduce el DTO a EmailCredentials.
+    """Simple Factory: traduce cada DTO a sus credenciales de email concretas.
 
-    Ya no se usa directamente desde el router: la creacion de credenciales
-    paso a ser responsabilidad del Abstract Factory de cada proveedor
-    (app/auth/factories.py). `EmailAuthFactory.create_credentials` delega
-    aca, y se conserva el metodo estatico por compatibilidad con los tests
-    y consumidores existentes."""
+    `create_credentials` lo invocan directamente los endpoints /register,
+    /login y /recover-password de app/auth/router.py. Los overloads le
+    indican al type checker que credenciales concretas devuelve cada DTO."""
+
+    @overload
+    @staticmethod
+    def create_credentials(peticion: RegisterRequest) -> EmailRegistration: ...
+
+    @overload
+    @staticmethod
+    def create_credentials(peticion: LoginRequest) -> EmailCredentials: ...
+
+    @overload
+    @staticmethod
+    def create_credentials(peticion: RecoverPasswordRequest) -> EmailRecoveryRequest: ...
 
     @staticmethod
     def create_credentials(peticion: Peticion) -> Credentials:
         if isinstance(peticion, RegisterRequest):
-            return EmailCredentials(
-                usuario=peticion.email,
+            return EmailRegistration(
+                email=peticion.email,
                 password=peticion.password,
                 nombre=peticion.nombre,
                 rol=peticion.rol,
             )
         if isinstance(peticion, LoginRequest):
-            return EmailCredentials(usuario=peticion.email, password=peticion.password)
+            return EmailCredentials(email=peticion.email, password=peticion.password)
         if isinstance(peticion, RecoverPasswordRequest):
-            return EmailCredentials(usuario=peticion.email, password=None)
+            return EmailRecoveryRequest(email=peticion.email)
         raise TypeError(f"Tipo de peticion no soportado: {type(peticion)!r}")

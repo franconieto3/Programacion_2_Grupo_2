@@ -1,6 +1,6 @@
-"""EmailRegister implements RegisterBehavior, tal como el diagrama."""
+"""EmailRegister implements RegisterBehavior[EmailRegistration], tal como el diagrama."""
 
-from app.auth.credentials import Credentials
+from app.auth.credentials import EmailRegistration
 from app.auth.events.auth_events import UserRegistered
 from app.auth.events.publisher import AuthEventPublisher
 from app.auth.exceptions import EmailAlreadyRegisteredError
@@ -20,12 +20,11 @@ class EmailRegister:
         self._password_hasher = password_hasher
         self._event_publisher = event_publisher
 
-    async def register(self, credentials: Credentials) -> RegisteredUser:
-        data = credentials.get_credentials()
-        email = data["usuario"]
-        password = data["password"]
-        nombre = data["nombre"]
-        rol = data["rol"]
+    async def register(self, credentials: EmailRegistration) -> RegisteredUser:
+        email = credentials.email
+        password = credentials.password
+        nombre = credentials.nombre
+        rol = credentials.rol
 
         if await self._user_repository.get_by_email(email) is not None:
             raise EmailAlreadyRegisteredError(email)

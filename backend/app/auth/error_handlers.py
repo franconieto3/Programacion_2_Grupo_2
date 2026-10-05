@@ -1,7 +1,7 @@
 """Traduce las excepciones del dominio de auth (app/auth/exceptions.py) a
 respuestas HTTP. Centralizado aca (en vez de try/except repetido en cada
 endpoint de app/auth/router.py) para que el router se limite a orquestar
-AuthProviderFactory + Auth + la respuesta de exito."""
+CredentialsFactory + Auth + la respuesta de exito."""
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse

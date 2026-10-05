@@ -1,6 +1,6 @@
 import pytest
 
-from app.auth.credentials import EmailCredentials
+from app.auth.credentials import EmailCredentials, EmailRecoveryRequest, EmailRegistration
 from app.auth.credentials_factory import CredentialsFactory
 from app.auth.schemas import LoginRequest, RecoverPasswordRequest, RegisterRequest
 from app.models.usuario import RolEnum
@@ -13,31 +13,37 @@ def test_create_credentials_from_register_request():
 
     credentials = CredentialsFactory.create_credentials(peticion)
 
-    assert isinstance(credentials, EmailCredentials)
-    assert credentials.get_credentials() == {
-        "usuario": "a@a.com",
-        "password": "secret123",
-        "nombre": "Ana",
-        "rol": RolEnum.DEMANDANTE,
-    }
+    assert credentials == EmailRegistration(
+        email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE
+    )
 
 
 def test_create_credentials_from_login_request():
     peticion = LoginRequest(email="a@a.com", password="secret123")
 
-    data = CredentialsFactory.create_credentials(peticion).get_credentials()
+    credentials = CredentialsFactory.create_credentials(peticion)
 
-    assert data == {"usuario": "a@a.com", "password": "secret123"}
+    assert credentials == EmailCredentials(email="a@a.com", password="secret123")
 
 
 def test_create_credentials_from_recover_password_request_has_no_password():
     peticion = RecoverPasswordRequest(email="a@a.com")
 
-    data = CredentialsFactory.create_credentials(peticion).get_credentials()
+    credentials = CredentialsFactory.create_credentials(peticion)
 
-    assert data == {"usuario": "a@a.com", "password": None}
+    assert credentials == EmailRecoveryRequest(email="a@a.com")
+    assert not hasattr(credentials, "password")
 
 
 def test_create_credentials_rejects_unknown_type():
     with pytest.raises(TypeError):
-        CredentialsFactory.create_credentials(object())  # type: ignore[arg-type]
+        CredentialsFactory.create_credentials(object())  # type: ignore[call-overload]
+
+
+def test_identifier_is_the_email():
+    assert EmailCredentials(email="a@a.com", password="x").identifier == "a@a.com"
+    assert EmailRecoveryRequest(email="a@a.com").identifier == "a@a.com"
+
+
+def test_password_is_not_exposed_in_repr():
+    assert "secret123" not in repr(EmailCredentials(email="a@a.com", password="secret123"))

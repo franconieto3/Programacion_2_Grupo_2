@@ -1,16 +1,15 @@
 """Endpoints HTTP del modulo de auth. El router es deliberadamente delgado:
-arma Credentials con la fabrica del proveedor (AuthProviderFactory, Abstract
-Factory), delega en Auth, y traduce el resultado a un schema Pydantic. La
-fabrica y Auth salen del mismo `Depends(get_auth_factory)` (cacheado por
-request), asi que credenciales y estrategias son siempre de la misma familia.
-El manejo de errores esta centralizado en app/auth/error_handlers.py
+arma Credentials con CredentialsFactory, delega la ejecucion en Auth (inyectado
+via `Depends(get_auth)`), y traduce el resultado a un schema Pydantic.
+/register, /login y /recover-password son exclusivos de la autenticacion por
+email + contrasena local; un proveedor externo futuro tendra sus propios
+endpoints. El manejo de errores esta centralizado en app/auth/error_handlers.py
 (registrado en app/main.py)."""
 
 from fastapi import APIRouter, Cookie, Depends, Response, status
 
-from app.auth.auth import Auth
-from app.auth.dependencies import get_auth, get_auth_factory, get_token_service
-from app.auth.factories import AuthProviderFactory
+from app.auth.credentials_factory import CredentialsFactory
+from app.auth.dependencies import EmailAuth, get_auth, get_token_service
 from app.auth.schemas import (
     GenericMessageResponse,
     LoginRequest,
@@ -45,10 +44,9 @@ def _set_refresh_cookie(response: Response, refresh_token: str, settings: Settin
 @router.post("/register", response_model=UsuarioPublic, status_code=status.HTTP_201_CREATED)
 async def register(
     peticion: RegisterRequest,
-    auth: Auth = Depends(get_auth),
-    factory: AuthProviderFactory = Depends(get_auth_factory),
+    auth: EmailAuth = Depends(get_auth),
 ) -> UsuarioPublic:
-    credentials = factory.create_credentials(peticion)
+    credentials = CredentialsFactory.create_credentials(peticion)
     resultado = await auth.register(credentials)
     return UsuarioPublic(
         id=resultado.usuario_id,
@@ -62,11 +60,10 @@ async def register(
 async def login(
     peticion: LoginRequest,
     response: Response,
-    auth: Auth = Depends(get_auth),
-    factory: AuthProviderFactory = Depends(get_auth_factory),
+    auth: EmailAuth = Depends(get_auth),
     settings: Settings = Depends(get_settings),
 ) -> TokenResponse:
-    credentials = factory.create_credentials(peticion)
+    credentials = CredentialsFactory.create_credentials(peticion)
     resultado = await auth.sign_in(credentials)
     _set_refresh_cookie(response, resultado.refresh_token, settings)
     return TokenResponse(
@@ -87,10 +84,9 @@ async def login(
 )
 async def recover_password(
     peticion: RecoverPasswordRequest,
-    auth: Auth = Depends(get_auth),
-    factory: AuthProviderFactory = Depends(get_auth_factory),
+    auth: EmailAuth = Depends(get_auth),
 ) -> GenericMessageResponse:
-    credentials = factory.create_credentials(peticion)
+    credentials = CredentialsFactory.create_credentials(peticion)
     await auth.recover_password(credentials)
     # Mensaje identico exista o no el email registrado: evita enumeracion de
     # usuarios (ver EmailRecovery y el plan, seccion 9).
@@ -103,7 +99,7 @@ async def recover_password(
 
 
 @router.post("/verify-session", response_model=SessionInfoResponse)
-async def verify_session(auth: Auth = Depends(get_auth)) -> SessionInfoResponse:
+async def verify_session(auth: EmailAuth = Depends(get_auth)) -> SessionInfoResponse:
     """POST (no GET): puede tener efecto lateral (emitir un access token
     nuevo via silent refresh), asi que no deberia dispararse implicitamente
     (prefetch del navegador, <img>, etc.)."""
