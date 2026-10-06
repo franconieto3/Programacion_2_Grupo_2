@@ -32,9 +32,7 @@ typos = "^1.50.3"
 
 [tool.pytest]
 pythonpath = ['.']
-addopts = ['-p', 'no:warnings', '--cov=fast_zero', '--cov-context=test']
-
-[tool.pytest.ini_options]
+addopts = ['-p', 'no:warnings', '--cov=app', '--cov-context=test']
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
@@ -63,7 +61,7 @@ format.sequence = [
   { cmd = "ruff check --fix" },
   { cmd = "ruff format" },
 ]
-serve = "fastapi dev fast_zero/app.py"
+serve = "uvicorn app.main:app --reload"
 test.sequence = [
   "lint",
   { cmd = "pytest -s -x -vv $POE_EXTRA_ARGS" },
