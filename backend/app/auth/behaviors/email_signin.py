@@ -64,7 +64,7 @@ class EmailSignIn:
             usuario_id=usuario.id,
             email=usuario.email,
             nombre=usuario.nombre,
-            rol=usuario.rol,
+            apellido=usuario.apellido,
             access_token=access_token,
             refresh_token=refresh_token,
         )

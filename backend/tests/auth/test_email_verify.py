@@ -5,13 +5,12 @@ from app.auth.behaviors.email_signin import EmailSignIn
 from app.auth.behaviors.email_verify import EmailVerify
 from app.auth.credentials import EmailCredentials, EmailRegistration
 from app.auth.exceptions import SessionNotFoundError
-from app.models.usuario import RolEnum
 
 
 async def _crear_y_loguear(user_repository, password_hasher, token_service, event_publisher):
     register = EmailRegister(user_repository, password_hasher, event_publisher)
     await register.register(
-        EmailRegistration(email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE)
+        EmailRegistration(email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez")
     )
     usuario = await user_repository.get_by_email("a@a.com")
     token_service.register_user(usuario)

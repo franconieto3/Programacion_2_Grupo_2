@@ -26,20 +26,25 @@ def _uuid_type():
 def upgrade() -> None:
     op.create_table(
         "usuario",
-        sa.Column("id", _uuid_type(), primary_key=True),
-        sa.Column("email", sa.String(255), nullable=False, unique=True),
-        sa.Column("password_hash", sa.String(255), nullable=False),
+        sa.Column("id_usuario", _uuid_type(), primary_key=True),
         sa.Column("nombre", sa.String(255), nullable=False),
-        sa.Column("rol", sa.String(20), nullable=False),
+        sa.Column("apellido", sa.String(255), nullable=False),
+        sa.Column("email", sa.String(255), nullable=False, unique=True),
+        sa.Column("password_hash", sa.String(255), nullable=True),
+        sa.Column(
+            "fecha_creacion",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
         sa.Column("activo", sa.Boolean, nullable=False, server_default=sa.true()),
-        sa.Column("creado_en", sa.DateTime(timezone=True), nullable=False),
     )
     op.create_index("ix_usuario_email", "usuario", ["email"])
 
     op.create_table(
         "refresh_token",
         sa.Column("id", _uuid_type(), primary_key=True),
-        sa.Column("usuario_id", _uuid_type(), sa.ForeignKey("usuario.id"), nullable=False),
+        sa.Column("usuario_id", _uuid_type(), sa.ForeignKey("usuario.id_usuario"), nullable=False),
         sa.Column("token_hash", sa.String(64), nullable=False, unique=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
@@ -51,7 +56,7 @@ def upgrade() -> None:
     op.create_table(
         "password_reset_token",
         sa.Column("id", _uuid_type(), primary_key=True),
-        sa.Column("usuario_id", _uuid_type(), sa.ForeignKey("usuario.id"), nullable=False),
+        sa.Column("usuario_id", _uuid_type(), sa.ForeignKey("usuario.id_usuario"), nullable=False),
         sa.Column("token_hash", sa.String(64), nullable=False, unique=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("used_at", sa.DateTime(timezone=True), nullable=True),

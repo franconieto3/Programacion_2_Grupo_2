@@ -3,18 +3,17 @@ import pytest
 from app.auth.credentials import EmailCredentials, EmailRecoveryRequest, EmailRegistration
 from app.auth.credentials_factory import CredentialsFactory
 from app.auth.schemas import LoginRequest, RecoverPasswordRequest, RegisterRequest
-from app.models.usuario import RolEnum
 
 
 def test_create_credentials_from_register_request():
     peticion = RegisterRequest(
-        email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE
+        email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez"
     )
 
     credentials = CredentialsFactory.create_credentials(peticion)
 
     assert credentials == EmailRegistration(
-        email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE
+        email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez"
     )
 
 

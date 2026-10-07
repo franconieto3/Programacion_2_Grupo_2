@@ -24,14 +24,14 @@ class EmailRegister:
         email = credentials.email
         password = credentials.password
         nombre = credentials.nombre
-        rol = credentials.rol
+        apellido = credentials.apellido
 
         if await self._user_repository.get_by_email(email) is not None:
             raise EmailAlreadyRegisteredError(email)
 
         password_hash = await self._password_hasher.hash(password)
         usuario = await self._user_repository.create(
-            email=email, password_hash=password_hash, nombre=nombre, rol=rol
+            email=email, password_hash=password_hash, nombre=nombre, apellido=apellido
         )
 
         # Se publica DESPUES de crear el usuario: nunca notificar un alta que
@@ -42,5 +42,8 @@ class EmailRegister:
         )
 
         return RegisteredUser(
-            usuario_id=usuario.id, email=usuario.email, nombre=usuario.nombre, rol=usuario.rol
+            usuario_id=usuario.id,
+            email=usuario.email,
+            nombre=usuario.nombre,
+            apellido=usuario.apellido,
         )

@@ -4,9 +4,9 @@
 
 ---
 
-## CU-01 · Demandante descubre eventos cerca de su ubicación actual
+## CU-01 · Usuario descubre eventos cerca de su ubicación actual
 
-**Actor principal:** Usuario con rol Demandante
+**Actor principal:** Usuario
 
 **Precondiciones:**
 - El usuario tiene una cuenta registrada e inició sesión (o navega sin sesión, si la búsqueda es pública).
@@ -21,7 +21,7 @@
 6. El usuario ajusta el rango de fechas y horario mediante los filtros disponibles.
 7. El sistema re-ejecuta la búsqueda y actualiza los marcadores.
 8. El usuario selecciona un marcador.
-9. El sistema muestra la ficha de detalle del evento (título, descripción, fecha/hora, ubicación, precio si corresponde, datos del oferente).
+9. El sistema muestra la ficha de detalle del evento (título, descripción, fecha/hora, ubicación, precio si corresponde, datos del organizador).
 
 **Flujos alternativos:**
 - **3a. El usuario rechaza el permiso de geolocalización:** el sistema centra el mapa en una ubicación por defecto y muestra visible el buscador de lugar, permitiendo continuar la búsqueda sin geolocalización (RF-03.8).
@@ -34,9 +34,9 @@
 
 ---
 
-## CU-02 · Demandante explora eventos en una ubicación distinta a la actual
+## CU-02 · Usuario explora eventos en una ubicación distinta a la actual
 
-**Actor principal:** Usuario con rol Demandante
+**Actor principal:** Usuario
 
 **Escenario:** el usuario se encuentra actualmente en una ciudad, pero viajará a otra dentro de unos días y quiere saber qué actividades va a tener disponibles.
 
@@ -62,12 +62,12 @@
 
 ---
 
-## CU-03 · Oferente publica un nuevo evento
+## CU-03 · Organizador publica un nuevo evento
 
-**Actor principal:** Usuario con rol Oferente
+**Actor principal:** Organizador (usuario con perfil de organizador aprobado)
 
 **Precondiciones:**
-- El usuario tiene una cuenta registrada con rol Oferente e inició sesión.
+- El usuario inició sesión y tiene un perfil de organizador en estado `APROBADO` (ver CU-04).
 
 **Flujo principal:**
 1. El usuario accede a la opción "Publicar evento".
@@ -77,24 +77,54 @@
 5. El usuario posiciona el pin en el lugar correspondiente.
 6. El usuario selecciona una o varias categorías del catálogo cerrado (por ejemplo, "recital" y "aire libre").
 7. El usuario confirma la publicación.
-8. El sistema valida los datos ingresados, guarda el evento con estado `PUBLICADO` y lo asocia al perfil del oferente.
-9. El sistema muestra el evento en el listado "Mis eventos" del oferente.
+8. El sistema valida los datos ingresados, guarda el evento con estado `PUBLICADO` y lo asocia al perfil del organizador.
+9. El sistema muestra el evento en el listado "Mis eventos" del organizador.
 
 **Flujos alternativos:**
 - **8a. Faltan datos obligatorios o son inválidos (por ejemplo, fecha de fin anterior a la de inicio):** el sistema rechaza el guardado e indica los campos a corregir.
-- **9a. El oferente decide editar el evento luego de publicado:** desde "Mis eventos", accede a la edición, modifica los campos necesarios (incluyendo reposicionar el pin o cambiar categorías) y guarda los cambios (RF-02.4).
-- **9b. El oferente decide cancelar el evento:** desde "Mis eventos", cambia el estado del evento a cancelado; el evento deja de aparecer en las búsquedas de los demandantes.
+- **9a. El organizador decide editar el evento luego de publicado:** desde "Mis eventos", accede a la edición, modifica los campos necesarios (incluyendo reposicionar el pin o cambiar categorías) y guarda los cambios (RF-02.4).
+- **9b. El organizador decide cancelar el evento:** desde "Mis eventos", cambia el estado del evento a cancelado; el evento deja de aparecer en las búsquedas de los usuarios.
 
-**Postcondición:** el evento queda publicado y disponible para ser descubierto por demandantes que realicen una búsqueda compatible con su ubicación, fecha/horario y categoría.
+**Postcondición:** el evento queda publicado y disponible para ser descubierto por usuarios que realicen una búsqueda compatible con su ubicación, fecha/horario y categoría.
 
-**Requisitos relacionados:** RF-02.1, RF-02.2, RF-02.3, RF-02.4, RF-02.5, RF-04.1, RF-04.2.
+**Requisitos relacionados:** RF-01.7, RF-02.1, RF-02.2, RF-02.3, RF-02.4, RF-02.5, RF-04.1, RF-04.2.
+
+---
+
+## CU-04 · Usuario solicita convertirse en organizador
+
+**Actor principal:** Usuario
+**Actor secundario:** Administrador
+
+**Precondiciones:**
+- El usuario tiene una cuenta registrada e inició sesión.
+- El usuario no tiene un perfil de organizador `PENDIENTE` ni `APROBADO`.
+
+**Flujo principal:**
+1. El usuario accede a la opción "Quiero publicar eventos".
+2. El sistema muestra un formulario con nombre público (por ejemplo, "Bar Los Pinos") y descripción.
+3. El usuario completa los datos y envía la solicitud.
+4. El sistema crea el perfil de organizador en estado `PENDIENTE` e informa al usuario que la solicitud está en revisión.
+5. El administrador revisa la solicitud desde el panel de administración y la aprueba.
+6. El sistema pasa el perfil a `APROBADO`; desde ese momento el usuario puede publicar eventos (CU-03).
+
+**Flujos alternativos:**
+- **3a. Faltan datos obligatorios:** el sistema rechaza el envío e indica los campos a corregir.
+- **4a. El usuario ya tiene una solicitud pendiente o un perfil aprobado:** el sistema no crea una nueva solicitud y le muestra el estado de la existente.
+- **5a. El administrador rechaza la solicitud:** el perfil pasa a `RECHAZADO` y el usuario es informado; puede volver a solicitarlo.
+- **6a. Un organizador aprobado es suspendido:** el perfil pasa a `SUSPENDIDO` y el usuario deja de poder crear o editar eventos.
+
+**Postcondición:** el usuario cuenta con un perfil de organizador aprobado, asociado a su misma cuenta, y puede publicar eventos.
+
+**Requisitos relacionados:** RF-01.6, RF-01.7, RF-05.5, RNF-04.4.
 
 ---
 
 ## Nota sobre priorización de estos casos de uso
 
-Los tres casos de uso descriptos representan el **flujo central del producto** (el "corazón" del
-MVP, según la planificación): la publicación de un evento por parte de un oferente y su
-descubrimiento por parte de un demandante, tanto en la ubicación actual como en una ubicación de
-interés futura. Cualquier funcionalidad de fase 2 (favoritos, notificaciones, publicidad,
-recurrencia, etc.) se apoya sobre estos tres flujos base y no los reemplaza.
+Los casos de uso descriptos representan el **flujo central del producto** (el "corazón" del
+MVP, según la planificación): la habilitación de un usuario como organizador, la publicación de
+un evento por parte de ese organizador y su descubrimiento por parte de cualquier usuario, tanto
+en la ubicación actual como en una ubicación de interés futura. Cualquier funcionalidad de fase 2
+(favoritos, notificaciones, publicidad, recurrencia, etc.) se apoya sobre estos flujos base y no
+los reemplaza.

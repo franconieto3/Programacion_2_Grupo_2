@@ -5,7 +5,6 @@ from app.auth.behaviors.email_signin import EmailSignIn
 from app.auth.credentials import EmailCredentials, EmailRegistration
 from app.auth.events.auth_events import LoginFailed
 from app.auth.exceptions import InactiveAccountError, InvalidCredentialsError
-from app.models.usuario import RolEnum
 
 
 async def _crear_usuario(
@@ -13,7 +12,7 @@ async def _crear_usuario(
 ):
     register = EmailRegister(user_repository, password_hasher, event_publisher)
     await register.register(
-        EmailRegistration(email=email, password=password, nombre="Ana", rol=RolEnum.DEMANDANTE)
+        EmailRegistration(email=email, password=password, nombre="Ana", apellido="Gomez")
     )
 
 

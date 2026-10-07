@@ -17,7 +17,7 @@ class AuthResult:
     usuario_id: UUID
     email: str
     nombre: str
-    rol: str
+    apellido: str
     access_token: str
     refresh_token: str
 
@@ -31,7 +31,7 @@ class RegisteredUser:
     usuario_id: UUID
     email: str
     nombre: str
-    rol: str
+    apellido: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,7 +40,6 @@ class SessionInfo:
 
     usuario_id: UUID
     email: str
-    rol: str
     expires_at: datetime | None
     refreshed_access_token: str | None = None
 
@@ -49,5 +48,4 @@ class SessionInfo:
 class AccessTokenPayload:
     sub: UUID
     email: str
-    rol: str
     exp: datetime

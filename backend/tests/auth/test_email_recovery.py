@@ -4,7 +4,6 @@ from app.auth.behaviors.email_recovery import EmailRecovery
 from app.auth.behaviors.email_register import EmailRegister
 from app.auth.credentials import EmailRecoveryRequest, EmailRegistration
 from app.auth.events.auth_events import PasswordRecoveryRequested
-from app.models.usuario import RolEnum
 
 
 class _SpyObserver:
@@ -20,7 +19,7 @@ async def test_recover_password_for_existing_user_creates_token_and_publishes_ev
 ):
     register = EmailRegister(user_repository, password_hasher, event_publisher)
     await register.register(
-        EmailRegistration(email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE)
+        EmailRegistration(email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez")
     )
     spy = _SpyObserver()
     event_publisher.subscribe(spy)

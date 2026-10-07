@@ -47,7 +47,7 @@ class CredentialsFactory:
                 email=peticion.email,
                 password=peticion.password,
                 nombre=peticion.nombre,
-                rol=peticion.rol,
+                apellido=peticion.apellido,
             )
         if isinstance(peticion, LoginRequest):
             return EmailCredentials(email=peticion.email, password=peticion.password)

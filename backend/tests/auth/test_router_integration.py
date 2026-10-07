@@ -47,7 +47,7 @@ async def test_register_then_login_then_verify_session(wired_app):
     async with _client() as client:
         register_response = await client.post(
             "/auth/register",
-            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "rol": "DEMANDANTE"},
+            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "apellido": "Gomez"},
         )
         assert register_response.status_code == 201
         assert register_response.json()["email"] == "a@a.com"
@@ -75,11 +75,34 @@ async def test_register_then_login_then_verify_session(wired_app):
         assert verify_response.json()["email"] == "a@a.com"
 
 
+async def test_register_does_not_require_nor_expose_rol(wired_app):
+    async with _client() as client:
+        response = await client.post(
+            "/auth/register",
+            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "apellido": "Gomez"},
+        )
+
+        assert response.status_code == 201
+        body = response.json()
+        assert body["apellido"] == "Gomez"
+        assert "rol" not in body
+
+
+async def test_register_without_apellido_returns_422(wired_app):
+    async with _client() as client:
+        response = await client.post(
+            "/auth/register",
+            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana"},
+        )
+
+        assert response.status_code == 422
+
+
 async def test_login_with_wrong_password_returns_401(wired_app):
     async with _client() as client:
         await client.post(
             "/auth/register",
-            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "rol": "DEMANDANTE"},
+            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "apellido": "Gomez"},
         )
         response = await client.post("/auth/login", json={"email": "a@a.com", "password": "mala"})
 
@@ -92,7 +115,7 @@ async def test_register_with_duplicate_email_returns_409(wired_app):
             "email": "a@a.com",
             "password": "secret123",
             "nombre": "Ana",
-            "rol": "DEMANDANTE",
+            "apellido": "Gomez",
         }
         await client.post("/auth/register", json=payload)
         response = await client.post("/auth/register", json=payload)
@@ -104,7 +127,7 @@ async def test_recover_password_responds_identically_for_existing_and_unknown_em
     async with _client() as client:
         await client.post(
             "/auth/register",
-            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "rol": "DEMANDANTE"},
+            json={"email": "a@a.com", "password": "secret123", "nombre": "Ana", "apellido": "Gomez"},
         )
 
         r1 = await client.post("/auth/recover-password", json={"email": "a@a.com"})

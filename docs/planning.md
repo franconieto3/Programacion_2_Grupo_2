@@ -29,10 +29,10 @@ No hay código heredado ni restricciones previas.
 | Plataforma | Web responsive **mobile-first**. Sin app nativa ni PWA en el MVP |
 | Equipo / plazo | 3-5 personas, dedicación parcial, 4-8 semanas |
 | Alcance geográfico | **Multi-ciudad por diseño**, sin ciudad hardcodeada |
-| Oferta inicial | Sin ETL. Seed manual del equipo + carga de oferentes reales |
+| Oferta inicial | Sin ETL. Seed manual del equipo + carga de organizadores reales |
 | Mapas | OpenStreetMap, sin costo ni tarjeta |
 | Recurrencia | Fuera del MVP. Solo eventos únicos (con el modelo preparado) |
-| Roles | **Cuentas separadas** demandante / oferente desde el registro |
+| Roles | **Cuenta única sin rol** en el registro. Publicar eventos requiere solicitar un perfil de **organizador** y que un administrador lo apruebe |
 | Categorías | Catálogo **cerrado**, **varias por evento** |
 | Radio de búsqueda | **Viewport**: se busca lo que entra en el rectángulo visible del mapa |
 | Autenticación | Email + contraseña propio (sin login social) |
@@ -252,8 +252,8 @@ sequenceDiagram
     participant Obs as Observers (EmailNotification, AuditLog)
     participant DB as AsyncSession / PostgreSQL
 
-    Cliente->>FastAPI: POST /auth/register {email, password, nombre, rol}
-    FastAPI->>FastAPI: valida RegisterRequest (EmailStr, password 8..128, rol)
+    Cliente->>FastAPI: POST /auth/register {email, password, nombre, apellido}
+    FastAPI->>FastAPI: valida RegisterRequest (EmailStr, password 8..128, nombre, apellido)
     alt body invalido
         FastAPI-->>Cliente: 422 Unprocessable Entity
     end
@@ -265,7 +265,7 @@ sequenceDiagram
 
     FastAPI->>Router: register(peticion, auth)
     Router->>CF: create_credentials(peticion: RegisterRequest)
-    CF-->>Router: EmailRegistration(email, password, nombre, rol)
+    CF-->>Router: EmailRegistration(email, password, nombre, apellido)
     Router->>Auth: register(credentials: EmailRegistration)
     Auth->>Reg: register(credentials)
     Reg->>Repo: get_by_email(credentials.email)
@@ -282,7 +282,7 @@ sequenceDiagram
     else email disponible
         Reg->>Hasher: hash(credentials.password)
         Hasher-->>Reg: password_hash (argon2)
-        Reg->>Repo: create(email, password_hash, nombre, rol)
+        Reg->>Repo: create(email, password_hash, nombre, apellido)
         Repo->>DB: add(usuario) + flush() (INSERT)
         DB-->>Repo: usuario con id
         Repo-->>Reg: Usuario
@@ -291,9 +291,9 @@ sequenceDiagram
             Pub->>Obs: handle(evento)
             Note right of Obs: EmailNotification: email de bienvenida<br/>AuditLog: registra el alta
         end
-        Reg-->>Auth: RegisteredUser(usuario_id, email, nombre, rol)
+        Reg-->>Auth: RegisteredUser(usuario_id, email, nombre, apellido)
         Auth-->>Router: RegisteredUser
-        Router-->>FastAPI: UsuarioPublic(id, email, nombre, rol)
+        Router-->>FastAPI: UsuarioPublic(id, email, nombre, apellido)
         FastAPI->>DB: commit() al cerrar get_db_session
         FastAPI-->>Cliente: 201 Created UsuarioPublic
     end
@@ -322,7 +322,7 @@ pero el índice correcto desde el día 1 no cuesta nada y es defendible en la ev
 - *Descartado — SQLite en producción*: se usa solo para la suite de tests (arranque instantáneo,
   aislamiento por test). En desarrollo y producción va PostgreSQL para que no haya divergencia
   de comportamiento entre entornos.
-- *Descartado — MongoDB*: los datos son fuertemente relacionales (usuario → oferente → evento →
+- *Descartado — MongoDB*: los datos son fuertemente relacionales (usuario → organizador → evento →
   categorías) y el equipo sabe SQL. No hay ningún argumento a favor.
 
 ### Frontend — **React 18 + TypeScript + Vite**
@@ -360,41 +360,63 @@ consideración. Vite por velocidad de arranque y cero configuración.
 Convención: nombres en español para coincidir con el dominio y la documentación del TP.
 Todos los timestamps se almacenan en **UTC** y se presentan en hora local.
 
-### `Usuario`
-Modelo de autenticación propio (tabla SQLAlchemy), con el email como identificador.
+### `usuario` (implementada)
+Modelo de autenticación propio (tabla SQLAlchemy), con el email como identificador. **No tiene
+rol**: todo usuario registrado puede descubrir eventos, y la capacidad de publicarlos se obtiene
+aparte, con un perfil de organizador aprobado (ver `organizadores`). Así una misma persona busca y
+publica desde una sola cuenta, sin migrar datos.
 
-| Campo | Tipo | Notas |
+| Columna | Tipo | Notas |
 |---|---|---|
-| `id` | UUID | PK. UUID y no autoincremental: no filtra volumen de usuarios ni permite enumeración |
+| `id_usuario` | UUID | PK. UUID y no autoincremental: no filtra volumen de usuarios ni permite enumeración. En Python, `Usuario.id` |
+| `nombre`, `apellido` | str | obligatorios |
 | `email` | str | **único**, login |
-| `password_hash` | str | hash generado con `argon2-cffi`/`passlib`. Nunca en texto plano |
-| `nombre` | str | |
-| `rol` | enum | `DEMANDANTE` \| `OFERENTE`. **Excluyente** (decisión: cuentas separadas) |
-| `activo`, `creado_en` | bool, datetime | |
+| `password_hash` | str, null | hash `argon2`. Nunca en texto plano. **Nullable**: un usuario que entra por login social (ver `proveedores_usuario`) no tiene contraseña local |
+| `fecha_creacion` | timestamptz | default `NOW()`. En Python, `Usuario.creado_en` |
+| `activo` | bool | default `TRUE` |
 
-> El rol es excluyente por decisión de producto. Aun así vive en una sola tabla: si en el futuro
-> se decide unificar cuentas, el cambio es relajar una validación, no una migración de datos.
+> **El JWT no lleva rol ni condición de organizador.** Esa condición cambia al aprobarse o
+> suspenderse el perfil, y un claim quedaría obsoleto hasta el próximo refresh. Los endpoints de
+> organizador la resolverán con una dependencia (`require_organizador`) que consulte
+> `organizadores` en la base de datos.
 
-### `PerfilOferente` (1:1 con `Usuario` donde `rol = OFERENTE`)
+### `organizadores` (pendiente de implementar)
+Perfil público con el que un usuario publica eventos. Se crea al solicitarlo (CU-04) y un
+administrador lo aprueba desde SQLAdmin.
 
-| Campo | Tipo | Notas |
+| Columna | Tipo | Notas |
 |---|---|---|
-| `usuario_id` | FK | PK y FK |
-| `nombre_publico` | str | Lo que ve el demandante ("Bar Los Pinos") |
-| `tipo` | enum | `PERSONA` \| `LOCAL` \| `MARCA` \| `ESTABLECIMIENTO` |
-| `descripcion`, `sitio_web`, `telefono_contacto` | | opcionales |
-| `verificado` | bool | **default `False`, sin flujo de verificación en el MVP.** El campo existe para que la insignia y el proceso de validación de identidad se puedan agregar en fase 2 sin migrar |
+| `id_organizador` | PK | |
+| `id_usuario` | FK → `usuario` | `ON DELETE CASCADE` |
+| `nombre_publico` | str | Lo que ve el usuario ("Bar Los Pinos") |
+| `descripcion` | text, null | |
+| `estado` | enum | `PENDIENTE` \| `APROBADO` \| `RECHAZADO` \| `SUSPENDIDO`. Solo `APROBADO` puede crear/editar eventos |
+| `fecha_creacion` | timestamptz | default `NOW()` |
 
-### `PerfilDemandante` (1:1 con `Usuario` donde `rol = DEMANDANTE`)
-Prácticamente vacío en el MVP (`usuario_id`, `ciudad_referencia` opcional). Existe como punto de
-anclaje para favoritos y ubicaciones guardadas de la fase 2.
+Respecto del `PerfilOferente` anterior quedan fuera `tipo` (`PERSONA`/`LOCAL`/`MARCA`/
+`ESTABLECIMIENTO`), `sitio_web`, `telefono_contacto` y `verificado` (este último lo reemplaza
+`verificaciones_usuario`). Hay que decidir si se suman antes de implementar la tabla.
+
+### `verificaciones_usuario` (fase posterior)
+`id`, `id_usuario` (FK), `tipo`, `estado`, `fecha_solicitud`, `fecha_verificacion`,
+`fecha_vencimiento`. Registra las verificaciones adicionales del organizador (identidad,
+documentación) con vencimiento, y respalda la insignia de verificado (RF-01.8). En el MVP la
+única verificación es la aprobación manual del administrador.
+
+### `proveedores_usuario` (fase posterior)
+`id`, `id_usuario` (FK), `provider`, `provider_user_id`, `access_token_hash`. Vincula una cuenta
+con proveedores de login social (RF-01.5); es la razón por la que `usuario.password_hash` es
+nullable.
+
+> Ya no existe `PerfilDemandante`: favoritos y ubicaciones guardadas de fase 2 cuelgan
+> directamente de `usuario`.
 
 ### `Evento` — entidad central
 
 | Campo | Tipo | Notas |
 |---|---|---|
 | `id` | UUID | PK |
-| `oferente_id` | FK → `PerfilOferente` | |
+| `organizador_id` | FK → `organizadores` | |
 | `titulo`, `descripcion` | str, text | |
 | `inicio_utc`, `fin_utc` | datetime | `fin` opcional |
 | `hora_inicio_local` | smallint (0-23) | **denormalizado a propósito**: permite indexar el filtro de rango horario. Sin esto, `EXTRACT(HOUR FROM ...)` fuerza un scan completo |
@@ -403,14 +425,14 @@ anclaje para favoritos y ubicaciones guardadas de la fase 2.
 | `precio_desde` | decimal, null | `null` = sin dato; `0` = gratis. **No son lo mismo** |
 | `url_externa` | str, null | Link a entradas o a la publicación original |
 | `estado` | enum | `BORRADOR` \| `PUBLICADO` \| `CANCELADO` \| `OCULTO` (`OCULTO` = bajado por moderación) |
-| `origen` | enum | `CARGA_OFERENTE` \| `SEED_EQUIPO` \| `IMPORTADO`. Hoy nunca vale `IMPORTADO`; **el campo existe desde el día 1 para que la ingesta de fase 2 no requiera migración y para poder distinguir el dataset de demo del contenido real** |
+| `origen` | enum | `CARGA_ORGANIZADOR` \| `SEED_EQUIPO` \| `IMPORTADO`. Hoy nunca vale `IMPORTADO`; **el campo existe desde el día 1 para que la ingesta de fase 2 no requiera migración y para poder distinguir el dataset de demo del contenido real** |
 | `serie_id` | UUID, null | Siempre `null` en el MVP. Gancho para la recurrencia (RRULE) de fase 2 |
 | `destacado_hasta` | datetime, null | Siempre `null` en el MVP. Gancho para la publicidad de fase 2 |
 | `creado_en`, `actualizado_en` | datetime | |
 
 **Índices:**
 - `(estado, inicio_utc, latitud, longitud)` — cubre la consulta principal de búsqueda
-- `(oferente_id, inicio_utc)` — listado "mis eventos" del oferente
+- `(organizador_id, inicio_utc)` — listado "mis eventos" del organizador
 
 ### `Categoria` — catálogo cerrado (fixture versionada en el repo)
 `id`, `slug`, `nombre`, `icono`, `activa`.
@@ -462,20 +484,23 @@ que el modelo de datos quede sincronizado con el código (`backend/app/models/`)
 ### MVP — lo que entra
 
 **Autenticación y cuentas**
-- Registro con email + contraseña, eligiendo rol (demandante u oferente) en el registro
+- Registro con nombre, apellido, email + contraseña, **sin elegir rol**
 - Login / logout con JWT (emisión y validación propia con `python-jose`, sobre las dependencias
   de seguridad de FastAPI); el access token se mantiene en memoria, nunca en `localStorage`
 - Perfil básico editable
 
-**Oferente**
+**Organizador**
+- Solicitud de perfil de organizador (nombre público + descripción), que queda `PENDIENTE` hasta
+  que un administrador la aprueba o rechaza desde SQLAdmin. Solo un organizador `APROBADO` puede
+  publicar
 - Alta, edición y baja de eventos únicos
-- Ubicación: **el oferente marca el punto arrastrando un pin en el mapa** (el valor autoritativo
+- Ubicación: **el organizador marca el punto arrastrando un pin en el mapa** (el valor autoritativo
   son las coordenadas, la dirección escrita es descriptiva). Esto evita depender de geocoding y
   elimina de raíz el problema de direcciones argentinas mal interpretadas
 - Selección de una o varias categorías del catálogo cerrado
 - Listado "mis eventos" con estado
 
-**Demandante — descubrimiento (el corazón del producto)**
+**Descubrimiento — cualquier usuario (el corazón del producto)**
 - **Vista mapa**: se centra con la Geolocation API del navegador; marcadores de eventos; búsqueda
   por viewport, que se re-dispara (con debounce) al mover o hacer zoom
 - **Vista lista**: mismos resultados, mismos filtros, ordenados por fecha de inicio
@@ -488,7 +513,7 @@ que el modelo de datos quede sincronizado con el código (`backend/app/models/`)
 - **Estado vacío honesto**: si no hay resultados, decir explícitamente cuál filtro los está
   eliminando y ofrecer la acción correctiva ("ampliá el rango de fechas", "alejá el mapa"),
   nunca una pantalla en blanco
-- Ficha de detalle del evento con datos del oferente
+- Ficha de detalle del evento con datos del organizador
 
 **Contenido y operación**
 - Seed manual del equipo vía panel de administración (SQLAdmin), marcado con `origen = SEED_EQUIPO`
@@ -509,11 +534,11 @@ que el modelo de datos quede sincronizado con el código (`backend/app/models/`)
    pago o a instancia propia, y es un costo que hay que presupuestar antes de prometer la feature.
 2. **Favoritos y ubicaciones guardadas** (habilitan retención y, después, notificaciones).
 3. **Eventos recurrentes** (`Serie` + RRULE + materialización de ocurrencias + excepciones).
-4. **Entidad `Lugar`** con reutilización de direcciones por parte del oferente.
-5. **Verificación de oferentes** (anti-suplantación) y reportes de usuarios.
+4. **Entidad `Lugar`** con reutilización de direcciones por parte del organizador.
+5. **Verificaciones adicionales de organizadores** (identidad, anti-suplantación, sobre `verificaciones_usuario`) y reportes de usuarios. La aprobación manual ya está en el MVP.
 6. **Notificaciones** ("hay algo nuevo cerca de una ubicación que guardaste").
 7. **Publicidad / eventos destacados** + integración con Mercado Pago.
-8. **Dashboard de analítica para oferentes** (vistas, clicks, alcance).
+8. **Dashboard de analítica para organizadores** (vistas, clicks, alcance).
 9. **Reseñas y calificaciones.**
 10. **App nativa / PWA**, si el uso mobile lo justifica.
 
@@ -545,7 +570,7 @@ no rediseñar el esquema.
 | Semana | Backend | Frontend | Transversal |
 |---|---|---|---|
 | 1 | Setup FastAPI + Postgres, modelos SQLAlchemy, Alembic | Setup Vite + React + ruteo | **CI andando desde el día 1**, `main` protegida |
-| 2 | Auth manual (registro/login/JWT, hashing) | Pantallas de auth, cliente de API | Primeros tests |
+| 2 | Auth manual (registro/login/JWT, hashing), solicitud de organizador | Pantallas de auth, cliente de API | Primeros tests |
 | 3 | CRUD de eventos + endpoint de búsqueda | Formulario de carga con pin en mapa | Tests de búsqueda |
 | 4 | Filtros, índices, paginación | Vista mapa con viewport y marcadores | Seed manual cargado |
 | 5 | Ajustes, panel de admin (SQLAdmin) | Vista lista, filtros, buscador de ciudad | Tests de integración |

@@ -8,14 +8,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models.usuario import RolEnum
-
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     nombre: str = Field(min_length=1, max_length=255)
-    rol: RolEnum
+    apellido: str = Field(min_length=1, max_length=255)
 
 
 class LoginRequest(BaseModel):
@@ -31,7 +29,7 @@ class UsuarioPublic(BaseModel):
     id: UUID
     email: str
     nombre: str
-    rol: RolEnum
+    apellido: str
 
 
 class TokenResponse(BaseModel):
@@ -43,7 +41,6 @@ class TokenResponse(BaseModel):
 class SessionInfoResponse(BaseModel):
     usuario_id: UUID
     email: str
-    rol: RolEnum
     expires_at: datetime | None
     access_token: str | None = Field(
         default=None,

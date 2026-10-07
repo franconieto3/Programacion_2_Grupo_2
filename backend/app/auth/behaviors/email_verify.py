@@ -37,7 +37,6 @@ class EmailVerify:
             return SessionInfo(
                 usuario_id=payload.sub,
                 email=payload.email,
-                rol=payload.rol,
                 expires_at=payload.exp,
             )
 
@@ -50,7 +49,6 @@ class EmailVerify:
             return SessionInfo(
                 usuario_id=usuario.id,
                 email=usuario.email,
-                rol=usuario.rol,
                 expires_at=None,
                 refreshed_access_token=nuevo_access_token,
             )

@@ -26,7 +26,7 @@ class _FailsOnceThenSucceeds:
             usuario_id=uuid4(),
             email="a@a.com",
             nombre="Ana",
-            rol="DEMANDANTE",
+            apellido="Gomez",
             access_token="t",
             refresh_token="r",
         )
