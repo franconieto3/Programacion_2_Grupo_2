@@ -52,7 +52,7 @@ async def register(
         id=resultado.usuario_id,
         email=resultado.email,
         nombre=resultado.nombre,
-        rol=resultado.rol,
+        apellido=resultado.apellido,
     )
 
 
@@ -72,7 +72,7 @@ async def login(
             id=resultado.usuario_id,
             email=resultado.email,
             nombre=resultado.nombre,
-            rol=resultado.rol,
+            apellido=resultado.apellido,
         ),
     )
 
@@ -107,7 +107,6 @@ async def verify_session(auth: EmailAuth = Depends(get_auth)) -> SessionInfoResp
     return SessionInfoResponse(
         usuario_id=resultado.usuario_id,
         email=resultado.email,
-        rol=resultado.rol,
         expires_at=resultado.expires_at,
         access_token=resultado.refreshed_access_token,
     )

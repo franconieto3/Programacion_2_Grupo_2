@@ -25,24 +25,26 @@ para resolver dos preguntas concretas:
 
 ## 3. Propuesta de valor
 
-- **Para quien busca actividades (demandante):** un único lugar donde descubrir eventos por
+- **Para quien busca actividades (cualquier usuario):** un único lugar donde descubrir eventos por
   cercanía geográfica, fecha/horario y categoría, sin necesidad de conocer o seguir previamente
   al organizador. La búsqueda funciona tanto sobre la ubicación actual como sobre una ubicación
   alternativa (por ejemplo, un destino de viaje futuro).
-- **Para quien organiza actividades (oferente):** un canal gratuito de publicación y visibilidad,
+- **Para quien organiza actividades (organizador):** un canal gratuito de publicación y visibilidad,
   alternativo o complementario a sus redes sociales propias, que lo pone frente a personas que no
   lo conocían de antemano.
 
 ## 4. Modelo de dos lados
 
-El producto conecta dos roles de usuario con necesidades opuestas y complementarias:
+El producto conecta dos lados con necesidades opuestas y complementarias:
 
-| Rol | Qué hace |
+| Actor | Qué hace |
 |---|---|
-| **Demandante** | Busca y descubre eventos filtrando por ubicación, fecha/horario y categoría |
-| **Oferente** | Publica sus eventos (persona, local, marca o establecimiento) para ganar visibilidad |
+| **Usuario** | Busca y descubre eventos filtrando por ubicación, fecha/horario y categoría |
+| **Organizador** | Publica sus eventos (persona, local, marca o establecimiento) para ganar visibilidad |
 
-Ambos roles se registran con cuentas separadas y excluyentes desde el alta.
+Hay una única cuenta, sin rol que elegir en el registro: todo usuario puede descubrir eventos.
+Para publicarlos, el usuario solicita convertirse en organizador y un administrador debe aprobar
+la solicitud. Así, una misma persona puede buscar y publicar desde la misma cuenta.
 
 ## 5. Naturaleza del entregable
 
@@ -62,10 +64,11 @@ arquitectónicas a futuro.
 
 ### Incluido (MVP)
 
-- Registro y autenticación de usuarios, con rol excluyente (demandante u oferente).
-- Alta, edición y baja de eventos por parte del oferente, con ubicación geográfica precisa
+- Registro y autenticación de usuarios, sin elección de rol.
+- Solicitud de perfil de organizador y aprobación por parte de un administrador.
+- Alta, edición y baja de eventos por parte del organizador, con ubicación geográfica precisa
   (marcada directamente sobre el mapa) y una o varias categorías de un catálogo cerrado.
-- Búsqueda y descubrimiento de eventos por parte del demandante, en dos vistas (mapa y lista),
+- Búsqueda y descubrimiento de eventos por parte de cualquier usuario, en dos vistas (mapa y lista),
   filtrando por rango de fechas, rango horario y categoría.
 - Posibilidad de explorar eventos en una ubicación distinta a la ubicación física actual del
   usuario (por ejemplo, un destino de viaje).
@@ -80,11 +83,11 @@ arquitectónicas a futuro.
 - Ingesta automática de eventos desde fuentes externas (ETL).
 - Favoritos y ubicaciones guardadas por el usuario.
 - Eventos recurrentes (agenda semanal fija de un mismo lugar).
-- Verificación de identidad de oferentes y sistema de reportes de usuarios.
+- Verificaciones de identidad de organizadores (más allá de la aprobación manual) y sistema de reportes de usuarios.
 - Notificaciones (push/email) sobre nuevos eventos.
 - Monetización mediante publicidad o posicionamiento pago.
-- Dashboard de analítica para oferentes.
-- Reseñas y calificaciones de eventos u oferentes.
+- Dashboard de analítica para organizadores.
+- Reseñas y calificaciones de eventos u organizadores.
 - Aplicación nativa o PWA.
 
 La justificación detallada de cada decisión de alcance, junto con el modelo de datos, la

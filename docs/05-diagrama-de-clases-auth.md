@@ -23,7 +23,7 @@ classDiagram
             +email: EmailStr
             +password: str
             +nombre: str
-            +rol: RolEnum
+            +apellido: str
         }
         class LoginRequest {
             <<Pydantic DTO>>
@@ -55,7 +55,7 @@ classDiagram
             +email: str
             +password: str
             +nombre: str
-            +rol: RolEnum
+            +apellido: str
             +identifier: str
         }
         class EmailRecoveryRequest {
@@ -157,7 +157,7 @@ classDiagram
             <<interface>>
             +get_by_email(email) Usuario
             +get_by_id(usuario_id) Usuario
-            +create(email, password_hash, nombre, rol) Usuario
+            +create(email, password_hash, nombre, apellido) Usuario
         }
         class SQLAlchemyUserRepository
         class PasswordHasher {

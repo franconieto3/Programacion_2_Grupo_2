@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.usuario import RolEnum, Usuario
+from app.models.usuario import Usuario
 
 
 @runtime_checkable
@@ -19,7 +19,7 @@ class UserRepository(Protocol):
     async def get_by_id(self, usuario_id: UUID) -> Usuario | None: ...
 
     async def create(
-        self, *, email: str, password_hash: str, nombre: str, rol: RolEnum
+        self, *, email: str, password_hash: str, nombre: str, apellido: str
     ) -> Usuario: ...
 
 
@@ -36,9 +36,11 @@ class SQLAlchemyUserRepository:
         return result.scalar_one_or_none()
 
     async def create(
-        self, *, email: str, password_hash: str, nombre: str, rol: RolEnum
+        self, *, email: str, password_hash: str, nombre: str, apellido: str
     ) -> Usuario:
-        usuario = Usuario(email=email, password_hash=password_hash, nombre=nombre, rol=rol)
+        usuario = Usuario(
+            email=email, password_hash=password_hash, nombre=nombre, apellido=apellido
+        )
         self._session.add(usuario)
         await self._session.flush()
         return usuario

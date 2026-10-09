@@ -32,7 +32,6 @@ class UserRecord(Protocol):
 
     id: UUID
     email: str
-    rol: str
     activo: bool
 
 
@@ -40,7 +39,6 @@ class UserRecord(Protocol):
 class AccessTokenPayload:
     sub: UUID
     email: str
-    rol: str
     exp: datetime
 
 
@@ -106,10 +104,12 @@ class JoseTokenService:
 
     def create_access_token(self, usuario: UserRecord) -> str:
         expires_at = datetime.now(timezone.utc) + self._access_token_ttl
+        # Sin claim de rol a proposito: ser organizador cambia al aprobarse o
+        # revocarse el perfil, y un claim quedaria obsoleto hasta el proximo
+        # refresh. Esa autorizacion se resuelve consultando la base de datos.
         claims = {
             "sub": str(usuario.id),
             "email": usuario.email,
-            "rol": usuario.rol,
             "exp": expires_at,
         }
         return jwt.encode(claims, self._secret_key, algorithm=self._algorithm)
@@ -124,7 +124,6 @@ class JoseTokenService:
         return AccessTokenPayload(
             sub=UUID(claims["sub"]),
             email=claims["email"],
-            rol=claims["rol"],
             exp=datetime.fromtimestamp(claims["exp"], tz=timezone.utc),
         )
 

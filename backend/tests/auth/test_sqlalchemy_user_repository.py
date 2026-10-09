@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.auth.repository import SQLAlchemyUserRepository
 from app.db.base import Base
-from app.models.usuario import RolEnum
+from app.models.usuario import Usuario
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ async def test_create_and_get_by_email(sqlite_session):
     repo = SQLAlchemyUserRepository(sqlite_session)
 
     creado = await repo.create(
-        email="a@a.com", password_hash="hash", nombre="Ana", rol=RolEnum.DEMANDANTE
+        email="a@a.com", password_hash="hash", nombre="Ana", apellido="Gomez"
     )
     await sqlite_session.commit()
 
@@ -36,7 +36,8 @@ async def test_create_and_get_by_email(sqlite_session):
 
     assert encontrado is not None
     assert encontrado.id == creado.id
-    assert encontrado.rol == RolEnum.DEMANDANTE
+    assert encontrado.apellido == "Gomez"
+    assert encontrado.creado_en is not None
 
 
 async def test_get_by_email_returns_none_when_missing(sqlite_session):
@@ -51,3 +52,17 @@ async def test_get_by_id_returns_none_when_missing(sqlite_session):
     repo = SQLAlchemyUserRepository(sqlite_session)
 
     assert await repo.get_by_id(uuid4()) is None
+
+
+async def test_usuario_sin_password_hash_se_persiste(sqlite_session):
+    """password_hash es nullable: un usuario de login social no tiene
+    contrasena local."""
+    sqlite_session.add(
+        Usuario(email="b@b.com", password_hash=None, nombre="Beto", apellido="Perez")
+    )
+    await sqlite_session.commit()
+
+    encontrado = await SQLAlchemyUserRepository(sqlite_session).get_by_email("b@b.com")
+
+    assert encontrado is not None
+    assert encontrado.password_hash is None

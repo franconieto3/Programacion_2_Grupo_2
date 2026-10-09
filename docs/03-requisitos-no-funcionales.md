@@ -37,7 +37,7 @@
 | RNF-04.1 | Las contraseñas deben almacenarse con hashing seguro (nunca en texto plano). |
 | RNF-04.2 | La autenticación debe realizarse mediante tokens (JWT), con el *access token* mantenido en memoria del cliente y nunca persistido en `localStorage`, para reducir superficie de ataque ante XSS. |
 | RNF-04.3 | Los identificadores de entidades sensibles (usuarios, eventos) deben ser no secuenciales (UUID), evitando enumeración o filtrado del volumen real de registros. |
-| RNF-04.4 | Las acciones de moderación (ocultar contenido) deben quedar restringidas a usuarios con rol de administrador. |
+| RNF-04.4 | Las acciones de moderación (ocultar contenido, aprobar o suspender organizadores) deben quedar restringidas a administradores. El administrador no es un rol que pueda elegirse en el registro; el mecanismo con el que se lo representa está pendiente de definir. |
 
 ## RNF-05 · Compatibilidad e integraciones
 

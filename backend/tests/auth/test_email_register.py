@@ -3,7 +3,6 @@ import pytest
 from app.auth.behaviors.email_register import EmailRegister
 from app.auth.credentials import EmailRegistration
 from app.auth.exceptions import EmailAlreadyRegisteredError
-from app.models.usuario import RolEnum
 
 
 class _SpyObserver:
@@ -21,7 +20,7 @@ async def test_register_creates_user_hashes_password_and_publishes_event(
     event_publisher.subscribe(spy)
     behavior = EmailRegister(user_repository, password_hasher, event_publisher)
     credentials = EmailRegistration(
-        email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE
+        email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez"
     )
 
     resultado = await behavior.register(credentials)
@@ -37,7 +36,7 @@ async def test_register_creates_user_hashes_password_and_publishes_event(
 async def test_register_rejects_duplicate_email(user_repository, password_hasher, event_publisher):
     behavior = EmailRegister(user_repository, password_hasher, event_publisher)
     credentials = EmailRegistration(
-        email="a@a.com", password="secret123", nombre="Ana", rol=RolEnum.DEMANDANTE
+        email="a@a.com", password="secret123", nombre="Ana", apellido="Gomez"
     )
     await behavior.register(credentials)
 

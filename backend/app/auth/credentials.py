@@ -11,8 +11,6 @@ quien intenta autenticarse (la usa RateLimitedSignIn como clave).
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from app.models.usuario import RolEnum
-
 
 class Credentials(ABC):
     @property
@@ -40,7 +38,7 @@ class EmailRegistration(Credentials):
     email: str
     password: str = field(repr=False)
     nombre: str
-    rol: RolEnum
+    apellido: str
 
     @property
     def identifier(self) -> str:

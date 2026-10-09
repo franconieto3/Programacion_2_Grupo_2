@@ -11,7 +11,7 @@ import pytest
 from app.auth.events.publisher import AuthEventPublisher
 from app.auth.exceptions import InvalidTokenError, TokenExpiredError
 from app.core.security.token_service import AccessTokenPayload
-from app.models.usuario import RolEnum, Usuario
+from app.models.usuario import Usuario
 
 
 class InMemoryUserRepository:
@@ -25,14 +25,14 @@ class InMemoryUserRepository:
         return self._by_id.get(usuario_id)
 
     async def create(
-        self, *, email: str, password_hash: str, nombre: str, rol: RolEnum
+        self, *, email: str, password_hash: str, nombre: str, apellido: str
     ) -> Usuario:
         usuario = Usuario(
             id=uuid4(),
             email=email,
             password_hash=password_hash,
             nombre=nombre,
-            rol=rol,
+            apellido=apellido,
             activo=True,
             creado_en=datetime.now(timezone.utc),
         )
@@ -80,7 +80,6 @@ class FakeTokenService:
         self._access_tokens[token] = AccessTokenPayload(
             sub=usuario.id,
             email=usuario.email,
-            rol=usuario.rol,
             exp=datetime.now(timezone.utc) + timedelta(minutes=15),
         )
         self._users_by_id[usuario.id] = usuario
