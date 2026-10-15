@@ -18,7 +18,7 @@ Clasificación según el método **MoSCoW**:
 | RF-01.1 | El sistema debe permitir registrar un usuario con nombre, apellido, email y contraseña | **M** |
 | RF-01.2 | Todo usuario registrado puede descubrir eventos | **M** |
 | RF-01.3 | El sistema debe permitir iniciar y cerrar sesión mediante email y contraseña | **M** |
-| RF-01.4 | El sistema debe permitir editar los datos básicos del perfil propio | **M** |
+| RF-01.4 | El sistema debe permitir editar los datos básicos del perfil propio | **S** |
 | RF-01.5 | El sistema debe permitir autenticación mediante proveedores externos (login social) | **C** |
 | RF-01.6 | El sistema debe permitir a un usuario registrado solicitar convertirse en organizador (nombre público y descripción). La solicitud queda `PENDIENTE` hasta que un administrador la aprueba o rechaza | **M** |
 | RF-01.7 | El sistema debe permitir crear y editar eventos solo a usuarios con perfil de organizador `APROBADO` | **M** |
@@ -95,8 +95,8 @@ Clasificación según el método **MoSCoW**:
 
 | Prioridad | Cantidad de requisitos |
 |---|---|
-| **Must (M)** | 26 |
-| **Should (S)** | 8 |
+| **Must (M)** | 25 |
+| **Should (S)** | 9 |
 | **Could (C)** | 9 |
 
 Los requisitos **Must** constituyen el MVP / Trabajo Práctico. Los requisitos **Should** son la
