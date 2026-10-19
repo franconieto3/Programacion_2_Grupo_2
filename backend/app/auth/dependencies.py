@@ -22,6 +22,7 @@ from app.auth.behaviors.email_verify import EmailVerify
 from app.auth.credentials import EmailCredentials, EmailRecoveryRequest, EmailRegistration
 from app.auth.decorators.rate_limited_signin import InMemoryLoginAttemptsStore, RateLimitedSignIn
 from app.auth.events.publisher import AuthEventPublisher
+from app.auth.exceptions import InactiveAccountError, InvalidTokenError, SessionNotFoundError
 from app.auth.repository import SQLAlchemyUserRepository, UserRepository
 from app.auth.token_repository import (
     SQLAlchemyPasswordResetTokenRepository,
@@ -31,6 +32,7 @@ from app.core.config import Settings, get_settings
 from app.core.security.password_hasher import Argon2PasswordHasher, PasswordHasher
 from app.core.security.token_service import JoseTokenService, TokenService
 from app.db.session import get_db_session
+from app.models.usuario import Usuario
 
 # Instancias sin estado por proceso (no son el Singleton "de ejercicio", solo
 # evitan reconstruir objetos triviales en cada request). El almacen de
@@ -77,6 +79,41 @@ def get_token_service(
     )
 
 
+def _extract_bearer_token(authorization: str | None) -> str | None:
+    if authorization and authorization.lower().startswith("bearer "):
+        return authorization.split(" ", 1)[1].strip()
+    return None
+
+
+async def get_usuario_actual(
+    authorization: str | None = Header(default=None),
+    token_service: TokenService = Depends(get_token_service),
+    user_repository: UserRepository = Depends(get_user_repository),
+) -> Usuario:
+    """Usuario autenticado de la request, para endpoints protegidos fuera de
+    /auth (organizadores, eventos).
+
+    Solo acepta el access token: la cookie del refresh token tiene path /auth
+    y no llega a estos endpoints. Ante un 401 por token vencido, el frontend
+    renueva la sesion con POST /auth/verify-session y reintenta.
+
+    El usuario se carga de la base y no se arma desde los claims del JWT, para
+    que una cuenta desactivada pierda el acceso de inmediato y no recien al
+    vencer el token. Los errores se traducen a HTTP en
+    app/auth/error_handlers.py."""
+    access_token = _extract_bearer_token(authorization)
+    if access_token is None:
+        raise SessionNotFoundError()
+
+    payload = token_service.decode_access_token(access_token)
+    usuario = await user_repository.get_by_id(payload.sub)
+    if usuario is None:
+        raise InvalidTokenError()
+    if not usuario.activo:
+        raise InactiveAccountError()
+    return usuario
+
+
 def get_reset_token_repository(
     session: AsyncSession = Depends(get_db_session),
 ) -> SQLAlchemyPasswordResetTokenRepository:
@@ -104,9 +141,7 @@ def get_auth(
     `verifySession()` no toma argumentos (fiel al diagrama): la sesion se
     extrae ACA (access token del header Authorization, refresh token de la
     cookie) y se inyecta al construir la estrategia de verificacion."""
-    access_token = None
-    if authorization and authorization.lower().startswith("bearer "):
-        access_token = authorization.split(" ", 1)[1].strip()
+    access_token = _extract_bearer_token(authorization)
 
     sign_in_behavior = RateLimitedSignIn(
         EmailSignIn(user_repository, password_hasher, token_service, event_publisher),

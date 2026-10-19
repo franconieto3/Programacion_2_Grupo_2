@@ -15,6 +15,8 @@ from app.auth.error_handlers import register_auth_exception_handlers
 from app.auth.events.observers.audit_log_observer import AuditLogObserver
 from app.auth.events.observers.email_notification_observer import EmailNotificationObserver
 from app.auth.router import router as auth_router
+from app.organizadores.error_handlers import register_organizadores_exception_handlers
+from app.organizadores.router import router as organizadores_router
 from app.core.email_sender import ConsoleEmailSender
 from app.db.session import async_session_factory
 
@@ -54,7 +56,9 @@ def create_app() -> FastAPI:
     )
 
     register_auth_exception_handlers(app)
+    register_organizadores_exception_handlers(app)
     app.include_router(auth_router)
+    app.include_router(organizadores_router)
 
     return app
 
