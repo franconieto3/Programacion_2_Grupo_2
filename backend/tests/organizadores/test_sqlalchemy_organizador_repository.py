@@ -1,6 +1,8 @@
 """Prueba SQLAlchemyOrganizadorRepository contra SQLite en memoria (admitido
 por RNF-05.2 solo para tests), igual que el repositorio de usuarios."""
 
+from uuid import uuid4
+
 import pytest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -80,3 +82,48 @@ async def test_add_duplicado_lanza_solicitud_ya_existente(
             await SQLAlchemyOrganizadorRepository(session).add(
                 _organizador(usuario)
             )
+
+
+async def test_get_by_id_existente_lo_devuelve(session_factory, usuario):
+    async with session_factory() as session:
+        creado = await SQLAlchemyOrganizadorRepository(session).add(
+            _organizador(usuario)
+        )
+        await session.commit()
+        id_organizador = creado.id_organizador
+
+    async with session_factory() as session:
+        encontrado = await SQLAlchemyOrganizadorRepository(session).get_by_id(
+            id_organizador
+        )
+
+    assert encontrado is not None
+    assert encontrado.id_organizador == id_organizador
+
+
+async def test_get_by_id_inexistente_devuelve_none(session_factory, usuario):
+    async with session_factory() as session:
+        repo = SQLAlchemyOrganizadorRepository(session)
+        assert await repo.get_by_id(uuid4()) is None
+
+
+async def test_list_by_estado_filtra_por_estado(session_factory, usuario):
+    async with session_factory() as session:
+        otro = Usuario(nombre='Beto', apellido='Diaz', email='b@b.com')
+        session.add(otro)
+        await session.flush()
+
+        repo = SQLAlchemyOrganizadorRepository(session)
+        pendiente = await repo.add(_organizador(usuario))
+        aprobado = _organizador(otro)
+        aprobado.estado = EstadoOrganizador.APROBADO
+        await repo.add(aprobado)
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyOrganizadorRepository(session)
+        pendientes = await repo.list_by_estado(EstadoOrganizador.PENDIENTE)
+        suspendidos = await repo.list_by_estado(EstadoOrganizador.SUSPENDIDO)
+
+    assert [o.id_organizador for o in pendientes] == [pendiente.id_organizador]
+    assert suspendidos == []

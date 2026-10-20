@@ -19,9 +19,26 @@ class InMemoryOrganizadorRepository:
     async def get_by_usuario_id(self, usuario_id: UUID) -> Organizador | None:
         return self._by_usuario_id.get(usuario_id)
 
+    async def get_by_id(self, id_organizador: UUID) -> Organizador | None:
+        return next(
+            (
+                o
+                for o in self._by_usuario_id.values()
+                if o.id_organizador == id_organizador
+            ),
+            None,
+        )
+
     async def add(self, organizador: Organizador) -> Organizador:
         self._by_usuario_id[organizador.id_usuario] = organizador
         return organizador
+
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]:
+        return [
+            o for o in self._by_usuario_id.values() if o.estado == estado
+        ]
 
 
 @pytest.fixture

@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.organizadores.exceptions import SolicitudYaExistenteError
-from app.organizadores.models import Organizador
+from app.organizadores.models import EstadoOrganizador, Organizador
 
 
 @runtime_checkable
@@ -20,7 +20,13 @@ class OrganizadorRepository(Protocol):
         self, usuario_id: UUID
     ) -> Organizador | None: ...
 
+    async def get_by_id(self, id_organizador: UUID) -> Organizador | None: ...
+
     async def add(self, organizador: Organizador) -> Organizador: ...
+
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]: ...
 
 
 class SQLAlchemyOrganizadorRepository:
@@ -30,6 +36,14 @@ class SQLAlchemyOrganizadorRepository:
     async def get_by_usuario_id(self, usuario_id: UUID) -> Organizador | None:
         result = await self._session.execute(
             select(Organizador).where(Organizador.id_usuario == usuario_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, id_organizador: UUID) -> Organizador | None:
+        result = await self._session.execute(
+            select(Organizador).where(
+                Organizador.id_organizador == id_organizador
+            )
         )
         return result.scalar_one_or_none()
 
@@ -49,3 +63,15 @@ class SQLAlchemyOrganizadorRepository:
         except IntegrityError as exc:
             raise SolicitudYaExistenteError() from exc
         return organizador
+
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]:
+        """Las mas antiguas primero: el administrador revisa las solicitudes
+        en el orden en que llegaron."""
+        result = await self._session.execute(
+            select(Organizador)
+            .where(Organizador.estado == estado)
+            .order_by(Organizador.fecha_creacion)
+        )
+        return list(result.scalars().all())
