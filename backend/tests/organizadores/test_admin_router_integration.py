@@ -128,3 +128,98 @@ async def test_estado_invalido_responde_422(wired_app):
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize('accion', ['aprobar', 'rechazar', 'suspender'])
+async def test_sin_token_responde_401_en_accion(wired_app, accion):
+    async with _client() as client:
+        response = await client.post(f"/admin/organizadores/{uuid4()}/{accion}")
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize('accion', ['aprobar', 'rechazar', 'suspender'])
+async def test_usuario_no_admin_responde_403_en_accion(wired_app, accion):
+    user_repository, token_service, _, _ = wired_app
+    _, token = await _usuario_con_token(user_repository, token_service, "a@a.com")
+
+    async with _client() as client:
+        response = await client.post(
+            f"/admin/organizadores/{uuid4()}/{accion}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    'accion', ['aprobar', 'rechazar', 'suspender']
+)
+async def test_id_inexistente_responde_404_en_accion(wired_app, accion):
+    user_repository, token_service, admin_repo, _ = wired_app
+    usuario, token = await _usuario_con_token(
+        user_repository, token_service, "admin@a.com"
+    )
+    admin_repo.add(usuario.id)
+
+    async with _client() as client:
+        response = await client.post(
+            f"/admin/organizadores/{uuid4()}/{accion}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 404
+
+
+@pytest.mark.parametrize(
+    ('accion', 'estado_invalido'),
+    [
+        ('aprobar', EstadoOrganizador.APROBADO),
+        ('rechazar', EstadoOrganizador.RECHAZADO),
+        ('suspender', EstadoOrganizador.PENDIENTE),
+    ],
+)
+async def test_transicion_invalida_responde_409_en_accion(
+    wired_app, accion, estado_invalido
+):
+    user_repository, token_service, admin_repo, organizador_repo = wired_app
+    usuario, token = await _usuario_con_token(
+        user_repository, token_service, "admin@a.com"
+    )
+    admin_repo.add(usuario.id)
+    perfil = await _perfil(organizador_repo, estado_invalido)
+
+    async with _client() as client:
+        response = await client.post(
+            f"/admin/organizadores/{perfil.id_organizador}/{accion}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 409
+
+
+@pytest.mark.parametrize(
+    ('accion', 'estado_origen', 'estado_esperado'),
+    [
+        ('aprobar', EstadoOrganizador.PENDIENTE, 'APROBADO'),
+        ('rechazar', EstadoOrganizador.PENDIENTE, 'RECHAZADO'),
+        ('suspender', EstadoOrganizador.APROBADO, 'SUSPENDIDO'),
+    ],
+)
+async def test_accion_valida_responde_200_y_actualiza_estado(
+    wired_app, accion, estado_origen, estado_esperado
+):
+    user_repository, token_service, admin_repo, organizador_repo = wired_app
+    usuario, token = await _usuario_con_token(
+        user_repository, token_service, "admin@a.com"
+    )
+    admin_repo.add(usuario.id)
+    perfil = await _perfil(organizador_repo, estado_origen)
+
+    async with _client() as client:
+        response = await client.post(
+            f"/admin/organizadores/{perfil.id_organizador}/{accion}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id_organizador"] == str(perfil.id_organizador)
+    assert body["estado"] == estado_esperado
+    assert perfil.estado == estado_esperado

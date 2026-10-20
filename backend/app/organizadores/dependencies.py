@@ -11,8 +11,11 @@ from app.organizadores.repository import (
     SQLAlchemyOrganizadorRepository,
 )
 from app.organizadores.service import (
+    AprobarOrganizador,
     ListarSolicitudesOrganizador,
+    RechazarOrganizador,
     SolicitarOrganizador,
+    SuspenderOrganizador,
 )
 
 
@@ -32,3 +35,21 @@ def get_listar_solicitudes_organizador(
     repo: OrganizadorRepository = Depends(get_organizador_repository),
 ) -> ListarSolicitudesOrganizador:
     return ListarSolicitudesOrganizador(repo)
+
+
+def get_aprobar_organizador(
+    repo: OrganizadorRepository = Depends(get_organizador_repository),
+) -> AprobarOrganizador:
+    return AprobarOrganizador(repo)
+
+
+def get_rechazar_organizador(
+    repo: OrganizadorRepository = Depends(get_organizador_repository),
+) -> RechazarOrganizador:
+    return RechazarOrganizador(repo)
+
+
+def get_suspender_organizador(
+    repo: OrganizadorRepository = Depends(get_organizador_repository),
+) -> SuspenderOrganizador:
+    return SuspenderOrganizador(repo)

@@ -59,3 +59,34 @@ class Organizador(Base):
         self.nombre_publico = nombre_publico
         self.descripcion = descripcion
         self.estado = EstadoOrganizador.PENDIENTE
+
+    def aprobar(self) -> None:
+        """Solo valido desde PENDIENTE (CU-05)."""
+        from app.organizadores.exceptions import TransicionEstadoInvalidaError
+
+        if self.estado != EstadoOrganizador.PENDIENTE:
+            raise TransicionEstadoInvalidaError(
+                self.estado, EstadoOrganizador.APROBADO
+            )
+        self.estado = EstadoOrganizador.APROBADO
+
+    def rechazar(self) -> None:
+        """Solo valido desde PENDIENTE (CU-05)."""
+        from app.organizadores.exceptions import TransicionEstadoInvalidaError
+
+        if self.estado != EstadoOrganizador.PENDIENTE:
+            raise TransicionEstadoInvalidaError(
+                self.estado, EstadoOrganizador.RECHAZADO
+            )
+        self.estado = EstadoOrganizador.RECHAZADO
+
+    def suspender(self) -> None:
+        """Solo valido desde APROBADO: para desactivar una PENDIENTE esta
+        rechazar."""
+        from app.organizadores.exceptions import TransicionEstadoInvalidaError
+
+        if self.estado != EstadoOrganizador.APROBADO:
+            raise TransicionEstadoInvalidaError(
+                self.estado, EstadoOrganizador.SUSPENDIDO
+            )
+        self.estado = EstadoOrganizador.SUSPENDIDO

@@ -1,5 +1,8 @@
+from uuid import UUID
+
 from app.models.usuario import Usuario
 from app.organizadores.exceptions import (
+    OrganizadorNoEncontradoError,
     OrganizadorSuspendidoError,
     SolicitudYaExistenteError,
 )
@@ -52,3 +55,45 @@ class ListarSolicitudesOrganizador:
 
     async def ejecutar(self, estado: EstadoOrganizador) -> list[Organizador]:
         return await self._repo.list_by_estado(estado)
+
+
+class AprobarOrganizador:
+    """CU-05: un administrador aprueba una solicitud PENDIENTE."""
+
+    def __init__(self, repo: OrganizadorRepository) -> None:
+        self._repo = repo
+
+    async def ejecutar(self, id_organizador: UUID) -> Organizador:
+        organizador = await self._repo.get_by_id(id_organizador)
+        if organizador is None:
+            raise OrganizadorNoEncontradoError()
+        organizador.aprobar()
+        return organizador
+
+
+class RechazarOrganizador:
+    """CU-05: un administrador rechaza una solicitud PENDIENTE."""
+
+    def __init__(self, repo: OrganizadorRepository) -> None:
+        self._repo = repo
+
+    async def ejecutar(self, id_organizador: UUID) -> Organizador:
+        organizador = await self._repo.get_by_id(id_organizador)
+        if organizador is None:
+            raise OrganizadorNoEncontradoError()
+        organizador.rechazar()
+        return organizador
+
+
+class SuspenderOrganizador:
+    """CU-05: un administrador suspende un perfil APROBADO."""
+
+    def __init__(self, repo: OrganizadorRepository) -> None:
+        self._repo = repo
+
+    async def ejecutar(self, id_organizador: UUID) -> Organizador:
+        organizador = await self._repo.get_by_id(id_organizador)
+        if organizador is None:
+            raise OrganizadorNoEncontradoError()
+        organizador.suspender()
+        return organizador

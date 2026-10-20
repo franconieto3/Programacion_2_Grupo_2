@@ -35,3 +35,24 @@ class OrganizadorSuspendidoError(OrganizadorError):
             'Tu perfil de organizador esta suspendido. '
             'No podes volver a solicitarlo.'
         )
+
+
+class OrganizadorNoEncontradoError(OrganizadorError):
+    """No existe un organizador con el id pedido (CU-05)."""
+
+    def __init__(self) -> None:
+        super().__init__('No se encontro el organizador solicitado.')
+
+
+class TransicionEstadoInvalidaError(OrganizadorError):
+    """El organizador no esta en un estado desde el que la accion pedida
+    (aprobar/rechazar/suspender) sea valida (CU-05)."""
+
+    def __init__(
+        self, estado_actual: EstadoOrganizador, estado_destino: EstadoOrganizador
+    ) -> None:
+        super().__init__(
+            f'No se puede pasar de {estado_actual} a {estado_destino}.'
+        )
+        self.estado_actual = estado_actual
+        self.estado_destino = estado_destino

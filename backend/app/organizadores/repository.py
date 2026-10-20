@@ -20,6 +20,8 @@ class OrganizadorRepository(Protocol):
         self, usuario_id: UUID
     ) -> Organizador | None: ...
 
+    async def get_by_id(self, id_organizador: UUID) -> Organizador | None: ...
+
     async def add(self, organizador: Organizador) -> Organizador: ...
 
     async def list_by_estado(
@@ -34,6 +36,14 @@ class SQLAlchemyOrganizadorRepository:
     async def get_by_usuario_id(self, usuario_id: UUID) -> Organizador | None:
         result = await self._session.execute(
             select(Organizador).where(Organizador.id_usuario == usuario_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, id_organizador: UUID) -> Organizador | None:
+        result = await self._session.execute(
+            select(Organizador).where(
+                Organizador.id_organizador == id_organizador
+            )
         )
         return result.scalar_one_or_none()
 
