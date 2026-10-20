@@ -80,3 +80,25 @@ async def test_add_duplicado_lanza_solicitud_ya_existente(
             await SQLAlchemyOrganizadorRepository(session).add(
                 _organizador(usuario)
             )
+
+
+async def test_list_by_estado_filtra_por_estado(session_factory, usuario):
+    async with session_factory() as session:
+        otro = Usuario(nombre='Beto', apellido='Diaz', email='b@b.com')
+        session.add(otro)
+        await session.flush()
+
+        repo = SQLAlchemyOrganizadorRepository(session)
+        pendiente = await repo.add(_organizador(usuario))
+        aprobado = _organizador(otro)
+        aprobado.estado = EstadoOrganizador.APROBADO
+        await repo.add(aprobado)
+        await session.commit()
+
+    async with session_factory() as session:
+        repo = SQLAlchemyOrganizadorRepository(session)
+        pendientes = await repo.list_by_estado(EstadoOrganizador.PENDIENTE)
+        suspendidos = await repo.list_by_estado(EstadoOrganizador.SUSPENDIDO)
+
+    assert [o.id_organizador for o in pendientes] == [pendiente.id_organizador]
+    assert suspendidos == []

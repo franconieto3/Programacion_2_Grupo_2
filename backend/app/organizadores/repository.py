@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.organizadores.exceptions import SolicitudYaExistenteError
-from app.organizadores.models import Organizador
+from app.organizadores.models import EstadoOrganizador, Organizador
 
 
 @runtime_checkable
@@ -21,6 +21,10 @@ class OrganizadorRepository(Protocol):
     ) -> Organizador | None: ...
 
     async def add(self, organizador: Organizador) -> Organizador: ...
+
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]: ...
 
 
 class SQLAlchemyOrganizadorRepository:
@@ -49,3 +53,15 @@ class SQLAlchemyOrganizadorRepository:
         except IntegrityError as exc:
             raise SolicitudYaExistenteError() from exc
         return organizador
+
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]:
+        """Las mas antiguas primero: el administrador revisa las solicitudes
+        en el orden en que llegaron."""
+        result = await self._session.execute(
+            select(Organizador)
+            .where(Organizador.estado == estado)
+            .order_by(Organizador.fecha_creacion)
+        )
+        return list(result.scalars().all())

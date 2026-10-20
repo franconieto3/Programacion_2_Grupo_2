@@ -41,3 +41,14 @@ class SolicitarOrganizador:
         # misma fila porque id_usuario es UNIQUE (multiplicidad 0..1).
         existente.reenviar_solicitud(datos.nombre_publico, datos.descripcion)
         return existente
+
+
+class ListarSolicitudesOrganizador:
+    """Un administrador lista los perfiles de organizador en un estado dado,
+    tipicamente PENDIENTE para revisar las solicitudes del CU-04."""
+
+    def __init__(self, repo: OrganizadorRepository) -> None:
+        self._repo = repo
+
+    async def ejecutar(self, estado: EstadoOrganizador) -> list[Organizador]:
+        return await self._repo.list_by_estado(estado)

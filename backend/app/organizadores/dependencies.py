@@ -10,7 +10,10 @@ from app.organizadores.repository import (
     OrganizadorRepository,
     SQLAlchemyOrganizadorRepository,
 )
-from app.organizadores.service import SolicitarOrganizador
+from app.organizadores.service import (
+    ListarSolicitudesOrganizador,
+    SolicitarOrganizador,
+)
 
 
 def get_organizador_repository(
@@ -23,3 +26,9 @@ def get_solicitar_organizador(
     repo: OrganizadorRepository = Depends(get_organizador_repository),
 ) -> SolicitarOrganizador:
     return SolicitarOrganizador(repo)
+
+
+def get_listar_solicitudes_organizador(
+    repo: OrganizadorRepository = Depends(get_organizador_repository),
+) -> ListarSolicitudesOrganizador:
+    return ListarSolicitudesOrganizador(repo)

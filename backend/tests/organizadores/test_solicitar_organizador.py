@@ -23,6 +23,13 @@ class InMemoryOrganizadorRepository:
         self._by_usuario_id[organizador.id_usuario] = organizador
         return organizador
 
+    async def list_by_estado(
+        self, estado: EstadoOrganizador
+    ) -> list[Organizador]:
+        return [
+            o for o in self._by_usuario_id.values() if o.estado == estado
+        ]
+
 
 @pytest.fixture
 def repo() -> InMemoryOrganizadorRepository:

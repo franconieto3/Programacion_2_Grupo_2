@@ -9,12 +9,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.administradores.error_handlers import register_administradores_exception_handlers
 from app.auth.audit_repository import SQLAlchemyAuditLogWriter
 from app.auth.dependencies import get_auth_event_publisher
 from app.auth.error_handlers import register_auth_exception_handlers
 from app.auth.events.observers.audit_log_observer import AuditLogObserver
 from app.auth.events.observers.email_notification_observer import EmailNotificationObserver
 from app.auth.router import router as auth_router
+from app.organizadores.admin_router import router as admin_organizadores_router
 from app.organizadores.error_handlers import register_organizadores_exception_handlers
 from app.organizadores.router import router as organizadores_router
 from app.core.email_sender import ConsoleEmailSender
@@ -57,8 +59,10 @@ def create_app() -> FastAPI:
 
     register_auth_exception_handlers(app)
     register_organizadores_exception_handlers(app)
+    register_administradores_exception_handlers(app)
     app.include_router(auth_router)
     app.include_router(organizadores_router)
+    app.include_router(admin_organizadores_router)
 
     return app
 
