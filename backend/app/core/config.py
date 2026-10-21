@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     login_max_attempts: int = 5
     login_lockout_minutes: int = 15
 
+    # Zona con la que se calcula la hora local de inicio de un evento
+    # (Evento.hora_inicio_local), usada por el filtro horario (RF-03.5).
+    zona_horaria: str = 'America/Argentina/Buenos_Aires'
+
 
 @lru_cache
 def get_settings() -> Settings:
