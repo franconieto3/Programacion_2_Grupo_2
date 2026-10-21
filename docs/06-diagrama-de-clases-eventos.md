@@ -6,6 +6,16 @@ verifica que el usuario tenga un perfil de organizador `APROBADO`, y el servicio
 resuelve las categorías y delega en `EventoFactory` la construcción del `Evento`, que se
 persiste a través de un puerto (`EventoRepository`).
 
+## Estado de implementación
+
+| Parte | Estado |
+|---|---|
+| Dominio (`Evento`, `Lugar`, `Categoria`, enums) y migración `0004_eventos` | ✅ Fase 0 (`app/eventos/models.py`, `app/categorias/models.py`) |
+| `CategoriaRepository` y `GET /categorias` | ✅ Fase 0 (`app/categorias/`) |
+| `EventoRepository.buscar` y `GET /eventos` (sin filtros todavía) | ✅ Fase 0 (`app/eventos/`) |
+| `require_organizador_aprobado`, `CrearEventoRequest`, `CrearEvento`, `EventoFactory`, `POST /eventos` | ⏳ Persona A (RF-01.7, RF-02.1 a RF-02.3) |
+| `EventoRepository.add`, `get_by_id`, `list_by_organizador` | ⏳ Personas A, B y C, según quién lo necesite primero |
+
 ```mermaid
 classDiagram
     direction TB
@@ -20,14 +30,14 @@ classDiagram
             <<Pydantic DTO>>
             +titulo: str
             +descripcion: str
-            +inicio: datetime
-            +fin: Optional~datetime~
-            +precio_desde: Optional~Decimal~
-            +latitud: Decimal
-            +longitud: Decimal
+            +fecha_inicio: datetime
+            +fecha_fin: Optional~datetime~
+            +precio: Optional~Decimal~
+            +latitud: float
+            +longitud: float
             +lugar_nombre: Optional~str~
             +direccion: Optional~str~
-            +categoria_ids: list~UUID~
+            +categorias: list~str~
             +validar_fin_posterior_a_inicio()
         }
         class require_organizador_aprobado {
@@ -62,43 +72,41 @@ classDiagram
             +email: str
         }
         class Organizador {
-            +id: UUID
+            +id_organizador: UUID
             +nombre_publico: str
-            +descripcion: Optional~str~
+            +descripcion: str
             +estado: EstadoOrganizador
             +puede_publicar() bool
         }
         class Evento {
-            +id: UUID
+            +id_evento: UUID
+            +id_organizador: Optional~UUID~
             +titulo: str
             +descripcion: str
-            +inicio_utc: datetime
-            +fin_utc: Optional~datetime~
-            +hora_inicio_local: int
-            +ubicacion: Ubicacion
-            +precio_desde: Optional~Decimal~
-            +url_externa: Optional~str~
+            +fecha_inicio: datetime
+            +fecha_fin: Optional~datetime~
+            +hora_inicio_local: time
+            +precio: Optional~Decimal~
             +estado: EstadoEvento
             +origen: OrigenEvento
-            +serie_id: Optional~UUID~
-            +destacado_hasta: Optional~datetime~
-            +creado_en: datetime
-            +actualizado_en: datetime
+            +fecha_publicacion: Optional~datetime~
+            +fecha_actualizacion: datetime
+            +programar(fecha_inicio, fecha_fin, zona) None
             +cancelar() None
             +ocultar() None
         }
-        class Ubicacion {
-            <<value object>>
-            +latitud: Decimal
-            +longitud: Decimal
-            +lugar_nombre: Optional~str~
+        class Lugar {
+            +id_lugar: UUID
+            +nombre: Optional~str~
             +direccion: Optional~str~
+            +latitud: float
+            +longitud: float
         }
         class Categoria {
-            +id: UUID
+            +id_categoria: int
             +slug: str
             +nombre: str
-            +icono: str
+            +descripcion: Optional~str~
             +activa: bool
         }
         class EstadoOrganizador {
@@ -119,7 +127,6 @@ classDiagram
             <<enumeration>>
             CARGA_ORGANIZADOR
             SEED_EQUIPO
-            IMPORTADO
         }
     }
 
@@ -127,13 +134,15 @@ classDiagram
     namespace PuertosYAdaptadores {
         class EventoRepository {
             <<interface>>
+            +buscar(filtros: BusquedaEventosParams, ahora: datetime) tuple~list~Evento~, int~
             +add(evento: Evento) Evento
-            +get_by_id(evento_id: UUID) Optional~Evento~
-            +list_by_organizador(organizador_id: UUID) list~Evento~
+            +get_by_id(id_evento: UUID) Optional~Evento~
+            +list_by_organizador(id_organizador: UUID) list~Evento~
         }
         class CategoriaRepository {
             <<interface>>
-            +get_activas_by_ids(ids: list~UUID~) list~Categoria~
+            +list_activas() list~Categoria~
+            +get_activas_by_slugs(slugs: list~str~) list~Categoria~
         }
         class OrganizadorRepository {
             <<interface>>
@@ -156,11 +165,12 @@ classDiagram
     CrearEvento --> CategoriaRepository
     CrearEvento --> EventoFactory
     EventoFactory ..> Evento : «create»
+    EventoFactory ..> Lugar : «create»
 
     %% ── Dominio ──
     Usuario "1" *-- "0..1" Organizador : perfil
-    Organizador "1" -- "0..*" Evento : publica
-    Evento "1" *-- "1" Ubicacion
+    Organizador "0..1" -- "0..*" Evento : publica
+    Evento "0..*" --> "1" Lugar : ocurre en
     Evento "0..*" -- "1..*" Categoria : clasificado en
     Organizador ..> EstadoOrganizador
     Evento ..> EstadoEvento
@@ -177,14 +187,16 @@ classDiagram
 | Requisito | Cómo aparece en el modelo |
 |---|---|
 | RF-01.7 / CU-04: solo un organizador `APROBADO` crea eventos | `Organizador.estado` + `puede_publicar()`; la dependencia `require_organizador_aprobado` corta antes del servicio |
-| RF-02.1: título, descripción, inicio, fin opcional, precio opcional | Atributos de `Evento`; `fin_utc` y `precio_desde` son opcionales |
-| RF-02.2: coordenadas como dato autoritativo | Value object `Ubicacion` (latitud/longitud obligatorias, dirección descriptiva) |
-| RF-02.3 / RF-04.1 / RF-04.2: una o varias categorías de un catálogo cerrado | Asociación `Evento "0..*" -- "1..*" Categoria` |
-| CU-03 paso 8 / 8a: validar y guardar como `PUBLICADO` | Validación en `CrearEventoRequest` y `CrearEvento`; el estado inicial lo fija `EventoFactory` |
-| RF-05.2 / RF-06.1: eventos de seed e importados | `OrigenEvento` + un método de `EventoFactory` por origen |
-| RNF-01.2 / RNF-08.1: UTC y filtro horario indexable | `inicio_utc` y `hora_inicio_local`, calculada al crear |
-| RNF-02.3: campos preparados para fase 2 | `serie_id`, `destacado_hasta`, `OrigenEvento.IMPORTADO` |
-| RNF-04.3: identificadores no secuenciales | `id: UUID` en `Evento` |
+| RF-02.1: título, descripción, inicio, fin opcional, precio opcional | Atributos de `Evento`; `fecha_fin` y `precio` son opcionales |
+| RF-02.2: coordenadas como dato autoritativo | Entidad `Lugar` (latitud/longitud obligatorias; nombre y dirección descriptivos) |
+| RF-02.3 / RF-04.1 / RF-04.2: una o varias categorías de un catálogo cerrado | Asociación `Evento "0..*" -- "1..*" Categoria`; el catálogo lo carga la migración `0004` y se referencia por `slug` |
+| RF-02.4 / RF-05.1: cancelar y ocultar | `Evento.cancelar()` (desde `BORRADOR` o `PUBLICADO`) y `Evento.ocultar()` (desde `PUBLICADO` o `CANCELADO`) |
+| CU-03 paso 8 / 8a: validar y guardar como `PUBLICADO` | Validación en `CrearEventoRequest` y `CrearEvento`; el estado inicial y `fecha_publicacion` los fija `EventoFactory` |
+| RF-03.3 a RF-03.6: búsqueda con filtros | `EventoRepository.buscar` aplica la regla de visibilidad y un filtro por archivo en `app/eventos/filtros/` |
+| RF-04.3: retirar una categoría sin borrarla | `Categoria.activa` |
+| RF-05.2: eventos de seed | `OrigenEvento.SEED_EQUIPO` + `id_organizador` nulo + `EventoFactory.crear_seed` |
+| RNF-01.2 / RNF-08.1: UTC y filtro horario indexable | `fecha_inicio` en UTC y `hora_inicio_local`, calculada por `programar()` con `Settings.zona_horaria` |
+| RNF-04.3: identificadores no secuenciales | UUID en `Evento` y `Lugar` |
 
 ## Cómo leer el diagrama
 
@@ -204,42 +216,51 @@ mezcla autorización con la lógica de alta.
 - **Formato y coherencia interna** en el DTO: tipos, campos obligatorios, rangos de
   latitud/longitud y `validar_fin_posterior_a_inicio()`. Si fallan, FastAPI responde 422
   (CU-03, flujo alternativo 8a).
-- **Reglas que necesitan la base** en `CrearEvento`: `CategoriaRepository.get_activas_by_ids`
+- **Reglas que necesitan la base** en `CrearEvento`: `CategoriaRepository.get_activas_by_slugs`
   debe devolver todas las categorías pedidas; si falta alguna o está inactiva, el servicio
   lanza un error de dominio.
 
 **4. `EventoFactory` (Simple Factory).** Cumple el mismo papel que `CredentialsFactory` en el
-módulo de auth: centraliza lo que no viene en el DTO. Genera el UUID, convierte `inicio` y `fin`
-a UTC, calcula `hora_inicio_local` con la zona horaria configurada (RNF-01.2), fija
-`estado = PUBLICADO` y asigna el `origen` según el método:
+módulo de auth: centraliza lo que no viene en el DTO. Crea el `Lugar` a partir de las
+coordenadas, asigna las fechas con `Evento.programar()` (que calcula `hora_inicio_local` con la
+zona horaria configurada, RNF-01.2), fija `estado = PUBLICADO` y `fecha_publicacion`, y asigna
+el `origen` según el método:
 - `crear_desde_organizador` → `CARGA_ORGANIZADOR`, asociado al organizador.
-- `crear_seed` → `SEED_EQUIPO`, para el contenido cargado por el equipo (RF-05.2).
+- `crear_seed` → `SEED_EQUIPO`, sin organizador, para el contenido cargado por el equipo
+  (RF-05.2).
 
-Sumar la ingesta de fase 2 es agregar `crear_importado`, sin tocar `Evento` ni el servicio
-(OCP).
+Sumar un nuevo origen (por ejemplo, la ingesta de RF-06.1) es agregar un valor a
+`OrigenEvento` y un método a la factory, sin tocar `Evento` ni el servicio (OCP).
 
-**5. `Ubicacion` es un value object compuesto, no una entidad `Lugar`.** Respeta la decisión
-del MVP: dirección y coordenadas viven denormalizadas en la tabla de `Evento`, de modo que la
-búsqueda por viewport no necesita joins. Modelarla como clase propia deja preparado el paso a
-una entidad `Lugar` reutilizable en fase 2 (RF-02.8): la relación pasaría de composición a
-asociación.
+**5. `Lugar` es una entidad propia, como en el DER.** El evento referencia su lugar por
+`id_lugar`. En el MVP cada alta crea su propio lugar y la tabla no tiene dueño; reutilizar
+lugares de eventos anteriores (RF-02.8, *Should have*) queda para fase 2 y no requiere cambiar
+el esquema. La búsqueda por viewport hace un join con `lugar`, que tiene un índice sobre
+`(latitud, longitud)`.
 
-**6. `Categoria` es una asociación N:M simple.** No es agregación ni composición, porque las
-categorías existen independientemente de los eventos (catálogo cerrado). `EventoCategoria` es
+**6. `hora_inicio_local` es un dato derivado.** Las fechas se guardan como timestamps con zona
+(en UTC). La hora local de inicio se guarda aparte para que el filtro horario (RF-03.5) sea una
+comparación simple, sin convertir zonas horarias dentro de la query. Para que nunca quede
+desincronizada, las fechas se asignan siempre con `programar()`.
+
+**7. `Categoria` es una asociación N:M simple.** No es agregación ni composición, porque las
+categorías existen independientemente de los eventos (catálogo cerrado). `evento_categoria` es
 solo la tabla intermedia de persistencia y por eso no se dibuja como clase. La multiplicidad
-`1..*` del lado de `Categoria` expresa que todo evento tiene al menos una.
+`1..*` del lado de `Categoria` expresa que todo evento tiene al menos una. Hacia afuera, las
+categorías se identifican por `slug` (`?categorias=aire-libre`), no por su id entero.
 
-**7. El servicio depende solo de puertos (DIP).** Igual que las estrategias de auth,
+**8. El servicio depende solo de puertos (DIP).** Igual que las estrategias de auth,
 `CrearEvento` conoce `EventoRepository` y `CategoriaRepository` (definidos como
 `typing.Protocol`), nunca las implementaciones SQLAlchemy, que se arman en `dependencies.py`.
 
-**8. Campos preparados para fase 2.** `serie_id` (recurrencia), `destacado_hasta` (publicidad)
-y `OrigenEvento.IMPORTADO` (ETL) aparecen como atributos opcionales, sin clases propias, para
-evitar migraciones estructurales posteriores (RNF-02.3).
+**9. Regla de visibilidad de la búsqueda.** `EventoRepository.buscar` solo devuelve eventos
+`PUBLICADO` que no terminaron: uno con `fecha_fin` se muestra hasta que termina, y uno sin
+`fecha_fin`, hasta que empieza. Por eso un evento cancelado, oculto o en borrador nunca aparece
+en la búsqueda. La respuesta está paginada (`items`, `total`, `limit`, `offset`).
 
 ### Fuera del diagrama a propósito
 
-- La edición y cancelación (RF-02.4) y la moderación (RF-05.1) aparecen solo como métodos de
-  `Evento` (`cancelar`, `ocultar`); sus flujos se modelan aparte.
+- Los flujos de edición y cancelación (RF-02.4) y de moderación (RF-05.1) aparecen solo como
+  métodos de `Evento` (`cancelar`, `ocultar`); sus servicios y endpoints se modelan aparte.
 - Un evento de dominio `EventoPublicado`, con observers como en `AuthEventPublisher`, sería la
   extensión natural para notificaciones (RF-03.14, *Could have*). No entra en el MVP.

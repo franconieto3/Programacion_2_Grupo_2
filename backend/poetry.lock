@@ -1878,12 +1878,12 @@ version = "2026.5"
 description = "Provider of IANA time zone data"
 optional = false
 python-versions = ">=2"
-groups = ["dev"]
-markers = "platform_system == \"Windows\""
+groups = ["main", "dev"]
 files = [
     {file = "tzdata-2026.5-py2.py3-none-any.whl", hash = "sha256:b683bd1b6659ddcd810ff02ad09ba821d4bf1065072805063eb35c49617905ac"},
     {file = "tzdata-2026.5.tar.gz", hash = "sha256:8cc73c0a0bfca7dbfa59235d60b2eff82231dee33f53d206db1acd9173cfc0a7"},
 ]
+markers = {dev = "platform_system == \"Windows\""}
 
 [[package]]
 name = "uvicorn"
@@ -2212,4 +2212,4 @@ email = ["email-validator (>=2.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "20a3fbfd06901c9f5280c593c32abc3a38738e53b3c8daba8cb034d84da08883"
+content-hash = "c91571a7ab8f856430b8ca0c634bc11fad959cf93a9bdac00de33f079988c2c1"

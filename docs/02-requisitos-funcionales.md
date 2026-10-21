@@ -62,8 +62,8 @@ Clasificación según el método **MoSCoW**:
 
 | # | Requisito | Prioridad | Estado |
 |---|---|---|---|
-| RF-04.1 | El sistema debe mantener un catálogo cerrado de categorías de eventos (bar, recital, teatro, cine, deportivo, museo, gastronomía, feria, taller, aire libre, otro) | **M** | Pendiente |
-| RF-04.2 | El sistema debe permitir asociar múltiples categorías a un mismo evento | **M** | Pendiente |
+| RF-04.1 | El sistema debe mantener un catálogo cerrado de categorías de eventos (bar, recital, teatro, cine, deportivo, museo, gastronomía, feria, taller, aire libre, otro) | **M** | Resuelto |
+| RF-04.2 | El sistema debe permitir asociar múltiples categorías a un mismo evento | **M** | Resuelto |
 | RF-04.3 | El sistema debe permitir a un administrador ampliar o modificar el catálogo de categorías | **C** | Pendiente |
 
 ## RF-05 · Moderación y administración de contenido
@@ -95,7 +95,7 @@ Clasificación según el método **MoSCoW**:
 
 | Prioridad | Cantidad de requisitos | Resueltos | Pendientes |
 |---|---|---|---|
-| **Must (M)** | 23 | 3 | 20 |
+| **Must (M)** | 23 | 5 | 18 |
 | **Should (S)** | 11 | 1 | 10 |
 | **Could (C)** | 9 | 0 | 9 |
 
