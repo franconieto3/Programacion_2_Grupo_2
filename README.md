@@ -9,6 +9,7 @@ cd backend
 poetry install                               # crea backend/.venv e instala dependencias + grupo dev
 cp .env.example .env                         # completar variables de entorno
 poetry run alembic upgrade head              # aplicar migraciones
+poetry run python -m scripts.seed            # cargar eventos de ejemplo (--reset para recargarlos)
 poetry run uvicorn app.main:app --reload     # levantar la API
 poetry run pytest                            # correr los tests
 ```

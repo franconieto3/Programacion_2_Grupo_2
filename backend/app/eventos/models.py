@@ -166,6 +166,11 @@ class Evento(Base):
         self.fecha_fin = fecha_fin
         self.hora_inicio_local = hora_local(fecha_inicio, zona)
 
+    def es_editable(self) -> bool:
+        """El organizador puede editar un evento BORRADOR o PUBLICADO
+        (RF-02.4). Uno cancelado u oculto ya no se modifica."""
+        return self.estado in {EstadoEvento.BORRADOR, EstadoEvento.PUBLICADO}
+
     def cancelar(self) -> None:
         """Lo decide el organizador (RF-02.4). Valido desde BORRADOR o
         PUBLICADO. Un evento cancelado deja de aparecer en la busqueda, pero

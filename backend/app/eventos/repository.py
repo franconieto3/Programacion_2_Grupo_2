@@ -5,6 +5,7 @@ implementacion concreta y vive detras del composition root
 
 from datetime import datetime
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +20,14 @@ class EventoRepository(Protocol):
     async def buscar(
         self, filtros: BusquedaEventosParams, ahora: datetime
     ) -> tuple[list[Evento], int]: ...
+
+    async def add(self, evento: Evento) -> Evento: ...
+
+    async def get_by_id(self, id_evento: UUID) -> Evento | None: ...
+
+    async def list_by_organizador(
+        self, id_organizador: UUID
+    ) -> list[Evento]: ...
 
 
 def solo_visibles(consulta: Select, ahora: datetime) -> Select:
@@ -55,3 +64,33 @@ class SQLAlchemyEventoRepository:
             .offset(filtros.offset)
         )
         return list(result.scalars().all()), total or 0
+
+    async def add(self, evento: Evento) -> Evento:
+        """El flush ejecuta el INSERT dentro del request y asigna los
+        defaults (ids, fecha_actualizacion).
+
+        No hace falta un metodo update: los cambios sobre un evento ya
+        cargado (editar, cancelar, ocultar) los persiste la sesion al hacer
+        commit."""
+        self._session.add(evento)
+        await self._session.flush()
+        return evento
+
+    async def get_by_id(self, id_evento: UUID) -> Evento | None:
+        """Sin filtrar por estado: quien lo llama decide que hacer con un
+        evento cancelado u oculto."""
+        result = await self._session.execute(
+            select(Evento).where(Evento.id_evento == id_evento)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_by_organizador(self, id_organizador: UUID) -> list[Evento]:
+        """Todos los eventos del organizador, en cualquier estado ("mis
+        eventos", RF-02.5): los mas recientes primero; el id desempata para
+        que el orden sea estable."""
+        result = await self._session.execute(
+            select(Evento)
+            .where(Evento.id_organizador == id_organizador)
+            .order_by(Evento.fecha_inicio.desc(), Evento.id_evento)
+        )
+        return list(result.scalars().all())
