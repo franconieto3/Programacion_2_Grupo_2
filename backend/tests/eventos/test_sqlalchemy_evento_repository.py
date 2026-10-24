@@ -176,3 +176,38 @@ async def test_get_by_id_inexistente_devuelve_none(session_factory):
         leido = await SQLAlchemyEventoRepository(session).get_by_id(uuid4())
 
     assert leido is None
+
+
+async def test_list_by_organizador_devuelve_los_propios_mas_recientes_primero(
+    session_factory,
+):
+    # SQLite no exige la FK hacia organizadores: alcanza con un id.
+    yo, otro = uuid4(), uuid4()
+    eventos = [
+        _evento(f'Propio {dia}', AHORA + timedelta(days=dia))
+        for dia in (1, 3, 2)
+    ]
+    eventos.append(
+        _evento(
+            'Cancelado',
+            AHORA - timedelta(days=1),
+            estado=EstadoEvento.CANCELADO,
+        )
+    )
+    for e in eventos:
+        e.id_organizador = yo
+    ajeno = _evento('Ajeno', AHORA + timedelta(days=1))
+    ajeno.id_organizador = otro
+    await _guardar(session_factory, *eventos, ajeno, _evento('Seed', AHORA))
+
+    async with session_factory() as session:
+        propios = await SQLAlchemyEventoRepository(
+            session
+        ).list_by_organizador(yo)
+
+    assert [e.titulo for e in propios] == [
+        'Propio 3',
+        'Propio 2',
+        'Propio 1',
+        'Cancelado',
+    ]
