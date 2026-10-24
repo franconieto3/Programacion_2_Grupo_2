@@ -1,8 +1,10 @@
-"""Prueba SQLAlchemyEventoRepository.buscar contra SQLite en memoria
-(admitido por RNF-05.2 solo para tests): regla de visibilidad, orden y
-paginacion. Los filtros de app/eventos/filtros/ tienen sus propios tests."""
+"""Prueba SQLAlchemyEventoRepository contra SQLite en memoria (admitido
+por RNF-05.2 solo para tests): regla de visibilidad, orden y paginacion de
+la busqueda, y el alta y la lectura por id. Los filtros de
+app/eventos/filtros/ tienen sus propios tests."""
 
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -135,3 +137,42 @@ async def test_carga_lugar_y_categorias(session_factory):
 
     assert eventos[0].lugar.nombre == 'Plaza'
     assert [c.slug for c in eventos[0].categorias] == ['bar']
+
+
+async def test_add_asigna_id_y_get_by_id_lo_recupera(session_factory):
+    bar = Categoria(slug='bar', nombre='Bar')
+    async with session_factory() as session:
+        evento = await SQLAlchemyEventoRepository(session).add(
+            _evento('Nuevo', AHORA + timedelta(days=1), categorias=[bar])
+        )
+        await session.commit()
+        id_evento = evento.id_evento
+
+    assert id_evento is not None
+    async with session_factory() as session:
+        leido = await SQLAlchemyEventoRepository(session).get_by_id(id_evento)
+
+    assert leido.titulo == 'Nuevo'
+    assert leido.lugar.nombre == 'Plaza'
+    assert [c.slug for c in leido.categorias] == ['bar']
+
+
+async def test_get_by_id_devuelve_eventos_en_cualquier_estado(session_factory):
+    oculto = _evento(
+        'Oculto', AHORA + timedelta(days=1), estado=EstadoEvento.OCULTO
+    )
+    await _guardar(session_factory, oculto)
+
+    async with session_factory() as session:
+        leido = await SQLAlchemyEventoRepository(session).get_by_id(
+            oculto.id_evento
+        )
+
+    assert leido.estado == EstadoEvento.OCULTO
+
+
+async def test_get_by_id_inexistente_devuelve_none(session_factory):
+    async with session_factory() as session:
+        leido = await SQLAlchemyEventoRepository(session).get_by_id(uuid4())
+
+    assert leido is None
