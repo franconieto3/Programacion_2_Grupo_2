@@ -13,8 +13,10 @@ persiste a través de un puerto (`EventoRepository`).
 | Dominio (`Evento`, `Lugar`, `Categoria`, enums) y migración `0004_eventos` | ✅ Fase 0 (`app/eventos/models.py`, `app/categorias/models.py`) |
 | `CategoriaRepository` y `GET /categorias` | ✅ Fase 0 (`app/categorias/`) |
 | `EventoRepository.buscar` y `GET /eventos` (sin filtros todavía) | ✅ Fase 0 (`app/eventos/`) |
-| `require_organizador_aprobado`, `CrearEventoRequest`, `CrearEvento`, `EventoFactory`, `POST /eventos` | ⏳ Persona A (RF-01.7, RF-02.1 a RF-02.3) |
-| `EventoRepository.add`, `get_by_id`, `list_by_organizador` | ⏳ Personas A, B y C, según quién lo necesite primero |
+| `EventoFactory` con `crear_seed`, `EventoRepository.add`, `get_by_id` y `list_by_organizador` | ✅ Persona B (`app/eventos/factory.py`, `app/eventos/repository.py`) |
+| `require_organizador_aprobado` | ✅ Persona B (`app/organizadores/dependencies.py`), adelantada porque la necesitan mis eventos, editar y cancelar |
+| Seed de eventos (`backend/scripts/seed.py`), `GET /eventos/mios`, `PATCH /eventos/{id_evento}`, `POST /eventos/{id_evento}/cancelar` y `POST /admin/eventos/{id_evento}/ocultar` | ✅ Persona B (RF-05.2, RF-02.5, RF-02.4, RF-05.1) |
+| `CrearEventoRequest`, `CrearEvento`, `EventoFactory.crear_desde_organizador`, `POST /eventos` | ⏳ Persona A (RF-02.1 a RF-02.3) |
 
 ```mermaid
 classDiagram
@@ -57,9 +59,10 @@ classDiagram
         }
         class EventoFactory {
             <<Simple Factory>>
-            -zona_horaria: ZoneInfo
+            -zona: ZoneInfo
+            -reloj: Callable
             +crear_desde_organizador(organizador, datos, categorias) Evento
-            +crear_seed(datos, categorias) Evento
+            +crear_seed(titulo, descripcion, fecha_inicio, fecha_fin, lugar, categorias, precio) Evento
         }
     }
 

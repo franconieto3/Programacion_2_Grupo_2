@@ -31,8 +31,8 @@ Clasificación según el método **MoSCoW**:
 | RF-02.1 | El sistema debe permitir a un organizador dar de alta un evento con título, descripción, fecha/hora de inicio, fecha/hora de fin (opcional) y precio (opcional) | **M** | Pendiente |
 | RF-02.2 | El sistema debe permitir ubicar el evento marcando un punto sobre el mapa (coordenadas como dato autoritativo) | **M** | Pendiente |
 | RF-02.3 | El sistema debe permitir asociar el evento a una o varias categorías de un catálogo cerrado | **M** | Pendiente |
-| RF-02.4 | El sistema debe permitir editar y dar de baja (cancelar) un evento propio | **M** | Pendiente |
-| RF-02.5 | El sistema debe mostrar al organizador un listado de "mis eventos" con su estado actual | **M** | Pendiente |
+| RF-02.4 | El sistema debe permitir editar y dar de baja (cancelar) un evento propio | **M** | Resuelto |
+| RF-02.5 | El sistema debe mostrar al organizador un listado de "mis eventos" con su estado actual | **M** | Resuelto |
 | RF-02.6 | El sistema debe permitir adjuntar una imagen de portada opcional al evento | **S** | Pendiente |
 | RF-02.7 | El sistema debe permitir definir eventos recurrentes (agenda periódica) sin recargarlos manualmente cada vez | **S** | Pendiente |
 | RF-02.8 | El sistema debe permitir reutilizar un lugar ya cargado en eventos anteriores del mismo organizador | **S** | Pendiente |
@@ -70,8 +70,8 @@ Clasificación según el método **MoSCoW**:
 
 | # | Requisito | Prioridad | Estado |
 |---|---|---|---|
-| RF-05.1 | El sistema debe permitir a un administrador ocultar (dar de baja lógica) cualquier evento publicado | **M** | Pendiente |
-| RF-05.2 | El sistema debe permitir al equipo cargar eventos de origen propio (seed) diferenciados del contenido publicado por organizadores reales | **M** | Pendiente |
+| RF-05.1 | El sistema debe permitir a un administrador ocultar (dar de baja lógica) cualquier evento publicado | **M** | Resuelto |
+| RF-05.2 | El sistema debe permitir al equipo cargar eventos de origen propio (seed) diferenciados del contenido publicado por organizadores reales | **M** | Resuelto |
 | RF-05.3 | El sistema debe permitir a los usuarios reportar un evento sospechoso o falso | **S** | Pendiente |
 | RF-05.4 | El sistema debe incorporar mecanismos automáticos de detección de spam o duplicados | **C** | Pendiente |
 | RF-05.5 | El sistema debe permitir a un administrador aprobar, rechazar y suspender perfiles de organizador | **S** | Resuelto |
