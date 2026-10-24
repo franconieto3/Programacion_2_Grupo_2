@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from app.organizadores.exceptions import (
+    OrganizadorNoAprobadoError,
     OrganizadorNoEncontradoError,
     OrganizadorSuspendidoError,
     SolicitudYaExistenteError,
@@ -16,6 +17,7 @@ _STATUS_BY_EXCEPTION = {
     SolicitudYaExistenteError: status.HTTP_409_CONFLICT,
     OrganizadorSuspendidoError: status.HTTP_403_FORBIDDEN,
     OrganizadorNoEncontradoError: status.HTTP_404_NOT_FOUND,
+    OrganizadorNoAprobadoError: status.HTTP_403_FORBIDDEN,
     TransicionEstadoInvalidaError: status.HTTP_409_CONFLICT,
 }
 
