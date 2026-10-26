@@ -4,10 +4,22 @@ que app/organizadores/error_handlers.py."""
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.eventos.exceptions import TransicionEstadoEventoInvalidaError
+from app.eventos.exceptions import (
+    CategoriasInvalidasError,
+    EventoNoEditableError,
+    EventoNoEncontradoError,
+    FechasEventoInvalidasError,
+    NoEsDuenioDelEventoError,
+    TransicionEstadoEventoInvalidaError,
+)
 
 _STATUS_BY_EXCEPTION = {
     TransicionEstadoEventoInvalidaError: status.HTTP_409_CONFLICT,
+    EventoNoEncontradoError: status.HTTP_404_NOT_FOUND,
+    NoEsDuenioDelEventoError: status.HTTP_403_FORBIDDEN,
+    EventoNoEditableError: status.HTTP_409_CONFLICT,
+    CategoriasInvalidasError: status.HTTP_422_UNPROCESSABLE_CONTENT,
+    FechasEventoInvalidasError: status.HTTP_422_UNPROCESSABLE_CONTENT,
 }
 
 

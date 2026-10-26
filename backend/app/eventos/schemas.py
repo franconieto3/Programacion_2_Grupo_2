@@ -2,7 +2,13 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_validator,
+)
 
 from app.categorias.schemas import CategoriaPublic
 from app.eventos.models import EstadoEvento, OrigenEvento
@@ -62,3 +68,48 @@ class PaginaEventos(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class LugarRequest(BaseModel):
+    """Ubicacion de un evento. Las coordenadas son obligatorias (RF-02.2)."""
+
+    nombre: str | None = Field(default=None, max_length=255)
+    direccion: str | None = Field(default=None, max_length=255)
+    latitud: float = Field(ge=-90, le=90)
+    longitud: float = Field(ge=-180, le=180)
+
+
+class EditarEventoRequest(BaseModel):
+    """Cuerpo de PATCH /eventos/{id_evento} (RF-02.4). Solo se modifican
+    los campos enviados. `fecha_fin` y `precio` aceptan null para borrarlos;
+    el resto, si se envia, no puede ser null. `lugar` reemplaza la ubicacion
+    completa y `categorias` (slugs), la lista completa."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    titulo: str | None = Field(default=None, min_length=1, max_length=255)
+    descripcion: str | None = Field(default=None, min_length=1)
+    fecha_inicio: AwareDatetime | None = None
+    fecha_fin: AwareDatetime | None = None
+    precio: Decimal | None = Field(
+        default=None, ge=0, max_digits=10, decimal_places=2
+    )
+    lugar: LugarRequest | None = None
+    categorias: list[str] | None = Field(default=None, min_length=1)
+
+    @model_validator(mode='after')
+    def _obligatorios_no_nulos(self) -> 'EditarEventoRequest':
+        nulos = [
+            campo
+            for campo in (
+                'titulo',
+                'descripcion',
+                'fecha_inicio',
+                'lugar',
+                'categorias',
+            )
+            if campo in self.model_fields_set and getattr(self, campo) is None
+        ]
+        if nulos:
+            raise ValueError(f'No pueden ser null: {", ".join(nulos)}.')
+        return self

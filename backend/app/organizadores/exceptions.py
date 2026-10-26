@@ -44,6 +44,17 @@ class OrganizadorNoEncontradoError(OrganizadorError):
         super().__init__('No se encontro el organizador solicitado.')
 
 
+class OrganizadorNoAprobadoError(OrganizadorError):
+    """El usuario no tiene perfil de organizador o no esta APROBADO, asi que
+    no puede crear ni gestionar eventos (RF-01.7)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            'Necesitas un perfil de organizador aprobado para gestionar '
+            'eventos.'
+        )
+
+
 class TransicionEstadoInvalidaError(OrganizadorError):
     """El organizador no esta en un estado desde el que la accion pedida
     (aprobar/rechazar/suspender) sea valida (CU-05)."""
