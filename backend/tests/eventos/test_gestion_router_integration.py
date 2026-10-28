@@ -1,5 +1,6 @@
 """Integracion de GET /eventos/mios, PATCH /eventos/{id_evento},
-POST /eventos/{id_evento}/cancelar y POST /admin/eventos/{id_evento}/ocultar
+POST /eventos/{id_evento}/cancelar, POST /admin/eventos/{id_evento}/ocultar
+y GET /eventos/{id_evento}
 contra la app real de FastAPI, con la persistencia reemplazada por dobles en
 memoria via `app.dependency_overrides`. Se recorre la cadena completa de
 dependencias: get_usuario_actual (401) -> require_organizador_aprobado o
@@ -348,3 +349,119 @@ async def test_ocultar_evento_ya_oculto_responde_409(entorno):
         )
 
     assert response.status_code == 409
+
+
+# --- GET /eventos/{id_evento} (RF-03.10) ---
+# Que /mios no lo capture la ruta de detalle (que responderia 422 porque
+# "mios" no es un UUID) ya lo cubre test_sin_perfil_de_organizador_responde_403.
+
+
+async def _get_detalle(headers, id_evento):
+    async with _client() as client:
+        return await client.get(f'/eventos/{id_evento}', headers=headers)
+
+
+async def test_detalle_sin_token_responde_401(entorno):
+    original = await entorno.eventos.add(evento(None))
+
+    response = await _get_detalle({}, original.id_evento)
+
+    assert response.status_code == 401
+
+
+async def test_detalle_incluye_los_datos_publicos_del_organizador(entorno):
+    _, perfil = await entorno.organizador()
+    original = await entorno.eventos.add(evento(perfil))
+    token, _ = await entorno.token()
+
+    response = await _get_detalle(
+        {'Authorization': f'Bearer {token}'}, original.id_evento
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['id_evento'] == str(original.id_evento)
+    assert body['titulo'] == original.titulo
+    assert body['lugar']['latitud'] == -34.6
+    assert body['organizador'] == {
+        'id_organizador': str(perfil.id_organizador),
+        'nombre_publico': perfil.nombre_publico,
+        'descripcion': perfil.descripcion,
+    }
+
+
+async def test_detalle_de_seed_muestra_al_equipo(entorno):
+    original = await entorno.eventos.add(evento(None))
+    token, _ = await entorno.token()
+
+    response = await _get_detalle(
+        {'Authorization': f'Bearer {token}'}, original.id_evento
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['origen'] == 'SEED_EQUIPO'
+    assert body['organizador'] == {
+        'id_organizador': None,
+        'nombre_publico': 'Equipo de la plataforma',
+        'descripcion': 'Evento cargado por el equipo de la plataforma.',
+    }
+
+
+async def test_detalle_de_cancelado_responde_200_con_su_estado(entorno):
+    original = await entorno.eventos.add(
+        evento(None, estado=EstadoEvento.CANCELADO)
+    )
+    token, _ = await entorno.token()
+
+    response = await _get_detalle(
+        {'Authorization': f'Bearer {token}'}, original.id_evento
+    )
+
+    assert response.status_code == 200
+    assert response.json()['estado'] == 'CANCELADO'
+
+
+async def test_detalle_de_borrador_lo_ve_solo_su_duenio(entorno):
+    headers_duenio, perfil = await entorno.organizador()
+    headers_otro, _ = await entorno.organizador()
+    original = await entorno.eventos.add(
+        evento(perfil, estado=EstadoEvento.BORRADOR)
+    )
+
+    propio = await _get_detalle(headers_duenio, original.id_evento)
+    ajeno = await _get_detalle(headers_otro, original.id_evento)
+
+    assert propio.status_code == 200
+    assert ajeno.status_code == 404
+
+
+async def test_detalle_de_oculto_responde_404_incluso_al_duenio(entorno):
+    headers, perfil = await entorno.organizador()
+    original = await entorno.eventos.add(
+        evento(perfil, estado=EstadoEvento.OCULTO)
+    )
+
+    response = await _get_detalle(headers, original.id_evento)
+
+    assert response.status_code == 404
+
+
+async def test_detalle_inexistente_responde_404(entorno):
+    token, _ = await entorno.token()
+
+    response = await _get_detalle(
+        {'Authorization': f'Bearer {token}'}, uuid4()
+    )
+
+    assert response.status_code == 404
+
+
+async def test_detalle_con_id_invalido_responde_422(entorno):
+    token, _ = await entorno.token()
+
+    response = await _get_detalle(
+        {'Authorization': f'Bearer {token}'}, 'no-es-un-uuid'
+    )
+
+    assert response.status_code == 422

@@ -9,10 +9,12 @@ from app.eventos.dependencies import (
     get_cancelar_evento,
     get_editar_evento,
     get_listar_mis_eventos,
+    get_obtener_detalle_evento,
 )
 from app.eventos.schemas import (
     BusquedaEventosParams,
     EditarEventoRequest,
+    EventoDetallePublic,
     EventoPublic,
     PaginaEventos,
 )
@@ -21,6 +23,7 @@ from app.eventos.service import (
     CancelarEvento,
     EditarEvento,
     ListarMisEventos,
+    ObtenerDetalleEvento,
 )
 from app.models.usuario import Usuario
 from app.organizadores.dependencies import require_organizador_aprobado
@@ -59,6 +62,25 @@ async def listar_mis_eventos(
     (RF-02.5)."""
     eventos = await servicio.ejecutar(organizador)
     return [EventoPublic.model_validate(e) for e in eventos]
+
+
+@router.get(
+    '/{id_evento}',
+    response_model=EventoDetallePublic,
+    status_code=status.HTTP_200_OK,
+)
+async def obtener_detalle_evento(
+    id_evento: UUID,
+    usuario: Usuario = Depends(get_usuario_actual),
+    servicio: ObtenerDetalleEvento = Depends(get_obtener_detalle_evento),
+) -> EventoDetallePublic:
+    """Ficha de detalle con los datos publicos del organizador (RF-03.10).
+    Requiere login (RF-01.2). PUBLICADO y CANCELADO los ve cualquiera,
+    aunque ya hayan terminado; BORRADOR, solo su organizador; OCULTO,
+    nadie. Si no se puede ver, 404. Un evento de seed trae como organizador
+    al "Equipo de la plataforma", con id_organizador null."""
+    evento, organizador = await servicio.ejecutar(usuario, id_evento)
+    return EventoDetallePublic.desde(evento, organizador)
 
 
 @router.patch(

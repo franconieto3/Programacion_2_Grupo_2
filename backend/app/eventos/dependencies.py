@@ -21,8 +21,11 @@ from app.eventos.service import (
     CancelarEvento,
     EditarEvento,
     ListarMisEventos,
+    ObtenerDetalleEvento,
     OcultarEvento,
 )
+from app.organizadores.dependencies import get_organizador_repository
+from app.organizadores.repository import OrganizadorRepository
 
 
 def get_evento_repository(
@@ -41,6 +44,13 @@ def get_evento_factory(
     settings: Settings = Depends(get_settings),
 ) -> EventoFactory:
     return EventoFactory(ZoneInfo(settings.zona_horaria))
+
+
+def get_obtener_detalle_evento(
+    repo: EventoRepository = Depends(get_evento_repository),
+    organizadores: OrganizadorRepository = Depends(get_organizador_repository),
+) -> ObtenerDetalleEvento:
+    return ObtenerDetalleEvento(repo, organizadores)
 
 
 def get_listar_mis_eventos(

@@ -37,6 +37,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 |---|---|---|---|
 | RF-01.5 | Autenticación mediante proveedores externos (login social) | **C** | **No implementado**, aunque el diseño lo contempla: `password_hash` es nullable, `Auth` se arma con estrategias intercambiables (Strategy) y existe `UnsupportedRecovery` (Null Object) para proveedores sin contraseña local. No hay endpoints ni integración con Google/Facebook. |
 | RF-03.8 | Uso pleno sin permiso de geolocalización (ubicación por defecto + buscador de lugar) | **M** | **Backend listo, falta el frontend.** `GET /config/ubicacion-default` (público) devuelve `nombre`, `lat`, `lng` y `zoom`, configurables con `UBICACION_DEFAULT_*` y validados al arrancar. El buscador de lugar es `GET /geocodificacion/buscar`. |
+| RF-03.10 | Ficha de detalle del evento con los datos del organizador | **M** | **Backend listo, falta el frontend.** `GET /eventos/{id_evento}` (requiere login) devuelve el evento y un bloque `organizador` con `id_organizador`, `nombre_publico` y `descripcion` (sin `id_usuario` ni estado del perfil). Un evento de seed trae `{"id_organizador": null, "nombre_publico": "Equipo de la plataforma", ...}`. Visibilidad: PUBLICADO y CANCELADO los ve cualquiera, aunque ya hayan terminado (responde la pregunta abierta #4 de `planning.md`: la búsqueda los oculta, la URL directa no); BORRADOR solo su organizador; OCULTO nadie. Si no se puede ver, 404. |
 
 ### Pendientes
 
@@ -44,7 +45,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 |---|---|
 | RF-01 · Cuentas | RF-01.2 (descubrir eventos: depende de RF-03), RF-01.4 (editar perfil), RF-01.6 (solicitud de organizador), RF-01.7 (restricción de alta de eventos a organizadores), RF-01.8 |
 | RF-02 · Gestión de eventos | RF-02.1 a RF-02.10 |
-| RF-03 · Descubrimiento y búsqueda | RF-03.1 a RF-03.14 (RF-03.8 con avance parcial, ver abajo) |
+| RF-03 · Descubrimiento y búsqueda | RF-03.1 a RF-03.14 (RF-03.8 y RF-03.10 con avance parcial, ver abajo) |
 | RF-04 · Categorías | RF-04.1 a RF-04.3 |
 | RF-05 · Moderación | RF-05.1 a RF-05.5 |
 | RF-06 · Ingesta externa | RF-06.1 |

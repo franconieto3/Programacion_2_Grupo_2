@@ -11,7 +11,8 @@ from pydantic import (
 )
 
 from app.categorias.schemas import CategoriaPublic
-from app.eventos.models import EstadoEvento, OrigenEvento
+from app.eventos.models import EstadoEvento, Evento, OrigenEvento
+from app.organizadores.models import Organizador
 
 
 class BusquedaEventosParams(BaseModel):
@@ -78,6 +79,55 @@ class EventoPublic(BaseModel):
     origen: OrigenEvento
     lugar: LugarPublic
     categorias: list[CategoriaPublic]
+
+
+NOMBRE_EQUIPO = 'Equipo de la plataforma'
+DESCRIPCION_EQUIPO = 'Evento cargado por el equipo de la plataforma.'
+
+
+class OrganizadorEnEventoPublic(BaseModel):
+    """Datos publicos del organizador en la ficha de un evento. A
+    diferencia de OrganizadorPublic, no expone id_usuario ni el estado del
+    perfil."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id_organizador: UUID | None
+    nombre_publico: str
+    descripcion: str
+
+    @classmethod
+    def del_equipo(cls) -> 'OrganizadorEnEventoPublic':
+        """Null Object para los eventos de seed (RF-05.2), que no tienen
+        organizador: la ficha siempre trae su "publicado por" y el frontend
+        no tiene que inventar el texto. `id_organizador` queda en None y el
+        evento sigue diciendo `origen: SEED_EQUIPO`, asi que no se hace
+        pasar por un organizador real."""
+        return cls(
+            id_organizador=None,
+            nombre_publico=NOMBRE_EQUIPO,
+            descripcion=DESCRIPCION_EQUIPO,
+        )
+
+
+class EventoDetallePublic(EventoPublic):
+    """Respuesta de GET /eventos/{id_evento} (RF-03.10)."""
+
+    organizador: OrganizadorEnEventoPublic
+
+    @classmethod
+    def desde(
+        cls, evento: Evento, organizador: Organizador | None
+    ) -> 'EventoDetallePublic':
+        datos_organizador = (
+            OrganizadorEnEventoPublic.model_validate(organizador)
+            if organizador is not None
+            else OrganizadorEnEventoPublic.del_equipo()
+        )
+        return cls(
+            **EventoPublic.model_validate(evento).model_dump(),
+            organizador=datos_organizador,
+        )
 
 
 class PaginaEventos(BaseModel):

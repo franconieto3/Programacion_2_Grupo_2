@@ -16,6 +16,7 @@ persiste a través de un puerto (`EventoRepository`).
 | `EventoFactory` con `crear_seed`, `EventoRepository.add`, `get_by_id` y `list_by_organizador` | ✅ Persona B (`app/eventos/factory.py`, `app/eventos/repository.py`) |
 | `require_organizador_aprobado` | ✅ Persona B (`app/organizadores/dependencies.py`), adelantada porque la necesitan mis eventos, editar y cancelar |
 | Seed de eventos (`backend/scripts/seed.py`), `GET /eventos/mios`, `PATCH /eventos/{id_evento}`, `POST /eventos/{id_evento}/cancelar` y `POST /admin/eventos/{id_evento}/ocultar` | ✅ Persona B (RF-05.2, RF-02.5, RF-02.4, RF-05.1) |
+| `GET /eventos/{id_evento}`: `ObtenerDetalleEvento`, `Evento.es_visible_para`, `EventoDetallePublic` con `OrganizadorEnEventoPublic` | ✅ (RF-03.10) |
 | `CrearEventoRequest`, `CrearEvento`, `EventoFactory.crear_desde_organizador`, `POST /eventos` | ⏳ Persona A (RF-02.1 a RF-02.3) |
 
 ```mermaid
@@ -95,6 +96,7 @@ classDiagram
             +fecha_publicacion: Optional~datetime~
             +fecha_actualizacion: datetime
             +programar(fecha_inicio, fecha_fin, zona) None
+            +es_visible_para(id_organizador_actual: Optional~UUID~) bool
             +cancelar() None
             +ocultar() None
         }
@@ -195,6 +197,7 @@ classDiagram
 | RF-02.3 / RF-04.1 / RF-04.2: una o varias categorías de un catálogo cerrado | Asociación `Evento "0..*" -- "1..*" Categoria`; el catálogo lo carga la migración `0004` y se referencia por `slug` |
 | RF-02.4 / RF-05.1: cancelar y ocultar | `Evento.cancelar()` (desde `BORRADOR` o `PUBLICADO`) y `Evento.ocultar()` (desde `PUBLICADO` o `CANCELADO`) |
 | CU-03 paso 8 / 8a: validar y guardar como `PUBLICADO` | Validación en `CrearEventoRequest` y `CrearEvento`; el estado inicial y `fecha_publicacion` los fija `EventoFactory` |
+| RF-03.10: ficha de detalle con datos del organizador | `ObtenerDetalleEvento` resuelve el evento (`EventoRepository.get_by_id`) y su organizador (`OrganizadorRepository.get_by_id`); `Evento.es_visible_para` decide quién la ve (OCULTO nadie, BORRADOR solo su dueño). Un seed muestra el Null Object `OrganizadorEnEventoPublic.del_equipo()` |
 | RF-03.3 a RF-03.6: búsqueda con filtros | `EventoRepository.buscar` aplica la regla de visibilidad y un filtro por archivo en `app/eventos/filtros/` |
 | RF-04.3: retirar una categoría sin borrarla | `Categoria.activa` |
 | RF-05.2: eventos de seed | `OrigenEvento.SEED_EQUIPO` + `id_organizador` nulo + `EventoFactory.crear_seed` |
