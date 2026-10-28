@@ -17,6 +17,7 @@ from app.auth.events.observers.audit_log_observer import AuditLogObserver
 from app.auth.events.observers.email_notification_observer import EmailNotificationObserver
 from app.auth.router import router as auth_router
 from app.categorias.router import router as categorias_router
+from app.configuracion.router import router as configuracion_router
 from app.eventos.admin_router import router as admin_eventos_router
 from app.eventos.error_handlers import register_eventos_exception_handlers
 from app.eventos.router import router as eventos_router
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(eventos_router)
     app.include_router(admin_eventos_router)
     app.include_router(geocodificacion_router)
+    app.include_router(configuracion_router)
 
     return app
 

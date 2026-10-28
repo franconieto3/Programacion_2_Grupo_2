@@ -36,6 +36,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 | # | Requisito | Prioridad | Estado |
 |---|---|---|---|
 | RF-01.5 | Autenticación mediante proveedores externos (login social) | **C** | **No implementado**, aunque el diseño lo contempla: `password_hash` es nullable, `Auth` se arma con estrategias intercambiables (Strategy) y existe `UnsupportedRecovery` (Null Object) para proveedores sin contraseña local. No hay endpoints ni integración con Google/Facebook. |
+| RF-03.8 | Uso pleno sin permiso de geolocalización (ubicación por defecto + buscador de lugar) | **M** | **Backend listo, falta el frontend.** `GET /config/ubicacion-default` (público) devuelve `nombre`, `lat`, `lng` y `zoom`, configurables con `UBICACION_DEFAULT_*` y validados al arrancar. El buscador de lugar es `GET /geocodificacion/buscar`. |
 
 ### Pendientes
 
@@ -43,7 +44,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 |---|---|
 | RF-01 · Cuentas | RF-01.2 (descubrir eventos: depende de RF-03), RF-01.4 (editar perfil), RF-01.6 (solicitud de organizador), RF-01.7 (restricción de alta de eventos a organizadores), RF-01.8 |
 | RF-02 · Gestión de eventos | RF-02.1 a RF-02.10 |
-| RF-03 · Descubrimiento y búsqueda | RF-03.1 a RF-03.14 |
+| RF-03 · Descubrimiento y búsqueda | RF-03.1 a RF-03.14 (RF-03.8 con avance parcial, ver abajo) |
 | RF-04 · Categorías | RF-04.1 a RF-04.3 |
 | RF-05 · Moderación | RF-05.1 a RF-05.5 |
 | RF-06 · Ingesta externa | RF-06.1 |
@@ -80,7 +81,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 
 | Caso de uso | Estado | Observación |
 |---|---|---|
-| CU-01 · Usuario descubre eventos cerca de su ubicación actual | ❌ No implementado | Requiere el modelo de eventos, la búsqueda por viewport y el frontend con mapa |
+| CU-01 · Usuario descubre eventos cerca de su ubicación actual | ❌ No implementado | Requiere el modelo de eventos, la búsqueda por viewport y el frontend con mapa. Para el flujo 3a (permiso rechazado), el backend ya expone la ubicación por defecto en `GET /config/ubicacion-default` |
 | CU-02 · Usuario explora eventos en una ubicación distinta | 🟡 Parcial (backend) | Pasos 2 y 2a: `GET /geocodificacion/buscar?q=` consulta Nominatim y devuelve sugerencias con su bounding box (`lat_min`/`lat_max`/`lng_min`/`lng_max`, los mismos nombres que el viewport de `GET /eventos`). Sin coincidencias → `[]`; Nominatim caído → `503`. Falta el buscador en el frontend |
 | CU-03 · Organizador publica un nuevo evento | ❌ No implementado | Requiere el perfil de organizador y el modelo de eventos |
 | CU-04 · Usuario solicita convertirse en organizador | ❌ No implementado | Su precondición ("tiene una cuenta registrada e inició sesión") **ya está cubierta** por el módulo de auth |
