@@ -67,6 +67,8 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 | RNF-04.2 | Autenticación por JWT, access token en memoria del cliente | El access token viaja en el cuerpo de la respuesta y el refresh token en una cookie `httpOnly` con path `/auth`. Que el cliente lo guarde solo en memoria es responsabilidad del frontend, que todavía no existe. |
 | RNF-04.3 | Identificadores no secuenciales (UUID) | PK UUID en las 4 tablas |
 | RNF-04 (general) | Mitigación de fuerza bruta y enumeración | Bloqueo tras 5 intentos fallidos en 15 min (`RateLimitedSignIn`, devuelve 423). Respuestas idénticas en la recuperación de contraseña, exista o no el email. |
+| RNF-01.4 | Caché local de las búsquedas de lugares | `CachedGeocodificador` (Decorator, `app/geocodificacion/decorators/cached.py`): caché en memoria por proceso, con TTL y tope de entradas configurables (`GEOCODIFICACION_CACHE_TTL_SEGUNDOS`, `GEOCODIFICACION_CACHE_MAX_ENTRADAS`). No cachea errores. |
+| RNF-05.1 | Política de uso de Nominatim | `RateLimitedGeocodificador` (Decorator) espacia las requests salientes a ≥1 s (las que llegan antes esperan, no se rechazan); `User-Agent` configurable en `Settings.nominatim_user_agent`. `GET /geocodificacion/buscar` requiere login, así la API no queda como proxy anónimo. Límite conocido: el estado es por proceso (un único worker). |
 | RNF-05.2 | PostgreSQL en dev/prod, SQLite solo en tests | `database_url` por defecto en PostgreSQL. Los tests usan `aiosqlite`. |
 | RNF-05.3 | FastAPI + OpenAPI + Pydantic | Schemas Pydantic en `app/auth/schemas.py` |
 
@@ -79,7 +81,7 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 | Caso de uso | Estado | Observación |
 |---|---|---|
 | CU-01 · Usuario descubre eventos cerca de su ubicación actual | ❌ No implementado | Requiere el modelo de eventos, la búsqueda por viewport y el frontend con mapa |
-| CU-02 · Usuario explora eventos en una ubicación distinta | ❌ No implementado | Requiere además la integración con Nominatim |
+| CU-02 · Usuario explora eventos en una ubicación distinta | 🟡 Parcial (backend) | Pasos 2 y 2a: `GET /geocodificacion/buscar?q=` consulta Nominatim y devuelve sugerencias con su bounding box (`lat_min`/`lat_max`/`lng_min`/`lng_max`, los mismos nombres que el viewport de `GET /eventos`). Sin coincidencias → `[]`; Nominatim caído → `503`. Falta el buscador en el frontend |
 | CU-03 · Organizador publica un nuevo evento | ❌ No implementado | Requiere el perfil de organizador y el modelo de eventos |
 | CU-04 · Usuario solicita convertirse en organizador | ❌ No implementado | Su precondición ("tiene una cuenta registrada e inició sesión") **ya está cubierta** por el módulo de auth |
 

@@ -30,6 +30,21 @@ class Settings(BaseSettings):
     # (Evento.hora_inicio_local), usada por el filtro horario (RF-03.5).
     zona_horaria: str = 'America/Argentina/Buenos_Aires'
 
+    # RNF-05.1: la politica de uso de Nominatim pide como maximo 1 request
+    # por segundo y un User-Agent que identifique a la aplicacion (idealmente
+    # con un contacto real; completarlo en el .env).
+    nominatim_url: str = 'https://nominatim.openstreetmap.org'
+    nominatim_user_agent: str = 'eventos-api/0.1 (TP Programacion 2)'
+    nominatim_intervalo_minimo_segundos: float = 1.0
+    nominatim_timeout_segundos: float = 5.0
+    # Codigos ISO separados por coma (ej. "ar") para acotar los resultados;
+    # vacio = sin restriccion.
+    nominatim_countrycodes: str | None = None
+
+    # RNF-01.4: cache local de busquedas de lugares.
+    geocodificacion_cache_ttl_segundos: float = 86400
+    geocodificacion_cache_max_entradas: int = 1000
+
 
 @lru_cache
 def get_settings() -> Settings:
