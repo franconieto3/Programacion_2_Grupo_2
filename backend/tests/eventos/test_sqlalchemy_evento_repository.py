@@ -211,3 +211,29 @@ async def test_list_by_organizador_devuelve_los_propios_mas_recientes_primero(
         'Propio 1',
         'Cancelado',
     ]
+
+
+async def test_filtra_por_viewport_con_bordes_inclusivos(session_factory):
+    adentro = _evento('Adentro', AHORA + timedelta(days=1))
+    en_el_borde = _evento('En el borde', AHORA + timedelta(days=2))
+    en_el_borde.lugar = Lugar(nombre='Borde', latitud=-34.0, longitud=-58.0)
+    afuera = _evento('Afuera', AHORA + timedelta(days=3))
+    afuera.lugar = Lugar(nombre='Cordoba', latitud=-31.4, longitud=-64.2)
+    await _guardar(session_factory, adentro, en_el_borde, afuera)
+
+    eventos, total = await _buscar(
+        session_factory, lat_min=-35, lat_max=-34, lng_min=-59, lng_max=-58
+    )
+
+    assert [e.titulo for e in eventos] == ['Adentro', 'En el borde']
+    assert total == 2
+
+
+async def test_sin_viewport_no_filtra_por_ubicacion(session_factory):
+    lejos = _evento('Lejos', AHORA + timedelta(days=1))
+    lejos.lugar = Lugar(nombre='Cordoba', latitud=-31.4, longitud=-64.2)
+    await _guardar(session_factory, lejos)
+
+    _, total = await _buscar(session_factory)
+
+    assert total == 1

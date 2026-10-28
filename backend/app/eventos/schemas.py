@@ -18,7 +18,9 @@ class BusquedaEventosParams(BaseModel):
     """Parametros de GET /eventos. Todos los filtros son opcionales; cada
     uno lo aplica su funcion en app/eventos/filtros/.
 
-    - Viewport (RF-03.3): lat_min, lat_max, lng_min, lng_max.
+    - Viewport (RF-03.3): lat_min, lat_max, lng_min, lng_max. Vienen los
+      cuatro o ninguno, y el minimo no puede superar al maximo (no se
+      admiten viewports que crucen el antimeridiano); si no, 422.
     - Fechas (RF-03.4): desde, hasta.
     - Horario (RF-03.5): hora_desde, hora_hasta, en formato HH:MM.
     - Categorias (RF-03.6): slugs, repitiendo el parametro
@@ -35,6 +37,21 @@ class BusquedaEventosParams(BaseModel):
     categorias: list[str] = Field(default_factory=list)
     limit: int = Field(default=20, ge=1, le=100)
     offset: int = Field(default=0, ge=0)
+
+    @model_validator(mode='after')
+    def _viewport_completo_y_ordenado(self) -> 'BusquedaEventosParams':
+        limites = (self.lat_min, self.lat_max, self.lng_min, self.lng_max)
+        if all(limite is None for limite in limites):
+            return self
+        if any(limite is None for limite in limites):
+            raise ValueError(
+                'el viewport requiere lat_min, lat_max, lng_min y lng_max'
+            )
+        if self.lat_min > self.lat_max:
+            raise ValueError('lat_min no puede ser mayor que lat_max')
+        if self.lng_min > self.lng_max:
+            raise ValueError('lng_min no puede ser mayor que lng_max')
+        return self
 
 
 class LugarPublic(BaseModel):
