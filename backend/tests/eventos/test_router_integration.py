@@ -147,7 +147,16 @@ async def test_buscar_recibe_todos_los_parametros(wired_app):
 
 
 @pytest.mark.parametrize(
-    'query', ['limit=101', 'limit=0', 'offset=-1', 'lat_min=91']
+    'query',
+    [
+        'limit=101',
+        'limit=0',
+        'offset=-1',
+        'lat_min=91',
+        'lat_min=-35&lat_max=-34',
+        'lat_min=-34&lat_max=-35&lng_min=-59&lng_max=-58',
+        'lat_min=-35&lat_max=-34&lng_min=-58&lng_max=-59',
+    ],
 )
 async def test_buscar_parametro_invalido_responde_422(wired_app, query):
     user_repository, token_service, _ = wired_app
@@ -166,3 +175,4 @@ async def test_listar_categorias_es_publico_y_excluye_inactivas(wired_app):
 
     assert response.status_code == 200
     assert [c['slug'] for c in response.json()] == ['bar']
+

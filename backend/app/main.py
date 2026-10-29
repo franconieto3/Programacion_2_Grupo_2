@@ -17,9 +17,13 @@ from app.auth.events.observers.audit_log_observer import AuditLogObserver
 from app.auth.events.observers.email_notification_observer import EmailNotificationObserver
 from app.auth.router import router as auth_router
 from app.categorias.router import router as categorias_router
+from app.configuracion.router import router as configuracion_router
 from app.eventos.admin_router import router as admin_eventos_router
 from app.eventos.error_handlers import register_eventos_exception_handlers
 from app.eventos.router import router as eventos_router
+from app.geocodificacion.dependencies import cerrar_geocodificador
+from app.geocodificacion.error_handlers import register_geocodificacion_exception_handlers
+from app.geocodificacion.router import router as geocodificacion_router
 from app.organizadores.admin_router import router as admin_organizadores_router
 from app.organizadores.error_handlers import register_organizadores_exception_handlers
 from app.organizadores.router import router as organizadores_router
@@ -48,6 +52,7 @@ async def lifespan(_app: FastAPI):
     publisher.subscribe(EmailNotificationObserver(ConsoleEmailSender()))
     publisher.subscribe(AuditLogObserver(_StandaloneAuditLogWriter()))
     yield
+    await cerrar_geocodificador()
 
 
 def create_app() -> FastAPI:
@@ -65,12 +70,15 @@ def create_app() -> FastAPI:
     register_organizadores_exception_handlers(app)
     register_administradores_exception_handlers(app)
     register_eventos_exception_handlers(app)
+    register_geocodificacion_exception_handlers(app)
     app.include_router(auth_router)
     app.include_router(organizadores_router)
     app.include_router(admin_organizadores_router)
     app.include_router(categorias_router)
     app.include_router(eventos_router)
     app.include_router(admin_eventos_router)
+    app.include_router(geocodificacion_router)
+    app.include_router(configuracion_router)
 
     return app
 

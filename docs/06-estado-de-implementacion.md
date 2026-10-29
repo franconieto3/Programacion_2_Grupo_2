@@ -2,23 +2,26 @@
 
 ## Plataforma de descubrimiento de eventos por geolocalización
 
-**Fecha de relevamiento:** 15/10/2026 · **Commit de referencia:** `85e3eb5` (merge PR #5, `refactor/registro`)
+**Fecha de relevamiento:** 28/10/2026 · **Commit de referencia:** `8ba31fa` (GET de evento específico con los datos del organizador)
 
 ---
 
 ## Resumen
 
-Hasta el momento solo está implementado el **módulo de autenticación del backend**
-(`backend/app/auth`, FastAPI + SQLAlchemy + PostgreSQL). Todavía no hay frontend ni módulos de
-eventos, categorías, organizadores o moderación. La única migración (`0001_auth_tables`) crea las
-tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
+Está implementado solo el **backend** (FastAPI + SQLAlchemy + PostgreSQL), con los módulos de
+autenticación (`auth`), organizadores y administradores (solicitud, aprobación, rechazo y
+suspensión de organizadores), categorías, eventos (búsqueda por viewport, ficha de detalle, mis
+eventos, edición, cancelación y ocultamiento por un administrador), geocodificación (búsqueda de
+lugares en Nominatim) y configuración (ubicación por defecto), más un script de seed de eventos.
+Todavía no hay frontend, así que los requisitos de descubrimiento (RF-03) están cubiertos solo del
+lado de la API. Hay 4 migraciones (`0001_auth_tables` a `0004_eventos`).
 
 | Ítem | Estado |
 |---|---|
-| Requisitos funcionales **Must** implementados | 2 de 26 (RF-01.1 y RF-01.3) |
-| Requisitos funcionales con avance parcial | RF-01.5 (solo preparación del diseño) |
-| Casos de uso documentados (CU-01 a CU-04) implementados | 0 de 4 |
-| Tests automatizados | 41 funciones de test en `backend/tests/auth` |
+| Requisitos funcionales **Must** implementados | 14 de 23 (ver `02-requisitos-funcionales.md`). RF-03.3, RF-03.7, RF-03.8 y RF-03.10 solo en el backend |
+| Requisitos funcionales con avance parcial | RF-01.5 (solo preparación del diseño) y RF-01.7 (falta el alta de eventos) |
+| Casos de uso documentados (CU-01 a CU-04) implementados | 0 de 4 (CU-04 con el backend completo, CU-02 parcial en el backend) |
+| Tests automatizados | 197 funciones de test en `backend/tests` |
 
 ---
 
@@ -30,22 +33,36 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 |---|---|---|---|
 | RF-01.1 | Registrar un usuario con nombre, apellido, email y contraseña | **M** | `POST /auth/register` → `EmailRegister`. Valida email, contraseña de 8 a 128 caracteres y nombre/apellido obligatorios. Rechaza emails duplicados (409). No inicia sesión automáticamente. |
 | RF-01.3 | Iniciar y cerrar sesión mediante email y contraseña | **M** | `POST /auth/login` → `EmailSignIn` (envuelto en `RateLimitedSignIn`). Devuelve un access token JWT y deja un refresh token en una cookie `httpOnly`. `POST /auth/logout` revoca el refresh token y borra la cookie. `POST /auth/verify-session` permite mantener la sesión (silent refresh). |
+| RF-01.2 | Todo usuario registrado puede descubrir eventos | **M** | `GET /eventos` y `GET /eventos/{id_evento}` piden login (`get_usuario_actual`) pero ningún rol: cualquier usuario registrado puede buscar eventos y ver su ficha, sea organizador o no. Sin sesión → `401`. |
+| RF-01.6 | Solicitar convertirse en organizador (nombre público y descripción), queda `PENDIENTE` | **M** | `POST /organizadores/solicitud` → `SolicitarOrganizador` (requiere login). Crea el perfil en `PENDIENTE`. Un usuario tiene como mucho un perfil (`id_usuario` UNIQUE): con una solicitud pendiente o aprobada responde `409`, y si está suspendido, `403`. Un rechazado puede volver a solicitar y se reutiliza la misma fila (flujo 5a de CU-04). |
+| RF-02.4 | Editar y dar de baja (cancelar) un evento propio | **M** | `PATCH /eventos/{id_evento}` → `EditarEvento`: edición parcial (solo los campos enviados), `lugar` y `categorias` reemplazan la lista completa, las categorías se validan contra el catálogo activo y `fecha_fin` debe ser posterior al inicio (si no, `422`). Solo se editan eventos `BORRADOR` o `PUBLICADO` (si no, `409`). `POST /eventos/{id_evento}/cancelar` → `CancelarEvento`, válido desde `BORRADOR` o `PUBLICADO`. Ambos exigen ser el organizador dueño (si no, `403`). |
+| RF-02.5 | Listado de "mis eventos" con su estado actual | **M** | `GET /eventos/mios` → `ListarMisEventos`: todos los eventos del organizador, en cualquier estado (incluidos los cancelados y ocultos). |
+| RF-04.1 | Catálogo cerrado de categorías | **M** | La migración `0004_eventos` carga las 11 categorías en `categoria_evento`. `GET /categorias` (público) lista las activas. La API no permite crear categorías. |
+| RF-04.2 | Asociar múltiples categorías a un evento | **M** | Asociación N:M mediante la tabla `evento_categoria`. Al editar, `categorias` recibe una lista de slugs (al menos uno). |
+| RF-05.1 | Un administrador oculta cualquier evento publicado | **M** | `POST /admin/eventos/{id_evento}/ocultar` → `OcultarEvento` (requiere administrador). Válido desde `PUBLICADO` o `CANCELADO` (si no, `409`). Un evento `OCULTO` desaparece de la búsqueda y de la ficha de detalle; su dueño lo sigue viendo en "mis eventos". |
+| RF-05.2 | Eventos de origen propio (seed) diferenciados | **M** | `Evento.origen` distingue `SEED_EQUIPO` de `CARGA_ORGANIZADOR`. `scripts/seed.py` carga eventos de ejemplo sin organizador mediante `EventoFactory.crear_seed`, repartidos en distintas zonas, fechas, horarios y categorías (`--reset` borra el seed y lo recarga). |
+| RF-05.5 | Un administrador aprueba, rechaza y suspende perfiles de organizador | **S** | `GET /admin/organizadores?estado=` lista los perfiles en un estado. `POST /admin/organizadores/{id}/aprobar` y `/rechazar` son válidos desde `PENDIENTE`; `/suspender`, desde `APROBADO`. Una transición inválida responde `409`. |
 
 ### Parcialmente preparados
 
 | # | Requisito | Prioridad | Estado |
 |---|---|---|---|
 | RF-01.5 | Autenticación mediante proveedores externos (login social) | **C** | **No implementado**, aunque el diseño lo contempla: `password_hash` es nullable, `Auth` se arma con estrategias intercambiables (Strategy) y existe `UnsupportedRecovery` (Null Object) para proveedores sin contraseña local. No hay endpoints ni integración con Google/Facebook. |
+| RF-01.7 | Crear y editar eventos solo con perfil de organizador `APROBADO` | **M** | **Cubierto para editar, falta crear.** La dependencia `require_organizador_aprobado` responde `403` si el usuario no tiene perfil de organizador o si su perfil no está `APROBADO`, y ya protege `GET /eventos/mios`, `PATCH /eventos/{id_evento}` y `POST /eventos/{id_evento}/cancelar`. El alta de eventos (RF-02.1) todavía no existe, así que el requisito no se cierra hasta que ese endpoint use la misma dependencia. |
+| RF-03.3 | Desplazar y hacer zoom sobre el mapa, re-ejecutando la búsqueda según el viewport | **M** | **Backend listo, falta el frontend.** `GET /eventos` acepta `lat_min`, `lat_max`, `lng_min` y `lng_max` (filtro `filtrar_por_viewport`, bordes inclusivos). Vienen los cuatro o ninguno y el mínimo no puede superar al máximo, así que no se admiten viewports que crucen el antimeridiano; si no, `422`. Sin viewport no filtra. Falta el mapa que vuelva a llamar al endpoint al desplazarse o hacer zoom. |
+| RF-03.7 | Buscar y establecer una ubicación de referencia distinta a la actual | **M** | **Backend listo, falta el frontend.** `GET /geocodificacion/buscar?q=` (requiere login) consulta Nominatim y devuelve sugerencias con su bounding box (`lat_min`/`lat_max`/`lng_min`/`lng_max`, los mismos nombres que el viewport de `GET /eventos`), así una sugerencia elegida se puede pasar directo a la búsqueda. Sin coincidencias → `[]`; Nominatim caído → `503`. Fijar la ubicación de referencia y centrar el mapa es responsabilidad del frontend. |
+| RF-03.8 | Uso pleno sin permiso de geolocalización (ubicación por defecto + buscador de lugar) | **M** | **Backend listo, falta el frontend.** `GET /config/ubicacion-default` (público) devuelve `nombre`, `lat`, `lng` y `zoom`, configurables con `UBICACION_DEFAULT_*` y validados al arrancar. El buscador de lugar es `GET /geocodificacion/buscar`. |
+| RF-03.10 | Ficha de detalle del evento con los datos del organizador | **M** | **Backend listo, falta el frontend.** `GET /eventos/{id_evento}` (requiere login) devuelve el evento y un bloque `organizador` con `id_organizador`, `nombre_publico` y `descripcion` (sin `id_usuario` ni estado del perfil). Un evento de seed trae `{"id_organizador": null, "nombre_publico": "Equipo de la plataforma", ...}`. Visibilidad: PUBLICADO y CANCELADO los ve cualquiera, aunque ya hayan terminado (responde la pregunta abierta #4 de `planning.md`: la búsqueda los oculta, la URL directa no); BORRADOR solo su organizador; OCULTO nadie. Si no se puede ver, 404. |
 
 ### Pendientes
 
 | Grupo | Requisitos |
 |---|---|
-| RF-01 · Cuentas | RF-01.2 (descubrir eventos: depende de RF-03), RF-01.4 (editar perfil), RF-01.6 (solicitud de organizador), RF-01.7 (restricción de alta de eventos a organizadores), RF-01.8 |
-| RF-02 · Gestión de eventos | RF-02.1 a RF-02.10 |
-| RF-03 · Descubrimiento y búsqueda | RF-03.1 a RF-03.14 |
-| RF-04 · Categorías | RF-04.1 a RF-04.3 |
-| RF-05 · Moderación | RF-05.1 a RF-05.5 |
+| RF-01 · Cuentas | RF-01.4 (editar perfil), RF-01.7 (falta el alta de eventos, ver arriba), RF-01.8 |
+| RF-02 · Gestión de eventos | RF-02.1 a RF-02.3, RF-02.6 a RF-02.10 |
+| RF-03 · Descubrimiento y búsqueda | RF-03.1, RF-03.2, RF-03.4 a RF-03.6, RF-03.9, RF-03.11 a RF-03.14 (RF-03.3, RF-03.7, RF-03.8 y RF-03.10 tienen el backend listo, ver arriba) |
+| RF-04 · Categorías | RF-04.3 (el modelo ya tiene `activa` para retirar una categoría sin borrarla, pero no hay endpoints de administración) |
+| RF-05 · Moderación | RF-05.3, RF-05.4 |
 | RF-06 · Ingesta externa | RF-06.1 |
 | RF-07 · Monetización | RF-07.1, RF-07.2 |
 
@@ -67,7 +84,10 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 | RNF-04.2 | Autenticación por JWT, access token en memoria del cliente | El access token viaja en el cuerpo de la respuesta y el refresh token en una cookie `httpOnly` con path `/auth`. Que el cliente lo guarde solo en memoria es responsabilidad del frontend, que todavía no existe. |
 | RNF-04.3 | Identificadores no secuenciales (UUID) | PK UUID en las 4 tablas |
 | RNF-04 (general) | Mitigación de fuerza bruta y enumeración | Bloqueo tras 5 intentos fallidos en 15 min (`RateLimitedSignIn`, devuelve 423). Respuestas idénticas en la recuperación de contraseña, exista o no el email. |
+| RNF-01.4 | Caché local de las búsquedas de lugares | `CachedGeocodificador` (Decorator, `app/geocodificacion/decorators/cached.py`): caché en memoria por proceso, con TTL y tope de entradas configurables (`GEOCODIFICACION_CACHE_TTL_SEGUNDOS`, `GEOCODIFICACION_CACHE_MAX_ENTRADAS`). No cachea errores. |
+| RNF-05.1 | Política de uso de Nominatim | `RateLimitedGeocodificador` (Decorator) espacia las requests salientes a ≥1 s (las que llegan antes esperan, no se rechazan); `User-Agent` configurable en `Settings.nominatim_user_agent`. `GET /geocodificacion/buscar` requiere login, así la API no queda como proxy anónimo. Límite conocido: el estado es por proceso (un único worker). |
 | RNF-05.2 | PostgreSQL en dev/prod, SQLite solo en tests | `database_url` por defecto en PostgreSQL. Los tests usan `aiosqlite`. |
+| RNF-04.4 | Moderación restringida a administradores | Tabla `administradores` (migración `0003_administradores`): un usuario es administrador si tiene una fila ahí, y `Usuario` sigue sin rol. `get_admin_actual` protege todo `/admin/...`: sin sesión `401`, sin perfil de administrador `403`. No hay endpoint para dar de alta administradores; se cargan directo en la base. |
 | RNF-05.3 | FastAPI + OpenAPI + Pydantic | Schemas Pydantic en `app/auth/schemas.py` |
 
 ---
@@ -78,10 +98,10 @@ tablas `usuario`, `refresh_token`, `password_reset_token` y `audit_log`.
 
 | Caso de uso | Estado | Observación |
 |---|---|---|
-| CU-01 · Usuario descubre eventos cerca de su ubicación actual | ❌ No implementado | Requiere el modelo de eventos, la búsqueda por viewport y el frontend con mapa |
-| CU-02 · Usuario explora eventos en una ubicación distinta | ❌ No implementado | Requiere además la integración con Nominatim |
+| CU-01 · Usuario descubre eventos cerca de su ubicación actual | ❌ No implementado | Requiere el modelo de eventos, la búsqueda por viewport y el frontend con mapa. Para el flujo 3a (permiso rechazado), el backend ya expone la ubicación por defecto en `GET /config/ubicacion-default` |
+| CU-02 · Usuario explora eventos en una ubicación distinta | 🟡 Parcial (backend) | Pasos 2 y 2a: `GET /geocodificacion/buscar?q=` consulta Nominatim y devuelve sugerencias con su bounding box (`lat_min`/`lat_max`/`lng_min`/`lng_max`, los mismos nombres que el viewport de `GET /eventos`). Sin coincidencias → `[]`; Nominatim caído → `503`. Falta el buscador en el frontend |
 | CU-03 · Organizador publica un nuevo evento | ❌ No implementado | Requiere el perfil de organizador y el modelo de eventos |
-| CU-04 · Usuario solicita convertirse en organizador | ❌ No implementado | Su precondición ("tiene una cuenta registrada e inició sesión") **ya está cubierta** por el módulo de auth |
+| CU-04 · Usuario solicita convertirse en organizador | 🟡 Backend listo | Paso 4: `POST /organizadores/solicitud` crea el perfil en `PENDIENTE`. Pasos 5 y 6 y flujo 5a: el administrador lista las solicitudes con `GET /admin/organizadores?estado=PENDIENTE` y las aprueba o rechaza; un rechazado puede volver a solicitar. Faltan el formulario, el panel de administración y avisarle al usuario el resultado (no se manda email) |
 
 ### Flujos de autenticación implementados
 
@@ -145,4 +165,3 @@ sistema. Todos los endpoints están bajo el prefijo `/auth`.
 - **Rate limiting en memoria:** `InMemoryLoginAttemptsStore` no comparte estado entre workers.
 - **Emails:** `ConsoleEmailSender` no envía emails reales. La URL base del link de reset está
   hardcodeada (`TODO: mover a Settings`).
-- **Rol de administrador (RNF-04.4):** todavía sin definir. Es un prerrequisito de RF-05.

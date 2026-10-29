@@ -171,6 +171,24 @@ class Evento(Base):
         (RF-02.4). Uno cancelado u oculto ya no se modifica."""
         return self.estado in {EstadoEvento.BORRADOR, EstadoEvento.PUBLICADO}
 
+    def es_visible_para(self, id_organizador_actual: uuid.UUID | None) -> bool:
+        """Quien puede ver la ficha de detalle (RF-03.10). Un PUBLICADO o
+        CANCELADO lo ve cualquiera, aunque ya haya terminado (la busqueda lo
+        oculta, el detalle por URL directa no). Un BORRADOR, solo su
+        organizador. Un OCULTO, nadie: es una baja por moderacion (RF-05.1);
+        el duenio lo sigue viendo en "mis eventos".
+
+        `id_organizador_actual` es el perfil de organizador de quien pide el
+        detalle, o None si no tiene."""
+        if self.estado == EstadoEvento.OCULTO:
+            return False
+        if self.estado == EstadoEvento.BORRADOR:
+            return (
+                self.id_organizador is not None
+                and self.id_organizador == id_organizador_actual
+            )
+        return True
+
     def cancelar(self) -> None:
         """Lo decide el organizador (RF-02.4). Valido desde BORRADOR o
         PUBLICADO. Un evento cancelado deja de aparecer en la busqueda, pero

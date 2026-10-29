@@ -12,10 +12,12 @@ from app.eventos.exceptions import (
     FechasEventoInvalidasError,
     NoEsDuenioDelEventoError,
 )
-from app.eventos.models import Evento
+from app.eventos.models import EstadoEvento, Evento
 from app.eventos.repository import EventoRepository
 from app.eventos.schemas import BusquedaEventosParams, EditarEventoRequest
+from app.models.usuario import Usuario
 from app.organizadores.models import Organizador
+from app.organizadores.repository import OrganizadorRepository
 
 
 def _ahora_utc() -> datetime:
@@ -59,6 +61,50 @@ async def _obtener_propio(
     if evento.id_organizador != organizador.id_organizador:
         raise NoEsDuenioDelEventoError()
     return evento
+
+
+class ObtenerDetalleEvento:
+    """Ficha de detalle de un evento con los datos de su organizador
+    (RF-03.10). La regla de quien puede verla vive en
+    `Evento.es_visible_para`; si no puede, 404 y no 403, para no revelar que
+    el id existe.
+
+    Devuelve el organizador como None en los eventos de seed (no tienen):
+    que mostrar en ese caso lo decide el schema de respuesta."""
+
+    def __init__(
+        self,
+        eventos: EventoRepository,
+        organizadores: OrganizadorRepository,
+    ) -> None:
+        self._eventos = eventos
+        self._organizadores = organizadores
+
+    async def ejecutar(
+        self, usuario: Usuario, id_evento: UUID
+    ) -> tuple[Evento, Organizador | None]:
+        evento = await _obtener(self._eventos, id_evento)
+        id_organizador_actual = await self._perfil_si_hace_falta(
+            evento, usuario
+        )
+        if not evento.es_visible_para(id_organizador_actual):
+            raise EventoNoEncontradoError()
+
+        if evento.id_organizador is None:
+            return evento, None
+        return evento, await self._organizadores.get_by_id(
+            evento.id_organizador
+        )
+
+    async def _perfil_si_hace_falta(
+        self, evento: Evento, usuario: Usuario
+    ) -> UUID | None:
+        """El perfil de organizador de quien pide solo cambia la respuesta
+        para un BORRADOR: para el resto se evita la consulta."""
+        if evento.estado != EstadoEvento.BORRADOR:
+            return None
+        perfil = await self._organizadores.get_by_usuario_id(usuario.id)
+        return perfil.id_organizador if perfil else None
 
 
 class ListarMisEventos:

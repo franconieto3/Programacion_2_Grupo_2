@@ -16,7 +16,7 @@ Clasificación según el método **MoSCoW**:
 | # | Requisito | Prioridad | Estado |
 |---|---|---|---|
 | RF-01.1 | El sistema debe permitir registrar un usuario con nombre, apellido, email y contraseña | **M** | Resuelto |
-| RF-01.2 | Todo usuario registrado puede descubrir eventos | **M** | Pendiente |
+| RF-01.2 | Todo usuario registrado puede descubrir eventos | **M** | Resuelto |
 | RF-01.3 | El sistema debe permitir iniciar y cerrar sesión mediante email y contraseña | **M** | Resuelto |
 | RF-01.4 | El sistema debe permitir editar los datos básicos del perfil propio | **S** | Pendiente |
 | RF-01.5 | El sistema debe permitir autenticación mediante proveedores externos (login social) | **C** | Pendiente |
@@ -45,14 +45,14 @@ Clasificación según el método **MoSCoW**:
 |---|---|---|---|
 | RF-03.1 | El sistema debe mostrar los eventos disponibles en una vista de mapa, centrada por defecto en la geolocalización del usuario | **M** | Pendiente |
 | RF-03.2 | El sistema debe mostrar los eventos disponibles en una vista de lista, con los mismos resultados que la vista mapa | **M** | Pendiente |
-| RF-03.3 | El sistema debe permitir desplazar y hacer zoom sobre el mapa, re-ejecutando la búsqueda según el área visible (viewport) | **M** | Pendiente |
+| RF-03.3 | El sistema debe permitir desplazar y hacer zoom sobre el mapa, re-ejecutando la búsqueda según el área visible (viewport) | **M** | Resuelto |
 | RF-03.4 | El sistema debe permitir filtrar eventos por rango de fechas | **M** | Pendiente |
 | RF-03.5 | El sistema debe permitir filtrar eventos por rango horario | **M** | Pendiente |
 | RF-03.6 | El sistema debe permitir filtrar eventos por una o varias categorías (filtro opcional, multi-selección) | **M** | Pendiente |
-| RF-03.7 | El sistema debe permitir buscar y establecer una ubicación de referencia distinta a la ubicación física actual del usuario (por ejemplo, un destino de viaje) | **M** | Pendiente |
-| RF-03.8 | El sistema debe funcionar de forma plenamente usable si el usuario rechaza el permiso de geolocalización, ofreciendo una ubicación por defecto y un buscador de lugar | **M** | Pendiente |
+| RF-03.7 | El sistema debe permitir buscar y establecer una ubicación de referencia distinta a la ubicación física actual del usuario (por ejemplo, un destino de viaje) | **M** | Resuelto |
+| RF-03.8 | El sistema debe funcionar de forma plenamente usable si el usuario rechaza el permiso de geolocalización, ofreciendo una ubicación por defecto y un buscador de lugar | **M** | Resuelto |
 | RF-03.9 | El sistema debe mostrar, ante una búsqueda sin resultados, un mensaje explícito sobre qué filtro los está excluyendo y una acción correctiva sugerida | **S** | Pendiente |
-| RF-03.10 | El sistema debe mostrar una ficha de detalle del evento con los datos del organizador que lo publica | **M** | Pendiente |
+| RF-03.10 | El sistema debe mostrar una ficha de detalle del evento con los datos del organizador que lo publica | **M** | Resuelto |
 | RF-03.11 | El sistema debe permitir marcar eventos como favoritos | **S** | Pendiente |
 | RF-03.12 | El sistema debe permitir guardar ubicaciones de interés para reutilizarlas en futuras búsquedas | **S** | Pendiente |
 | RF-03.13 | El sistema debe permitir calificar o reseñar eventos y organizadores | **C** | Pendiente |
@@ -95,7 +95,7 @@ Clasificación según el método **MoSCoW**:
 
 | Prioridad | Cantidad de requisitos | Resueltos | Pendientes |
 |---|---|---|---|
-| **Must (M)** | 23 | 5 | 18 |
+| **Must (M)** | 23 | 14 | 9 |
 | **Should (S)** | 11 | 1 | 10 |
 | **Could (C)** | 9 | 0 | 9 |
 
