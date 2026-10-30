@@ -54,6 +54,16 @@ class BusquedaEventosParams(BaseModel):
             raise ValueError('lng_min no puede ser mayor que lng_max')
         return self
 
+    @model_validator(mode='after')
+    def _desde_no_posterior_a_hasta(self) -> 'BusquedaEventosParams':
+        if (
+            self.desde is not None
+            and self.hasta is not None
+            and self.desde > self.hasta
+        ):
+            raise ValueError('desde no puede ser posterior a hasta')
+        return self
+
 
 class LugarPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
