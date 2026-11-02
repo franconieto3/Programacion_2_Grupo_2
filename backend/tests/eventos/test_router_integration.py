@@ -156,6 +156,7 @@ async def test_buscar_recibe_todos_los_parametros(wired_app):
         'lat_min=-35&lat_max=-34',
         'lat_min=-34&lat_max=-35&lng_min=-59&lng_max=-58',
         'lat_min=-35&lat_max=-34&lng_min=-58&lng_max=-59',
+        'desde=2026-11-30&hasta=2026-11-20',
     ],
 )
 async def test_buscar_parametro_invalido_responde_422(wired_app, query):
