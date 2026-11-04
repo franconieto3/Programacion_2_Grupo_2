@@ -176,4 +176,3 @@ async def test_listar_categorias_es_publico_y_excluye_inactivas(wired_app):
 
     assert response.status_code == 200
     assert [c['slug'] for c in response.json()] == ['bar']
-

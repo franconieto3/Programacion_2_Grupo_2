@@ -12,12 +12,12 @@ persiste a través de un puerto (`EventoRepository`).
 |---|---|
 | Dominio (`Evento`, `Lugar`, `Categoria`, enums) y migración `0004_eventos` | ✅ Fase 0 (`app/eventos/models.py`, `app/categorias/models.py`) |
 | `CategoriaRepository` y `GET /categorias` | ✅ Fase 0 (`app/categorias/`) |
-| `EventoRepository.buscar` y `GET /eventos` (sin filtros todavía) | ✅ Fase 0 (`app/eventos/`) |
+| `EventoRepository.buscar` y `GET /eventos` | ✅ Fase 0 (`app/eventos/`); filtros de viewport (C) y de fechas, horario y categorías (D) en `app/eventos/filtros/` |
 | `EventoFactory` con `crear_seed`, `EventoRepository.add`, `get_by_id` y `list_by_organizador` | ✅ Persona B (`app/eventos/factory.py`, `app/eventos/repository.py`) |
 | `require_organizador_aprobado` | ✅ Persona B (`app/organizadores/dependencies.py`), adelantada porque la necesitan mis eventos, editar y cancelar |
 | Seed de eventos (`backend/scripts/seed.py`), `GET /eventos/mios`, `PATCH /eventos/{id_evento}`, `POST /eventos/{id_evento}/cancelar` y `POST /admin/eventos/{id_evento}/ocultar` | ✅ Persona B (RF-05.2, RF-02.5, RF-02.4, RF-05.1) |
 | `GET /eventos/{id_evento}`: `ObtenerDetalleEvento`, `Evento.es_visible_para`, `EventoDetallePublic` con `OrganizadorEnEventoPublic` | ✅ (RF-03.10) |
-| `CrearEventoRequest`, `CrearEvento`, `EventoFactory.crear_desde_organizador`, `POST /eventos` | ⏳ Persona A (RF-02.1 a RF-02.3) |
+| `CrearEventoRequest`, `CrearEvento`, `EventoFactory.crear_desde_organizador`, `POST /eventos` | ✅ (RF-01.7, RF-02.1 a RF-02.3) |
 
 ```mermaid
 classDiagram
@@ -36,12 +36,9 @@ classDiagram
             +fecha_inicio: datetime
             +fecha_fin: Optional~datetime~
             +precio: Optional~Decimal~
-            +latitud: float
-            +longitud: float
-            +lugar_nombre: Optional~str~
-            +direccion: Optional~str~
+            +lugar: LugarRequest
             +categorias: list~str~
-            +validar_fin_posterior_a_inicio()
+            +_fin_posterior_a_inicio()
         }
         class require_organizador_aprobado {
             <<dependency>>
@@ -56,6 +53,7 @@ classDiagram
             -evento_repository: EventoRepository
             -categoria_repository: CategoriaRepository
             -factory: EventoFactory
+            -reloj: Callable
             +ejecutar(organizador: Organizador, datos: CrearEventoRequest) Evento
         }
         class EventoFactory {
@@ -170,7 +168,7 @@ classDiagram
     CrearEvento --> CategoriaRepository
     CrearEvento --> EventoFactory
     EventoFactory ..> Evento : «create»
-    EventoFactory ..> Lugar : «create»
+    CrearEvento ..> Lugar : «create»
 
     %% ── Dominio ──
     Usuario "1" *-- "0..1" Organizador : perfil
@@ -219,16 +217,18 @@ perfil (ver `planning.md` §3). Así `CrearEvento` recibe un `Organizador` ya ha
 mezcla autorización con la lógica de alta.
 
 **3. Validaciones en dos niveles.**
-- **Formato y coherencia interna** en el DTO: tipos, campos obligatorios, rangos de
-  latitud/longitud y `validar_fin_posterior_a_inicio()`. Si fallan, FastAPI responde 422
-  (CU-03, flujo alternativo 8a).
-- **Reglas que necesitan la base** en `CrearEvento`: `CategoriaRepository.get_activas_by_slugs`
-  debe devolver todas las categorías pedidas; si falta alguna o está inactiva, el servicio
-  lanza un error de dominio.
+- **Formato y coherencia interna** en el DTO: tipos, campos obligatorios, fechas con zona
+  horaria, precio no negativo, rangos de latitud/longitud (en `LugarRequest`) y
+  `_fin_posterior_a_inicio()`. Si fallan, FastAPI responde 422 (CU-03, flujo alternativo 8a).
+- **Reglas que necesitan la hora actual o la base** en `CrearEvento`: la fecha de inicio tiene
+  que ser futura (`FechaInicioPasadaError`), y `CategoriaRepository.get_activas_by_slugs` debe
+  devolver todas las categorías pedidas (si falta alguna o está inactiva,
+  `CategoriasInvalidasError`). Ambas responden 422. La validación de categorías es la misma que
+  usa la edición (RF-02.4).
 
 **4. `EventoFactory` (Simple Factory).** Cumple el mismo papel que `CredentialsFactory` en el
-módulo de auth: centraliza lo que no viene en el DTO. Crea el `Lugar` a partir de las
-coordenadas, asigna las fechas con `Evento.programar()` (que calcula `hora_inicio_local` con la
+módulo de auth: centraliza lo que no viene en el DTO. Recibe el `Lugar` (que `CrearEvento`
+arma con las coordenadas del DTO, y el seed con las suyas), asigna las fechas con `Evento.programar()` (que calcula `hora_inicio_local` con la
 zona horaria configurada, RNF-01.2), fija `estado = PUBLICADO` y `fecha_publicacion`, y asigna
 el `origen` según el método:
 - `crear_desde_organizador` → `CARGA_ORGANIZADOR`, asociado al organizador.

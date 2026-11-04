@@ -19,6 +19,7 @@ from app.eventos.repository import (
 from app.eventos.service import (
     BuscarEventos,
     CancelarEvento,
+    CrearEvento,
     EditarEvento,
     ListarMisEventos,
     ObtenerDetalleEvento,
@@ -44,6 +45,14 @@ def get_evento_factory(
     settings: Settings = Depends(get_settings),
 ) -> EventoFactory:
     return EventoFactory(ZoneInfo(settings.zona_horaria))
+
+
+def get_crear_evento(
+    repo: EventoRepository = Depends(get_evento_repository),
+    categorias: CategoriaRepository = Depends(get_categoria_repository),
+    factory: EventoFactory = Depends(get_evento_factory),
+) -> CrearEvento:
+    return CrearEvento(repo, categorias, factory)
 
 
 def get_obtener_detalle_evento(

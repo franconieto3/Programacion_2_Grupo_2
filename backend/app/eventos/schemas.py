@@ -156,6 +156,33 @@ class LugarRequest(BaseModel):
     longitud: float = Field(ge=-180, le=180)
 
 
+class CrearEventoRequest(BaseModel):
+    """Cuerpo de POST /eventos (CU-03, RF-02.1 a RF-02.3). `fecha_fin` y
+    `precio` son opcionales; `lugar` lleva las coordenadas (RF-02.2) y
+    `categorias`, al menos un slug del catalogo (RF-02.3). Que la fecha de
+    inicio sea futura lo valida CrearEvento, que conoce la hora actual."""
+
+    model_config = ConfigDict(extra='forbid')
+
+    titulo: str = Field(min_length=1, max_length=255)
+    descripcion: str = Field(min_length=1)
+    fecha_inicio: AwareDatetime
+    fecha_fin: AwareDatetime | None = None
+    precio: Decimal | None = Field(
+        default=None, ge=0, max_digits=10, decimal_places=2
+    )
+    lugar: LugarRequest
+    categorias: list[str] = Field(min_length=1)
+
+    @model_validator(mode='after')
+    def _fin_posterior_a_inicio(self) -> 'CrearEventoRequest':
+        if self.fecha_fin is not None and self.fecha_fin <= self.fecha_inicio:
+            raise ValueError(
+                'La fecha de fin tiene que ser posterior a la de inicio.'
+            )
+        return self
+
+
 class EditarEventoRequest(BaseModel):
     """Cuerpo de PATCH /eventos/{id_evento} (RF-02.4). Solo se modifican
     los campos enviados. `fecha_fin` y `precio` aceptan null para borrarlos;

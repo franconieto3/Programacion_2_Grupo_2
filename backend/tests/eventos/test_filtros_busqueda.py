@@ -189,7 +189,6 @@ def test_fechas_desde_posterior_a_hasta_es_invalido():
         )
 
 
-
 # --------------------------------------------------------------- horario
 
 
@@ -278,7 +277,6 @@ async def test_horario_solo_hasta_deja_abierto_el_extremo_inferior(
     eventos, _ = await _buscar(session_factory, hora_hasta=time(12, 0))
 
     assert _titulos(eventos) == ['Manana']
-
 
 
 # ------------------------------------------------------------ categorias
@@ -379,7 +377,6 @@ async def test_categorias_slug_inexistente_junto_a_uno_valido(
     )
 
     assert _titulos(eventos) == ['Bar']
-
 
 
 # ----------------------------------------------- combinados y determinismo

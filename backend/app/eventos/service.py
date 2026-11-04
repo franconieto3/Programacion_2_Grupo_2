@@ -9,12 +9,18 @@ from app.eventos.exceptions import (
     CategoriasInvalidasError,
     EventoNoEditableError,
     EventoNoEncontradoError,
+    FechaInicioPasadaError,
     FechasEventoInvalidasError,
     NoEsDuenioDelEventoError,
 )
-from app.eventos.models import EstadoEvento, Evento
+from app.eventos.factory import EventoFactory
+from app.eventos.models import EstadoEvento, Evento, Lugar
 from app.eventos.repository import EventoRepository
-from app.eventos.schemas import BusquedaEventosParams, EditarEventoRequest
+from app.eventos.schemas import (
+    BusquedaEventosParams,
+    CrearEventoRequest,
+    EditarEventoRequest,
+)
 from app.models.usuario import Usuario
 from app.organizadores.models import Organizador
 from app.organizadores.repository import OrganizadorRepository
@@ -61,6 +67,67 @@ async def _obtener_propio(
     if evento.id_organizador != organizador.id_organizador:
         raise NoEsDuenioDelEventoError()
     return evento
+
+
+async def _categorias_activas(
+    repo: CategoriaRepository, slugs: list[str]
+) -> list[Categoria]:
+    """Las categorias pedidas, en el orden pedido y sin repetir. Si alguna
+    no existe o esta inactiva, CategoriasInvalidasError (RF-04.1)."""
+    pedidos = list(dict.fromkeys(slugs))
+    encontradas = await repo.get_activas_by_slugs(pedidos)
+    por_slug = {c.slug: c for c in encontradas}
+    faltantes = [s for s in pedidos if s not in por_slug]
+    if faltantes:
+        raise CategoriasInvalidasError(faltantes)
+    return [por_slug[s] for s in pedidos]
+
+
+class CrearEvento:
+    """Un organizador aprobado publica un evento (CU-03, RF-02.1 a
+    RF-02.3). El permiso ya lo resolvio `require_organizador_aprobado`
+    (RF-01.7); aca se validan las reglas que necesitan la hora actual o la
+    base, y `EventoFactory` arma el evento.
+
+    `reloj` se inyecta para poder testear la regla de fecha futura con una
+    hora fija."""
+
+    def __init__(
+        self,
+        repo: EventoRepository,
+        categorias: CategoriaRepository,
+        factory: EventoFactory,
+        reloj: Callable[[], datetime] = _ahora_utc,
+    ) -> None:
+        self._repo = repo
+        self._categorias = categorias
+        self._factory = factory
+        self._reloj = reloj
+
+    async def ejecutar(
+        self, organizador: Organizador, datos: CrearEventoRequest
+    ) -> Evento:
+        if datos.fecha_inicio <= self._reloj():
+            raise FechaInicioPasadaError()
+        categorias = await _categorias_activas(
+            self._categorias, datos.categorias
+        )
+        evento = self._factory.crear_desde_organizador(
+            organizador=organizador,
+            titulo=datos.titulo,
+            descripcion=datos.descripcion,
+            fecha_inicio=datos.fecha_inicio,
+            fecha_fin=datos.fecha_fin,
+            lugar=Lugar(
+                nombre=datos.lugar.nombre,
+                direccion=datos.lugar.direccion,
+                latitud=datos.lugar.latitud,
+                longitud=datos.lugar.longitud,
+            ),
+            categorias=categorias,
+            precio=datos.precio,
+        )
+        return await self._repo.add(evento)
 
 
 class ObtenerDetalleEvento:
@@ -146,8 +213,8 @@ class EditarEvento:
         if enviados & {'fecha_inicio', 'fecha_fin'}:
             self._reprogramar(evento, datos)
         if 'categorias' in enviados:
-            evento.categorias = await self._categorias_activas(
-                datos.categorias
+            evento.categorias = await _categorias_activas(
+                self._categorias, datos.categorias
             )
         if 'lugar' in enviados:
             evento.lugar.nombre = datos.lugar.nombre
@@ -172,15 +239,6 @@ class EditarEvento:
         if fin is not None and fin <= inicio:
             raise FechasEventoInvalidasError()
         evento.programar(inicio, fin, self._zona)
-
-    async def _categorias_activas(self, slugs: list[str]) -> list[Categoria]:
-        pedidos = list(dict.fromkeys(slugs))
-        encontradas = await self._categorias.get_activas_by_slugs(pedidos)
-        por_slug = {c.slug: c for c in encontradas}
-        faltantes = [s for s in pedidos if s not in por_slug]
-        if faltantes:
-            raise CategoriasInvalidasError(faltantes)
-        return [por_slug[s] for s in pedidos]
 
 
 class CancelarEvento:
