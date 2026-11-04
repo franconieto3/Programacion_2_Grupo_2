@@ -8,6 +8,7 @@ from app.eventos.exceptions import (
     CategoriasInvalidasError,
     EventoNoEditableError,
     EventoNoEncontradoError,
+    FechaInicioPasadaError,
     FechasEventoInvalidasError,
     NoEsDuenioDelEventoError,
     TransicionEstadoEventoInvalidaError,
@@ -20,6 +21,7 @@ _STATUS_BY_EXCEPTION = {
     EventoNoEditableError: status.HTTP_409_CONFLICT,
     CategoriasInvalidasError: status.HTTP_422_UNPROCESSABLE_CONTENT,
     FechasEventoInvalidasError: status.HTTP_422_UNPROCESSABLE_CONTENT,
+    FechaInicioPasadaError: status.HTTP_422_UNPROCESSABLE_CONTENT,
 }
 
 

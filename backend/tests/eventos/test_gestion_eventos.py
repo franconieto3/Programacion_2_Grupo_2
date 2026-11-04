@@ -44,6 +44,11 @@ class InMemoryEventoRepository:
         )
 
     async def add(self, evento: Evento) -> Evento:
+        # Como el flush de SQLAlchemy: asigna los ids si no vinieron.
+        if evento.id_evento is None:
+            evento.id_evento = uuid4()
+        if evento.lugar.id_lugar is None:
+            evento.lugar.id_lugar = uuid4()
         self.eventos[evento.id_evento] = evento
         return evento
 

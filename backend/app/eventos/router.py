@@ -7,12 +7,14 @@ from app.auth.dependencies import get_usuario_actual
 from app.eventos.dependencies import (
     get_buscar_eventos,
     get_cancelar_evento,
+    get_crear_evento,
     get_editar_evento,
     get_listar_mis_eventos,
     get_obtener_detalle_evento,
 )
 from app.eventos.schemas import (
     BusquedaEventosParams,
+    CrearEventoRequest,
     EditarEventoRequest,
     EventoDetallePublic,
     EventoPublic,
@@ -21,6 +23,7 @@ from app.eventos.schemas import (
 from app.eventos.service import (
     BuscarEventos,
     CancelarEvento,
+    CrearEvento,
     EditarEvento,
     ListarMisEventos,
     ObtenerDetalleEvento,
@@ -47,6 +50,20 @@ async def buscar_eventos(
         limit=filtros.limit,
         offset=filtros.offset,
     )
+
+
+@router.post(
+    '', response_model=EventoPublic, status_code=status.HTTP_201_CREATED
+)
+async def crear_evento(
+    datos: CrearEventoRequest,
+    organizador: Organizador = Depends(require_organizador_aprobado),
+    servicio: CrearEvento = Depends(get_crear_evento),
+) -> EventoPublic:
+    """Publica un evento (CU-03). Solo un organizador APROBADO (RF-01.7);
+    si no, 403. Queda PUBLICADO y aparece en "mis eventos"."""
+    evento = await servicio.ejecutar(organizador, datos)
+    return EventoPublic.model_validate(evento)
 
 
 # /mios tiene que declararse antes que GET /{id_evento}: si no, FastAPI
