@@ -1,4 +1,4 @@
-"""Integracion de GET /eventos/mios, PATCH /eventos/{id_evento},
+"""Integracion de POST /eventos, GET /eventos/mios, PATCH /eventos/{id_evento},
 POST /eventos/{id_evento}/cancelar, POST /admin/eventos/{id_evento}/ocultar
 y GET /eventos/{id_evento}
 contra la app real de FastAPI, con la persistencia reemplazada por dobles en
@@ -6,7 +6,7 @@ memoria via `app.dependency_overrides`. Se recorre la cadena completa de
 dependencias: get_usuario_actual (401) -> require_organizador_aprobado o
 get_admin_actual (403) -> caso de uso."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -93,7 +93,28 @@ def _client() -> AsyncClient:
     )
 
 
+MANANA = datetime.now(timezone.utc) + timedelta(days=1)
+
+
+def _cuerpo_alta(**cambios) -> dict:
+    cuerpo = {
+        'titulo': 'Recital en la plaza',
+        'descripcion': 'Musica en vivo',
+        'fecha_inicio': MANANA.isoformat(),
+        'precio': '1500.00',
+        'lugar': {
+            'nombre': 'Plaza Serrano',
+            'latitud': -34.588,
+            'longitud': -58.430,
+        },
+        'categorias': ['bar'],
+    }
+    cuerpo.update(cambios)
+    return cuerpo
+
+
 ACCIONES_DE_ORGANIZADOR = [
+    ('POST', '/eventos', _cuerpo_alta()),
     ('GET', '/eventos/mios', None),
     ('PATCH', f'/eventos/{uuid4()}', {'titulo': 'x'}),
     ('POST', f'/eventos/{uuid4()}/cancelar', None),
@@ -135,6 +156,79 @@ async def test_organizador_pendiente_responde_403(
             metodo, url, json=cuerpo, headers=headers
         )
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    'estado', [EstadoOrganizador.RECHAZADO, EstadoOrganizador.SUSPENDIDO]
+)
+async def test_organizador_rechazado_o_suspendido_no_crea_eventos(
+    entorno, estado
+):
+    headers, _ = await entorno.organizador(estado)
+    async with _client() as client:
+        response = await client.post(
+            '/eventos', json=_cuerpo_alta(), headers=headers
+        )
+    assert response.status_code == 403
+    assert entorno.eventos.eventos == {}
+
+
+# --- POST /eventos (CU-03) ---
+
+
+async def test_organizador_aprobado_crea_el_evento(entorno):
+    headers, perfil = await entorno.organizador()
+
+    async with _client() as client:
+        response = await client.post(
+            '/eventos', json=_cuerpo_alta(), headers=headers
+        )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body['estado'] == 'PUBLICADO'
+    assert body['origen'] == 'CARGA_ORGANIZADOR'
+    assert body['id_organizador'] == str(perfil.id_organizador)
+    assert body['precio'] == '1500.00'
+    assert body['lugar']['latitud'] == -34.588
+    assert [c['slug'] for c in body['categorias']] == ['bar']
+
+
+async def test_el_evento_creado_aparece_en_mis_eventos(entorno):
+    headers, _ = await entorno.organizador()
+
+    async with _client() as client:
+        creado = await client.post(
+            '/eventos', json=_cuerpo_alta(), headers=headers
+        )
+        mios = await client.get('/eventos/mios', headers=headers)
+
+    assert [e['id_evento'] for e in mios.json()] == [
+        creado.json()['id_evento']
+    ]
+
+
+@pytest.mark.parametrize(
+    'cambios',
+    [
+        {'fecha_inicio': (MANANA - timedelta(days=2)).isoformat()},
+        {'fecha_fin': (MANANA - timedelta(hours=1)).isoformat()},
+        {'categorias': ['inexistente']},
+        {'categorias': []},
+        {'lugar': {'latitud': 91, 'longitud': -58.4}},
+        {'titulo': ''},
+    ],
+)
+async def test_alta_con_datos_invalidos_responde_422(entorno, cambios):
+    headers, _ = await entorno.organizador()
+
+    async with _client() as client:
+        response = await client.post(
+            '/eventos', json=_cuerpo_alta(**cambios), headers=headers
+        )
+
+    assert response.status_code == 422
+    assert entorno.eventos.eventos == {}
 
 
 # --- GET /eventos/mios ---

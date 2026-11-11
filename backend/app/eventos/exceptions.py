@@ -57,3 +57,11 @@ class FechasEventoInvalidasError(EventoError):
         super().__init__(
             'La fecha de fin tiene que ser posterior a la de inicio.'
         )
+
+
+class FechaInicioPasadaError(EventoError):
+    """Se intento crear un evento que ya empezo: nunca apareceria en la
+    busqueda (CU-03, flujo 8a)."""
+
+    def __init__(self) -> None:
+        super().__init__('La fecha de inicio tiene que ser futura.')

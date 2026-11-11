@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from app.categorias.models import Categoria
 from app.eventos.models import EstadoEvento, Evento, Lugar, OrigenEvento
+from app.organizadores.models import Organizador
 
 
 def _ahora_utc() -> datetime:
@@ -47,6 +48,33 @@ class EventoFactory:
             estado=EstadoEvento.PUBLICADO,
             origen=OrigenEvento.SEED_EQUIPO,
             id_organizador=None,
+            fecha_publicacion=self._reloj(),
+            lugar=lugar,
+            categorias=categorias,
+        )
+        evento.programar(fecha_inicio, fecha_fin, self._zona)
+        return evento
+
+    def crear_desde_organizador(  # noqa: PLR0913, PLR0917
+        self,
+        organizador: Organizador,
+        titulo: str,
+        descripcion: str,
+        fecha_inicio: datetime,
+        fecha_fin: datetime | None,
+        lugar: Lugar,
+        categorias: list[Categoria],
+        precio: Decimal | None = None,
+    ) -> Evento:
+        """Evento publicado por un organizador aprobado (CU-03, paso 8):
+        queda PUBLICADO y asociado a su perfil."""
+        evento = Evento(
+            titulo=titulo,
+            descripcion=descripcion,
+            precio=precio,
+            estado=EstadoEvento.PUBLICADO,
+            origen=OrigenEvento.CARGA_ORGANIZADOR,
+            id_organizador=organizador.id_organizador,
             fecha_publicacion=self._reloj(),
             lugar=lugar,
             categorias=categorias,
