@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
+          // El backend setea la cookie del refresh token con path /auth, pero el navegador
+          // ve esas rutas como /api/auth: sin esto la cookie nunca vuelve al backend.
+          cookiePathRewrite: { '/auth': '/api/auth' },
         },
       },
     },

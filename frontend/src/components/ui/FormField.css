@@ -1,0 +1,17 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  text-align: left;
+}
+
+.form-field-label {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.form-field-error {
+  font-size: 0.8125rem;
+  color: #ef4444; /* red-500 */
+}
