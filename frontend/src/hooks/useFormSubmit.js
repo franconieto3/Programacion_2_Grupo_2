@@ -27,9 +27,11 @@ function interpretarError(error) {
 
 // Maneja el envío de un formulario: arma un objeto con los valores (por el
 // atributo name de cada campo), llama a `accion` y expone el estado del envío.
-// Uso: const { submit, enviando, errores, errorGeneral } = useFormSubmit(accion)
+// `validar(datos)` es opcional: si devuelve errores por campo ({ campo: mensaje }),
+// se muestran y no se llama a `accion`.
+// Uso: const { submit, enviando, errores, errorGeneral } = useFormSubmit(accion, { validar })
 //      <form onSubmit={submit}>
-export function useFormSubmit(accion) {
+export function useFormSubmit(accion, { validar } = {}) {
   const [enviando, setEnviando] = useState(false);
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState(null);
@@ -38,6 +40,13 @@ export function useFormSubmit(accion) {
     evento.preventDefault();
     if (enviando) return;
     const datos = Object.fromEntries(new FormData(evento.currentTarget));
+
+    const erroresLocales = validar?.(datos) ?? {};
+    if (Object.keys(erroresLocales).length > 0) {
+      setErrores(erroresLocales);
+      setErrorGeneral(null);
+      return;
+    }
 
     setEnviando(true);
     setErrores({});

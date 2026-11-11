@@ -1,0 +1,50 @@
+/* Estilos compartidos por las pantallas de autenticación (Login, Registro). */
+
+.auth {
+  width: 100%;
+  max-width: 24rem;
+  margin: 4rem auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Dos campos lado a lado (nombre y apellido); se apilan en pantallas angostas. */
+.auth-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .auth-fila {
+    grid-template-columns: 1fr;
+  }
+}
+
+.auth-submit {
+  margin-top: 15px;
+}
+
+/* Aviso de éxito; mismo formato que FormError, en verde. */
+.auth-aviso {
+  margin-top: 1.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #bbf7d0; /* green-200 */
+  border-radius: 0.375rem;
+  background-color: #f0fdf4; /* green-50 */
+  color: #15803d; /* green-700 */
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.auth-pie {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+}
