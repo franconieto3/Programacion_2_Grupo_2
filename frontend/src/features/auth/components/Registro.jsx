@@ -2,6 +2,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import FormError from "../../../components/ui/FormError";
 import FormField from "../../../components/ui/FormField";
 import Input from "../../../components/ui/Input";
+import PasswordInput from "../../../components/ui/PasswordInput";
 import SubmitButton from "../../../components/ui/SubmitButton";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { registrar } from "../../../services/auth";
@@ -62,9 +63,8 @@ export function Registro() {
           <Input name="email" type="email" autoComplete="email" required />
         </FormField>
         <FormField label="Contraseña" error={errores.password}>
-          <Input
+          <PasswordInput
             name="password"
-            type="password"
             autoComplete="new-password"
             minLength={8}
             maxLength={128}
@@ -72,7 +72,7 @@ export function Registro() {
           />
         </FormField>
         <FormField label="Repetir contraseña" error={errores.password_confirmacion}>
-          <Input name="password_confirmacion" type="password" autoComplete="new-password" required />
+          <PasswordInput name="password_confirmacion" autoComplete="new-password" required />
         </FormField>
         <FormError mensaje={errorGeneral} />
         <SubmitButton className="auth-submit" enviando={enviando} textoEnviando="Creando cuenta...">

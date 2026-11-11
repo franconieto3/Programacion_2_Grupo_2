@@ -2,6 +2,7 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 import FormError from "../../../components/ui/FormError";
 import FormField from "../../../components/ui/FormField";
 import Input from "../../../components/ui/Input";
+import PasswordInput from "../../../components/ui/PasswordInput";
 import SubmitButton from "../../../components/ui/SubmitButton";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { useAuth } from "../context/AuthContext";
@@ -14,7 +15,6 @@ export function Login() {
   const destino = location.state?.from?.pathname ?? "/explorar";
   // Registro manda acá un aviso y el email si creó la cuenta pero no pudo iniciar sesión.
   const aviso = location.state?.aviso;
-
   const { submit, enviando, errores, errorGeneral } = useFormSubmit(
     ({ email, password }) => login(email, password),
   );
@@ -42,7 +42,7 @@ export function Login() {
           />
         </FormField>
         <FormField label="Contraseña" error={errores.password}>
-          <Input name="password" type="password" autoComplete="current-password" required />
+          <PasswordInput name="password" autoComplete="current-password" required />
         </FormField>
         <FormError mensaje={errorGeneral} />
         <SubmitButton className="auth-submit" enviando={enviando} textoEnviando="Ingresando...">
