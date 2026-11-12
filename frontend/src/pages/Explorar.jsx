@@ -35,6 +35,7 @@ const Explorar = () => {
   const busqueda = useBusquedaEventos(viewport, filtros, { habilitada: viewport !== null });
 
   const mapaRef = useRef(null);
+  const buscadorRef = useRef(null);
   // Si el usuario ya movió el mapa o buscó un lugar, una ubicación que llega
   // tarde no lo saca de donde está.
   const movido = useRef(false);
@@ -86,12 +87,18 @@ const Explorar = () => {
       <div className="explorar-panel">
         <div className="explorar-encabezado">
           <h1 className="explorar-titulo">Explorar</h1>
-          <BuscadorLugar onSeleccionar={irALugar} destacado={avisoVisible} />
+          <BuscadorLugar ref={buscadorRef} onSeleccionar={irALugar} destacado={avisoVisible} />
           {avisoVisible && (
             <AvisoUbicacion
               nombre={ubicacion.nombre}
               motivo={inicial.motivo}
-              onCerrar={() => setAvisoCerrado(true)}
+              onCerrar={(conTeclado) => {
+                setAvisoCerrado(true);
+                // El botón desaparece: el foco pasa al buscador en vez de
+                // perderse. Solo con teclado, para no abrir el teclado del
+                // celular al tocar la X.
+                if (conTeclado) buscadorRef.current?.focus();
+              }}
             />
           )}
           <PanelFiltros
@@ -143,14 +150,25 @@ const TEXTOS_MOTIVO = {
   "no-soportado": "Tu navegador no comparte la ubicación",
 };
 
+// Con el mapa a la vista en el celular se muestra la versión corta, para no
+// quitarle lugar al mapa.
 const AvisoUbicacion = ({ nombre, motivo, onCerrar }) => (
   <div className="explorar-aviso" role="status">
     <Icono nombre="location_off" className="explorar-aviso-icono" />
-    <p>
+    <p className="explorar-aviso-largo">
       {TEXTOS_MOTIVO[motivo] ?? "No pudimos obtener tu ubicación"}: te mostramos{" "}
       <strong>{nombre}</strong>. Buscá tu zona para ver eventos cerca tuyo.
     </p>
-    <button type="button" className="explorar-aviso-cerrar" aria-label="Cerrar el aviso" onClick={onCerrar}>
+    <p className="explorar-aviso-corto">
+      Sin tu ubicación: te mostramos <strong>{nombre}</strong>.
+    </p>
+    <button
+      type="button"
+      className="explorar-aviso-cerrar"
+      aria-label="Cerrar el aviso"
+      // detail es 0 cuando el click viene del teclado (Enter o espacio).
+      onClick={(evento) => onCerrar(evento.detail === 0)}
+    >
       <Icono nombre="close" />
     </button>
   </div>

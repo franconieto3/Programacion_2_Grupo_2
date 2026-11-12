@@ -17,9 +17,10 @@ import "./BuscadorLugar.css";
 // segundo. Si se sigue escribiendo, la búsqueda anterior se cancela.
 // - destacado: más grande y con sombra, para cuando no hay ubicación del
 //   usuario (RF-03.8) y buscar es la forma de llegar a su zona.
+// - ref: el <input>, para darle el foco desde afuera.
 const ESPERA = 500;
 
-const BuscadorLugar = ({ onSeleccionar, destacado = false, className = "" }) => {
+const BuscadorLugar = ({ onSeleccionar, destacado = false, className = "", ref }) => {
   const [texto, setTexto] = useState("");
   const [abierto, setAbierto] = useState(false);
   const [activa, setActiva] = useState(-1);
@@ -95,6 +96,7 @@ const BuscadorLugar = ({ onSeleccionar, destacado = false, className = "" }) => 
       </label>
       <Icono nombre="search" className="buscador-lugar-lupa" />
       <input
+        ref={ref}
         id={id}
         type="search"
         className="buscador-lugar-input"

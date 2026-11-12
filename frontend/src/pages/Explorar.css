@@ -45,6 +45,10 @@
   margin: 0.0625rem 0 0;
 }
 
+.explorar-aviso-corto {
+  display: none;
+}
+
 .explorar-aviso strong {
   color: var(--text-h);
   font-weight: 600;
@@ -127,6 +131,20 @@
 
 .explorar-vista-mapa .explorar-lista {
   display: none;
+}
+
+.explorar-vista-mapa .explorar-aviso {
+  align-items: center;
+  padding-block: 0.375rem;
+}
+
+.explorar-vista-mapa .explorar-aviso-largo {
+  display: none;
+}
+
+.explorar-vista-mapa .explorar-aviso-corto {
+  display: block;
+  margin: 0;
 }
 
 .explorar-vista-mapa .explorar-mapa {
@@ -252,6 +270,19 @@
 
   .explorar-vista-mapa .mapa-eventos {
     border-radius: 1rem;
+  }
+
+  .explorar-vista-mapa .explorar-aviso {
+    align-items: flex-start;
+    padding-block: 0.625rem;
+  }
+
+  .explorar-vista-mapa .explorar-aviso-largo {
+    display: block;
+  }
+
+  .explorar-vista-mapa .explorar-aviso-corto {
+    display: none;
   }
 
   .explorar-alternar {
