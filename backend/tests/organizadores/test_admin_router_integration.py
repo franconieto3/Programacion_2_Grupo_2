@@ -4,35 +4,25 @@ la persistencia reemplazada por dobles en memoria via
 Se recorre la cadena completa de dependencias: get_usuario_actual (401) ->
 get_admin_actual (403) -> caso de uso."""
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.administradores.dependencies import get_administrador_repository
-from app.administradores.models import Administrador
 from app.auth.dependencies import get_token_service, get_user_repository
 from app.main import app
 from app.models.usuario import Usuario
 from app.organizadores.dependencies import get_organizador_repository
 from app.organizadores.models import EstadoOrganizador, Organizador
-from tests.conftest import FakeTokenService, InMemoryUserRepository
+from tests.conftest import (
+    FakeTokenService,
+    InMemoryAdministradorRepository,
+    InMemoryUserRepository,
+)
 from tests.organizadores.test_solicitar_organizador import (
     InMemoryOrganizadorRepository,
 )
-
-
-class InMemoryAdministradorRepository:
-    def __init__(self) -> None:
-        self._by_usuario_id: dict[UUID, Administrador] = {}
-
-    def add(self, usuario_id: UUID) -> None:
-        self._by_usuario_id[usuario_id] = Administrador(id_usuario=usuario_id)
-
-    async def get_by_usuario_id(
-        self, usuario_id: UUID
-    ) -> Administrador | None:
-        return self._by_usuario_id.get(usuario_id)
 
 
 @pytest.fixture

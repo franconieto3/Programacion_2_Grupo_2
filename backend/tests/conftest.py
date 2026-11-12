@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from app.administradores.models import Administrador
 from app.auth.events.publisher import AuthEventPublisher
 from app.auth.exceptions import InvalidTokenError, TokenExpiredError
 from app.core.security.token_service import AccessTokenPayload
@@ -124,6 +125,19 @@ class InMemoryResetTokenRepository:
 
     async def create(self, usuario_id: UUID, token_hash: str, expires_at: datetime) -> None:
         self.created.append((usuario_id, token_hash, expires_at))
+
+
+class InMemoryAdministradorRepository:
+    def __init__(self) -> None:
+        self._by_usuario_id: dict[UUID, Administrador] = {}
+
+    def add(self, usuario_id: UUID) -> None:
+        self._by_usuario_id[usuario_id] = Administrador(id_usuario=usuario_id)
+
+    async def get_by_usuario_id(
+        self, usuario_id: UUID
+    ) -> Administrador | None:
+        return self._by_usuario_id.get(usuario_id)
 
 
 @pytest.fixture
