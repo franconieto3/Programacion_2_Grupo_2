@@ -5,6 +5,7 @@ import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Icono from "../components/ui/Icono";
+import BadgeEquipo from "../features/eventos/components/BadgeEquipo";
 import { cuandoDetalle, precio, yaTermino } from "../features/eventos/formato";
 import { useEvento } from "../features/eventos/hooks/useEvento";
 import "./DetalleEvento.css";
@@ -57,19 +58,22 @@ const Ficha = ({ evento }) => {
   const cuando = cuandoDetalle(evento);
   const textoPrecio = precio(evento.precio);
   const terminado = yaTermino(evento);
+  const finalizado = terminado && evento.estado !== "CANCELADO";
+  const delEquipo = evento.origen === "SEED_EQUIPO";
   const urlMapa = `https://www.openstreetmap.org/?mlat=${lugar.latitud}&mlon=${lugar.longitud}#map=17/${lugar.latitud}/${lugar.longitud}`;
 
   return (
     <article className="detalle-evento">
       <header className="detalle-evento-encabezado">
-        {(evento.estado === "BORRADOR" || (terminado && evento.estado !== "CANCELADO")) && (
+        {(delEquipo || evento.estado === "BORRADOR" || finalizado) && (
           <div className="detalle-evento-estados">
+            <BadgeEquipo evento={evento} />
             {evento.estado === "BORRADOR" && (
               <Badge variante="advertencia" icono="edit_note">
                 Borrador
               </Badge>
             )}
-            {terminado && evento.estado !== "CANCELADO" && <Badge icono="history">Finalizado</Badge>}
+            {finalizado && <Badge icono="history">Finalizado</Badge>}
           </div>
         )}
         <h1 className="detalle-evento-titulo">{evento.titulo}</h1>
