@@ -9,13 +9,15 @@ import { api } from './client'
 //   hora_desde, hora_hasta              'HH:MM'
 //   categorias                          lista de slugs, p. ej. ['bar', 'teatro']
 //   limit (1-100, default 20), offset   paginación
+// opciones.signal: el de TanStack Query, para cancelar la búsqueda anterior
+// cuando se arrastra el mapa o cambian los filtros.
 // Devuelve { items, total, limit, offset }.
-export function buscarEventos(filtros = {}) {
-  return api.get('/eventos', { query: filtros })
+export function buscarEventos(filtros = {}, { signal } = {}) {
+  return api.get('/eventos', { query: filtros, signal })
 }
 
-export function obtenerEvento(idEvento) {
-  return api.get(`/eventos/${idEvento}`)
+export function obtenerEvento(idEvento, { signal } = {}) {
+  return api.get(`/eventos/${idEvento}`, { signal })
 }
 
 // Solo organizadores aprobados: sus eventos en cualquier estado.
