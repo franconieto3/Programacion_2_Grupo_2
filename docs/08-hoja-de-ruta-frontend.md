@@ -182,7 +182,22 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    buscador no llame antes de tiempo. `client.js` acepta un `signal` (`AbortSignal`) y lo pasa a
    `fetch`; `buscarEventos()`, `obtenerEvento()` y los servicios nuevos lo reciben en un último
    parámetro `{ signal }`, que es el que TanStack Query le da a cada consulta.
-2. `useBusquedaEventos(viewport, filtros)` con TanStack Query.
+2. ~~`useBusquedaEventos(viewport, filtros)` con TanStack Query.~~ **Hecho**
+   (`features/eventos/hooks/`). Devuelve `{ eventos, total, cargando, actualizando, error, hayMas,
+   cargarMas, cargandoMas, reintentar }`:
+   - `useInfiniteQuery` con páginas de 50 (`TAMANO_PAGINA`); `cargarMas()` pide la siguiente con
+     `offset` y `eventos` las junta sin repetir. El mapa muestra lo mismo que la lista: lo cargado.
+   - `normalizarViewport()` deja el viewport como lo acepta el backend: traslada las longitudes que
+     Leaflet da fuera de -180..180, recorta lo que cruza el antimeridiano y redondea a 4 decimales
+     hacia afuera (unos 11 m), así un movimiento mínimo no dispara otra búsqueda.
+   - `normalizarFiltros()` descarta los vacíos y ordena las categorías: `['teatro', 'bar']` y
+     `['bar', 'teatro']` comparten la caché.
+   - Con `keepPreviousData`, al mover el mapa o cambiar un filtro se siguen viendo los resultados
+     anteriores (`actualizando: true`) hasta que llegan los nuevos, y cada búsqueda cancela la
+     anterior. El hook no hace debounce: lo hace el mapa (paso 5).
+   - `habilitada: false` evita buscar antes de tener el primer viewport.
+   - `clavesEventos.js`: todas las claves empiezan con `'eventos'`, para invalidarlas juntas después
+     de crear, editar o cancelar un evento (etapa 3).
 3. **Primero la lista, sin mapa**: `TarjetaEvento` + `ListaEventos` + `PanelFiltros` (fechas,
    horario, `SelectorCategorias`) con los filtros en la URL. Así se valida la búsqueda completa
    sin pelear todavía con el mapa.
@@ -252,7 +267,7 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | `Mapa` (base de Leaflet, la usan descubrimiento y organizador) |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado`, `useBusquedaEventos` |
+| `features/eventos/` | Hechos: `useBusquedaEventos`, `clavesEventos`. Faltan: `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
