@@ -19,7 +19,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 |---|---|---|
 | Proxy a la API | `frontend/vite.config.js` | `/api/...` → backend en `localhost:8000`, incluida la cookie del refresh token |
 | Cliente HTTP | `src/services/client.js` | Token, renovación de sesión ante un 401, errores del backend como `ApiError` |
-| Servicios | `src/services/auth.js`, `src/services/eventos.js` | Todos los endpoints de `/auth` y `/eventos` |
+| Servicios | `src/services/` | Todos los endpoints de `/auth`, `/eventos`, `/categorias`, `/config` y `/geocodificacion`. Las consultas aceptan `{ signal }` para que TanStack Query cancele las que quedan viejas |
 | Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, `refrescarUsuario`, restauración al recargar. `user` tiene siempre la forma de `GET /auth/me`: `{ id, email, nombre, apellido, organizador: { id_organizador, nombre_publico, estado } \| null, es_admin }` |
 | Rutas privadas | `src/routes/PrivateRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login |
 | Caché de datos del servidor | `src/queryClient.js`, `src/main.jsx` | `QueryClientProvider` envuelve la app. Un dato se considera actual durante 30 s; solo se reintentan las fallas de red y los 5xx (un 4xx daría lo mismo y el 401 lo resuelve `client.js`); las mutaciones no se reintentan. `AuthContext` vacía la caché al cerrar sesión o cuando la sesión vence |
@@ -88,7 +88,7 @@ sección siguiente.
 | RF-03.4 | Filtrar por rango de fechas | `PanelFiltros` con dos `<input type="date">` → `desde`, `hasta`. Los filtros se guardan en la URL (`useSearchParams`), así sobreviven a una recarga y se pueden compartir. | 2 | Pendiente |
 | RF-03.5 | Filtrar por rango horario | Dos `<input type="time">` en `PanelFiltros` → `hora_desde`, `hora_hasta` (`HH:MM`). | 2 | Pendiente |
 | RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Pendiente |
-| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Pendiente |
+| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (servicio listo) |
 | RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Pendiente |
 | RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Pendiente |
 
@@ -96,7 +96,7 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-04.1 | Catálogo cerrado de categorías | Nuevo `services/categorias.js` → `GET /categorias` (público). Se cachea con TanStack Query con un `staleTime` largo, porque el catálogo casi no cambia. Lo usan `SelectorCategorias` (filtros y formulario) y las tarjetas. | 2 | Pendiente |
+| RF-04.1 | Catálogo cerrado de categorías | Nuevo `services/categorias.js` → `GET /categorias` (público). Se cachea con TanStack Query con un `staleTime` largo, porque el catálogo casi no cambia. Lo usan `SelectorCategorias` (filtros y formulario) y las tarjetas. | 2 | Parcial (servicio listo) |
 | RF-04.2 | Varias categorías por evento | Cubierto por `SelectorCategorias` en `FormularioEvento` (RF-02.3). `TarjetaEvento` y el detalle muestran todas las categorías del evento como chips. | 3 | Pendiente |
 
 ### RF-05 · Moderación y contenido
@@ -176,7 +176,12 @@ Cierra **RF-01.1** y **RF-01.3**.
 
 ### Etapa 2 · Descubrimiento (CU-01 y CU-02)
 Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-05.2**.
-1. Servicios nuevos: `categorias.js`, `configuracion.js`, `geocodificacion.js`.
+1. ~~Servicios nuevos: `categorias.js`, `configuracion.js`, `geocodificacion.js`.~~ **Hecho:**
+   `listarCategorias()` y `obtenerUbicacionDefault()` (públicas, sin token) y `buscarLugar(texto,
+   { limit })`, que recorta los espacios; `MIN_CARACTERES_BUSQUEDA` (3) está exportado para que el
+   buscador no llame antes de tiempo. `client.js` acepta un `signal` (`AbortSignal`) y lo pasa a
+   `fetch`; `buscarEventos()`, `obtenerEvento()` y los servicios nuevos lo reciben en un último
+   parámetro `{ signal }`, que es el que TanStack Query le da a cada consulta.
 2. `useBusquedaEventos(viewport, filtros)` con TanStack Query.
 3. **Primero la lista, sin mapa**: `TarjetaEvento` + `ListaEventos` + `PanelFiltros` (fechas,
    horario, `SelectorCategorias`) con los filtros en la URL. Así se valida la búsqueda completa
@@ -251,4 +256,4 @@ página, reemplazarla en `App.jsx`.
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
-| `services/` | Hechos: `client`, `auth`, `eventos`. Faltan: `categorias`, `configuracion`, `geocodificacion`, `organizadores` |
+| `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`. Falta: `organizadores` |
