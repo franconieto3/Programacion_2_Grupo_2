@@ -30,6 +30,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Envío de formularios | `src/hooks/useFormSubmit.js` | Estado de envío y errores del backend mostrados en cada campo |
 | Login y registro | `src/features/auth/components/` | Formularios completos |
 | Perfil | `src/pages/Perfil.jsx` | Datos de la cuenta, roles (organizador con su estado, administrador) y "Cerrar sesión" |
+| Página 404 | `src/pages/NoEncontrado.jsx` | Ruta `*`, con o sin sesión. `/` redirige a `/explorar` |
 
 Decisiones de `planning.md` que aplican al frontend:
 - **Mapa: Leaflet + react-leaflet** con tiles de OpenStreetMap.
@@ -63,7 +64,7 @@ sección siguiente.
 |---|---|---|---|---|
 | RF-01.1 | Registro con nombre, apellido, email y contraseña | Página `/registro` con `FormField` + `Input` y `useFormSubmit`, llamando a `registrar()` (ya existe en `auth.js`). Validar en el navegador contraseña de 8 a 128 caracteres. El backend no inicia sesión al registrar: después del alta, llamar a `login()` con los mismos datos para entrar directo. Un `409` (email ya registrado) aparece solo en `FormError`. | 1 | Hecho |
 | RF-01.2 | Todo usuario registrado puede descubrir eventos | Todas las rutas de descubrimiento (`/explorar`, `/eventos/:id`) van dentro de `PrivateRoute`, sin exigir ningún rol. | 2 | Parcial (`PrivateRoute` listo) |
-| RF-01.3 | Iniciar y cerrar sesión | Login hecho. "Cerrar sesión" (`logout()` de `useAuth`) está en el menú de la cuenta, al pie de la barra lateral (`MenuCuenta`), y en `/perfil`, que es el único lugar en el celular. Falta que `/` redirija a `/explorar` (etapa 1, paso 6). | 1 | Parcial (falta redirigir `/`) |
+| RF-01.3 | Iniciar y cerrar sesión | Login hecho. "Cerrar sesión" (`logout()` de `useAuth`) está en el menú de la cuenta, al pie de la barra lateral (`MenuCuenta`), y en `/perfil`, que es el único lugar en el celular. `/` redirige a `/explorar` (sin sesión, `PrivateRoute` lleva a `/ingresar`). | 1 | Hecho |
 | RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (`user.organizador.estado === 'PENDIENTE'`); después de enviarla, llamar a `refrescarUsuario()`. Ya llevan a esta ruta el ítem "Ser organizador" de la barra (para quien no es organizador aprobado) y el enlace "Solicitar" de `/perfil`; hoy muestra `EnConstruccion`. | 3 | Pendiente |
 | RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. La barra de navegación ya muestra "Crear evento" y "Mis eventos" solo a ellos (`BarraNavegacion`); falta proteger las rutas, que hoy se pueden abrir escribiendo la URL. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Parcial (la barra filtra por rol) |
 
@@ -124,7 +125,7 @@ El orden sigue dos criterios:
 ### Etapa 0 · Base (hecha)
 Vite + proxy, `client.js` y servicios, `AuthContext`, `PrivateRoute`, componentes de formulario y Login.
 
-### Etapa 1 · Estructura de la app y registro
+### Etapa 1 · Estructura de la app y registro (hecha)
 Cierra **RF-01.1** y **RF-01.3**.
 1. ~~Pasar los colores de `Button.css` e `Input.css` a las variables de `index.css`, para que
    funcionen en modo claro y oscuro.~~ **Hecho.** También se pasaron `PasswordInput`, `FormField`,
@@ -165,7 +166,12 @@ Cierra **RF-01.1** y **RF-01.3**.
    un `ConfirmDialog` que simula un `409`). Solo existe en desarrollo (`import.meta.env.DEV`): no
    entra en el build de producción ni aparece en la barra.
 5. ~~Página de registro.~~ **Hecho.**
-6. Redirigir `/` a `/explorar` y agregar una página 404.
+6. ~~Redirigir `/` a `/explorar` y agregar una página 404.~~ **Hecho.** `/` redirige a `/explorar`;
+   sin sesión, `PrivateRoute` lleva a `/ingresar` y después del login se vuelve a `/explorar`. La
+   404 (`NoEncontrado`, ruta `*`) queda fuera de `PrivateRoute` para no mandar a iniciar sesión y
+   recién después avisar que la página no existe: con sesión se muestra dentro de `Layout` (que
+   ahora también acepta `children`) con "Ir a Explorar"; sin sesión, sola y centrada con
+   "Iniciar sesión". Los enlaces con forma de botón usan las clases de `Button` sobre un `Link`.
 7. ~~Coordinar con el backend los pendientes B-1 y B-2.~~ Resueltos.
 
 ### Etapa 2 · Descubrimiento (CU-01 y CU-02)
@@ -216,7 +222,7 @@ columna **Hoy** indica qué se muestra en este momento.
 |---|---|---|---|---|
 | `/ingresar` | Login | Pública (redirige si ya hay sesión) | 0 | Hecha |
 | `/registro` | Registro | Pública | 1 | Hecha |
-| `/` | Redirige a `/explorar` | — | 1 | Muestra el login (con sesión, redirige a `/explorar`) |
+| `/` | Redirige a `/explorar` | — | 1 | Hecha |
 | `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | `EnConstruccion` |
 | `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | — |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
@@ -226,7 +232,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | — |
 | `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
 | `/dev/componentes` | Catálogo de `components/ui` | Usuario logueado, **solo en desarrollo** | 1 | Hecha |
-| `*` | No encontrado | — | 1 | — |
+| `*` | No encontrado | Pública (con sesión, dentro de `Layout`) | 1 | Hecha |
 
 `EnConstruccion` (`src/pages/EnConstruccion.jsx`) es una página provisoria con un aviso de
 "Próximamente", para que los ítems de la barra no lleven a una página en blanco. Al hacer cada
@@ -244,5 +250,5 @@ página, reemplazarla en `App.jsx`.
 | `features/eventos/` | `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado`, `useBusquedaEventos` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`. Faltan: `categorias`, `configuracion`, `geocodificacion`, `organizadores` |
