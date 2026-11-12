@@ -1,15 +1,16 @@
 import { Link } from "react-router-dom";
 import Avatar from "../components/ui/Avatar";
+import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Icono from "../components/ui/Icono";
 import { useAuth } from "../features/auth/context/AuthContext";
 import "./Perfil.css";
 
 const ESTADO_ORGANIZADOR = {
-  PENDIENTE: "Solicitud pendiente de aprobación",
-  APROBADO: "Aprobado",
-  RECHAZADO: "Solicitud rechazada",
-  SUSPENDIDO: "Suspendido",
+  PENDIENTE: { texto: "Pendiente", variante: "advertencia" },
+  APROBADO: { texto: "Aprobado", variante: "exito" },
+  RECHAZADO: { texto: "Rechazado", variante: "error" },
+  SUSPENDIDO: { texto: "Suspendido", variante: "error" },
 };
 
 // Datos de la cuenta y sus roles. Todavía no se pueden editar (RF-01.4 no
@@ -40,11 +41,14 @@ const Perfil = () => {
             <div className="perfil-fila-texto">
               <span className="perfil-fila-titulo">Organizador</span>
               <span className="perfil-fila-detalle">
-                {organizador
-                  ? `${organizador.nombre_publico} · ${ESTADO_ORGANIZADOR[organizador.estado]}`
-                  : "Todavía no publicás eventos."}
+                {organizador ? organizador.nombre_publico : "Todavía no publicás eventos."}
               </span>
             </div>
+            {organizador && (
+              <Badge variante={ESTADO_ORGANIZADOR[organizador.estado].variante}>
+                {ESTADO_ORGANIZADOR[organizador.estado].texto}
+              </Badge>
+            )}
             {(!organizador || organizador.estado === "RECHAZADO") && (
               <Link to="/organizador/solicitud" className="perfil-fila-accion">
                 Solicitar

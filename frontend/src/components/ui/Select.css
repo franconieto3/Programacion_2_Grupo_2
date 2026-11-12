@@ -1,0 +1,34 @@
+.select {
+  position: relative;
+}
+
+/* Hereda bordes, colores y foco de .input-base; la flecha nativa se reemplaza
+   por un ícono, igual en todos los navegadores. */
+.select-control {
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+/* Mientras está elegido el placeholder, el texto va apagado como en un Input. */
+.select-control:has(option[value=""]:checked) {
+  color: var(--muted);
+}
+
+.select-control option {
+  color: var(--text-h);
+}
+
+.select-icono {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.select-control:disabled + .select-icono {
+  opacity: 0.5;
+}

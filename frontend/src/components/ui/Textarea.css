@@ -1,0 +1,24 @@
+.textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Hereda bordes, colores y foco de .input-base; solo cambia el alto. */
+.textarea-control {
+  height: auto;
+  min-height: 5.5rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.textarea-contador {
+  align-self: flex-end;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.textarea-contador-limite {
+  color: var(--error);
+}

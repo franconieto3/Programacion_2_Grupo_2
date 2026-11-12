@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import PrivateRoute from './routes/PrivateRoute';
 import { AuthContextProvider } from './features/auth/context/AuthContext';
@@ -5,8 +6,15 @@ import Layout from './components/layout/Layout';
 
 import { Login } from './features/auth/components/Login';
 import { Registro } from './features/auth/components/Registro';
+import Spinner from './components/ui/Spinner';
 import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
+
+// Catálogo de componentes solo en desarrollo: en el build de producción
+// import.meta.env.DEV es false y Vite descarta la ruta y el import.
+const CatalogoComponentes = import.meta.env.DEV
+  ? lazy(() => import('./pages/CatalogoComponentes'))
+  : null;
 
 function App() {
 
@@ -73,6 +81,16 @@ function App() {
                     }
                   />
                   <Route path="/perfil" element={<Perfil />} />
+                  {CatalogoComponentes && (
+                    <Route
+                      path="/dev/componentes"
+                      element={
+                        <Suspense fallback={<Spinner pantallaCompleta />}>
+                          <CatalogoComponentes />
+                        </Suspense>
+                      }
+                    />
+                  )}
                 </Route>
               </Route>
           </Routes>

@@ -1,4 +1,4 @@
-.en-construccion {
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9,7 +9,7 @@
   text-align: center;
 }
 
-.en-construccion-icono {
+.empty-state-icono {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -21,17 +21,21 @@
   color: var(--secondary-fg);
 }
 
-.en-construccion-icono .icono {
+.empty-state-icono .icono {
   font-size: 2rem;
 }
 
-.en-construccion-titulo {
+.empty-state-titulo {
   color: var(--text-h);
   font-size: 1.0625rem;
   font-weight: 600;
 }
 
-.en-construccion-texto {
+.empty-state-texto {
   max-width: 26rem;
   font-size: 0.9375rem;
+}
+
+.empty-state-accion {
+  margin-top: 1rem;
 }

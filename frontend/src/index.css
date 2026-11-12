@@ -31,6 +31,15 @@
   --success-bg: #f0fdf4;
   --success-border: #bbf7d0;
   --success-text: #15803d;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+  --warning-text: #b45309;
+  --info-bg: #eff6ff;
+  --info-border: #bfdbfe;
+  --info-text: #1d4ed8;
+
+  /* Fondo detrás de los diálogos */
+  --overlay: rgba(2, 8, 23, 0.45);
 
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -83,6 +92,14 @@
     --success-bg: #052e16;
     --success-border: #14532d;
     --success-text: #86efac;
+    --warning-bg: #451a03;
+    --warning-border: #78350f;
+    --warning-text: #fcd34d;
+    --info-bg: #172554;
+    --info-border: #1e3a8a;
+    --info-text: #93c5fd;
+
+    --overlay: rgba(0, 0, 0, 0.6);
 
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
@@ -91,6 +108,33 @@
 
 body {
   margin: 0;
+}
+
+/* Texto solo para lectores de pantalla (p. ej. "Cargando" en un Spinner). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* El spinner sí tiene que moverse para comunicar que algo está cargando:
+     solo se hace más lento. */
+  .spinner svg {
+    animation-duration: 1.5s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* Ocupa todo el ancho: la barra de navegación (components/layout) va fija al
