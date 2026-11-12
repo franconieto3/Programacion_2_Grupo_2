@@ -90,7 +90,7 @@ sección siguiente.
 | RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Hecho |
 | RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (servicio listo) |
 | RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Pendiente |
-| RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Pendiente |
+| RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Parcial (falta el mapa chico) |
 
 ### RF-04 · Categorías
 
@@ -217,9 +217,20 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    - `formato.js`: las fechas se muestran en `America/Argentina/Buenos_Aires`, la misma zona con la
      que el backend aplica los filtros de fecha y horario. Una fecha que llega sin zona horaria
      (pasa con SQLite) se toma como UTC.
-4. Ficha de detalle `/eventos/:id`.
+4. ~~Ficha de detalle `/eventos/:id`.~~ **Hecho** (`pages/DetalleEvento.jsx`, `useEvento`):
+   - Título, categorías, cuándo (en dos renglones; si dura más de un día, "Hasta el domingo 6 de
+     diciembre, 23:00"), lugar con un enlace "Abrir en OpenStreetMap", precio, descripción con sus
+     saltos de línea y "Publicado por". Los eventos del seed muestran el logo de la app en lugar de
+     iniciales.
+   - Un evento cancelado muestra un aviso; los borradores (solo los ve su organizador) y los ya
+     terminados, un badge.
+   - Un `404` o un id que no es UUID (ni se pide) muestran "No encontramos este evento".
+   - "Volver" regresa a la lista con sus filtros; si se entró directo por un enlace, dice
+     "Explorar" y lleva ahí.
+   - **Falta el mapa chico con el lugar**: va en el paso 5, cuando exista el componente `Mapa`.
 5. Instalar `leaflet` y `react-leaflet`. Crear un componente `Mapa` base (tiles, atribución,
    tamaño) y `MapaEventos` encima, con marcadores, popups y la búsqueda por viewport con debounce.
+   Sumar con `Mapa` el mapa chico de la ficha de detalle (RF-03.10).
 6. `useUbicacionInicial` (geolocalización o ubicación por defecto) y `BuscadorLugar`.
 7. Juntar mapa y lista en `/explorar`, alimentados por la misma búsqueda.
 8. Probar el flujo rechazando el permiso de ubicación (RF-03.8).
@@ -260,7 +271,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/registro` | Registro | Pública | 1 | Hecha |
 | `/` | Redirige a `/explorar` | — | 1 | Hecha |
 | `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | Lista + filtros (falta el mapa) |
-| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | `EnConstruccion` |
+| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | Hecha (falta el mapa chico) |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
 | `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | `EnConstruccion` |
 | `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | `EnConstruccion` (sin `OrganizadorRoute`) |
@@ -283,8 +294,8 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | `Mapa` (base de Leaflet, la usan descubrimiento y organizador) |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `clavesEventos`, `formato`. Faltan: `MapaEventos`, `FormularioEvento`, `BadgeEstado` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`. Faltan: `MapaEventos`, `FormularioEvento`, `BadgeEstado` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar` (sin mapa), `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar` (sin mapa), `DetalleEvento` (sin mapa), `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`. Falta: `organizadores` |
