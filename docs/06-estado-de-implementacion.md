@@ -80,6 +80,8 @@ lado de la API. Hay 4 migraciones (`0001_auth_tables` a `0004_eventos`).
 | Solicitud de recuperación de contraseña | `POST /auth/recover-password` → `EmailRecovery`. Genera un token de un solo uso (60 min), guarda su hash en `password_reset_token` y envía el link por email. **Falta el paso de consumirlo** (no hay un endpoint que valide el token y cambie la contraseña, y `used_at` nunca se escribe). |
 | Registro de auditoría | `AuditLogObserver` escribe en `audit_log` los 5 eventos de auth: `user_registered`, `login_succeeded`, `login_failed`, `password_recovery_requested` y `session_verified`. |
 | Emails transaccionales | `EmailNotificationObserver` envía un email de bienvenida al registrarse y el link de recuperación. Hoy usa `ConsoleEmailSender`, que solo los escribe en el log. |
+| Usuario actual con sus roles | `GET /auth/me` (`app/perfil/router.py`): datos del usuario autenticado, su perfil de organizador (`id_organizador`, `nombre_publico`, `estado`) o `null`, y `es_admin`. Lo usa el frontend después del login y al restaurar la sesión para mostrar u ocultar las acciones de organizador y de administrador. Sin token `401`, cuenta inactiva `403`. |
+| Errores de validación en español | `app/core/validation_errors.py`: handler de `RequestValidationError` que traduce el `msg` de cada error según su `type` de Pydantic y mantiene el formato `{"detail": [{loc, msg, type}]}`. Los validadores propios conservan su texto y un tipo sin traducción conserva el mensaje original. No devuelve `input` ni `ctx`. |
 
 ---
 
@@ -139,6 +141,14 @@ sistema. Todos los endpoints están bajo el prefijo `/auth`.
   `refresh_token` y se emite un **access token nuevo**. En ambos casos se publica `SessionVerified`.
 - **Alternativos:** sin tokens → `401`. Token inválido, revocado o vencido, o usuario
   inactivo → `401`.
+
+#### Usuario actual · `GET /auth/me`
+
+- **Flujo principal:** con un access token válido en `Authorization`, responde los datos públicos
+  del usuario más `organizador` (`{ id_organizador, nombre_publico, estado }` o `null`) y
+  `es_admin`. No acepta la cookie de refresh: si el token venció, el cliente renueva la sesión con
+  `verify-session` y reintenta.
+- **Alternativos:** sin token o token inválido → `401`. Cuenta inactiva → `403`.
 
 #### Cerrar sesión (RF-01.3) · `POST /auth/logout`
 

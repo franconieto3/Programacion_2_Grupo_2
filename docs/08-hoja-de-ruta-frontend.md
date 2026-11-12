@@ -20,7 +20,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Proxy a la API | `frontend/vite.config.js` | `/api/...` → backend en `localhost:8000`, incluida la cookie del refresh token |
 | Cliente HTTP | `src/services/client.js` | Token, renovación de sesión ante un 401, errores del backend como `ApiError` |
 | Servicios | `src/services/auth.js`, `src/services/eventos.js` | Todos los endpoints de `/auth` y `/eventos` |
-| Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, restauración al recargar |
+| Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, `refrescarUsuario`, restauración al recargar. `user` tiene siempre la forma de `GET /auth/me`: `{ id, email, nombre, apellido, organizador: { id_organizador, nombre_publico, estado } \| null, es_admin }` |
 | Rutas privadas | `src/routes/PrivateRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login |
 | Componentes de formulario | `src/components/ui/` | `Button`, `Input`, `FormField`, `FormError`, `SubmitButton` |
 | Envío de formularios | `src/hooks/useFormSubmit.js` | Estado de envío y errores del backend mostrados en cada campo |
@@ -34,15 +34,15 @@ Decisiones de `planning.md` que aplican al frontend:
 
 ---
 
-## Pendientes del backend que bloquean al frontend
+## Pendientes del backend que bloqueaban al frontend
 
-Hay que resolverlos antes de la etapa 3. Conviene acordarlos ya con quien trabaja en el backend.
+Ya resueltos; la etapa 3 y la 4 quedan desbloqueadas.
 
-| # | Problema | Qué afecta | Propuesta |
-|---|---|---|---|
-| B-1 | El frontend no tiene forma de saber si el usuario es organizador (y en qué estado) ni si es administrador | Mostrar u ocultar "Crear evento", "Mis eventos", "Solicitar ser organizador" y las acciones de admin (RF-01.6, RF-01.7, RF-05.1) | `GET /auth/me` que devuelva `UsuarioPublic` + `organizador: { estado } \| null` + `es_admin` |
-| B-2 | Después del login el usuario es `{ id, email, nombre, apellido }`, pero al recargar es `{ usuario_id, email }`: `verify-session` no devuelve el resto | Cualquier pantalla que muestre el nombre o use `user.id` | Se resuelve con el mismo `GET /auth/me` de B-1: `restaurarSesion()` lo llama después de renovar el token |
-| B-3 | Los errores de validación de Pydantic llegan en inglés ("value is not a valid email address") | Formularios de registro y de eventos | Traducirlos en el backend o mapear los más comunes en `useFormSubmit` |
+| # | Problema | Qué afecta | Solución | Estado |
+|---|---|---|---|---|
+| B-1 | El frontend no tiene forma de saber si el usuario es organizador (y en qué estado) ni si es administrador | Mostrar u ocultar "Crear evento", "Mis eventos", "Solicitar ser organizador" y las acciones de admin (RF-01.6, RF-01.7, RF-05.1) | `GET /auth/me` (`app/perfil/`) devuelve `UsuarioPublic` + `organizador: { id_organizador, nombre_publico, estado } \| null` + `es_admin` | Hecho |
+| B-2 | Después del login el usuario es `{ id, email, nombre, apellido }`, pero al recargar es `{ usuario_id, email }`: `verify-session` no devuelve el resto | Cualquier pantalla que muestre el nombre o use `user.id` | `iniciarSesion()` y `restaurarSesion()` (`services/auth.js`) piden `GET /auth/me`. `useAuth()` suma `refrescarUsuario()` para actualizar los roles sin otro login (p. ej. después de solicitar ser organizador) | Hecho |
+| B-3 | Los errores de validación de Pydantic llegan en inglés ("value is not a valid email address") | Formularios de registro y de eventos | Se traducen en el backend (`app/core/validation_errors.py`) con el mismo formato `{ detail: [{ loc, msg, type }] }`, así `useFormSubmit` no cambia | Hecho |
 
 ---
 
@@ -59,8 +59,8 @@ sección siguiente.
 | RF-01.1 | Registro con nombre, apellido, email y contraseña | Página `/registro` con `FormField` + `Input` y `useFormSubmit`, llamando a `registrar()` (ya existe en `auth.js`). Validar en el navegador contraseña de 8 a 128 caracteres. El backend no inicia sesión al registrar: después del alta, llamar a `login()` con los mismos datos para entrar directo. Un `409` (email ya registrado) aparece solo en `FormError`. | 1 | Hecho |
 | RF-01.2 | Todo usuario registrado puede descubrir eventos | Todas las rutas de descubrimiento (`/explorar`, `/eventos/:id`) van dentro de `PrivateRoute`, sin exigir ningún rol. | 2 | Parcial (`PrivateRoute` listo) |
 | RF-01.3 | Iniciar y cerrar sesión | Login hecho. Falta el `Header` con un menú de usuario y el botón "Cerrar sesión" (`logout()` de `useAuth`), y que `/` redirija a `/explorar`. | 1 | Parcial (login hecho) |
-| RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (necesita B-1). | 3 | Bloqueado (B-1) |
-| RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. El `Header` muestra "Crear evento" y "Mis eventos" solo a ellos. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Bloqueado (B-1) |
+| RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (`user.organizador.estado === 'PENDIENTE'`); después de enviarla, llamar a `refrescarUsuario()`. | 3 | Pendiente |
+| RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. El `Header` muestra "Crear evento" y "Mis eventos" solo a ellos. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Pendiente |
 
 ### RF-02 · Gestión de eventos (organizador)
 
@@ -97,14 +97,14 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a `/explorar`, porque el evento deja de verse. | 4 | Bloqueado (B-1) |
+| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a `/explorar`, porque el evento deja de verse. | 4 | Pendiente |
 | RF-05.2 | Eventos del equipo (seed) diferenciados | La carga es por script (`scripts/seed.py`), así que en el frontend no hay formulario. Solo hay que diferenciarlos: `Badge` "Equipo de la plataforma" cuando `origen === 'SEED_EQUIPO'` en `TarjetaEvento` y en el detalle. | 2 | Pendiente |
 
 ### Recomendado aunque no es Must
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. | 4 | Bloqueado (B-1) |
+| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. | 4 | Pendiente |
 
 ---
 
@@ -114,8 +114,7 @@ El orden sigue dos criterios:
 1. **Primero el descubrimiento**: es "el corazón del producto" según `planning.md` y contiene el
    único Must que falta en todo el proyecto (RF-03.1).
 2. **Construir antes lo que se reutiliza**: el `Mapa` y el `SelectorCategorias` de la etapa 2 los
-   vuelve a usar el formulario de eventos de la etapa 3. Además, eso le da tiempo al backend para
-   resolver B-1, que bloquea la etapa 3.
+   vuelve a usar el formulario de eventos de la etapa 3.
 
 ### Etapa 0 · Base (hecha)
 Vite + proxy, `client.js` y servicios, `AuthContext`, `PrivateRoute`, componentes de formulario y Login.
@@ -131,7 +130,7 @@ Cierra **RF-01.1** y **RF-01.3**.
    "Cargando..." de `PrivateRoute`), `Textarea`, `Select`, `Badge`, `EmptyState` y `ConfirmDialog`.
 5. Página de registro.
 6. Redirigir `/` a `/explorar` y agregar una página 404.
-7. Coordinar con el backend los pendientes B-1 y B-2.
+7. ~~Coordinar con el backend los pendientes B-1 y B-2.~~ Resueltos.
 
 ### Etapa 2 · Descubrimiento (CU-01 y CU-02)
 Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-05.2**.
@@ -148,7 +147,7 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
 8. Probar el flujo rechazando el permiso de ubicación (RF-03.8).
 
 ### Etapa 3 · Organizador (CU-04 y CU-03)
-Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. Necesita B-1 resuelto.
+Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya está resuelto (`GET /auth/me`).
 1. `services/organizadores.js` y la página de solicitud.
 2. `OrganizadorRoute` y los enlaces del `Header` según el rol.
 3. `SelectorUbicacion` (reutiliza `Mapa` y `BuscadorLugar`).
