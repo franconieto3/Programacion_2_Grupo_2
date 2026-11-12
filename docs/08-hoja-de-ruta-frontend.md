@@ -2,7 +2,7 @@
 
 ## Plataforma de descubrimiento de eventos por geolocalización
 
-**Fecha:** 11/11/2026 · **Stack:** React 19 + Vite + JavaScript, React Router 7
+**Fecha:** 11/11/2026 (actualizado el 12/11/2026) · **Stack:** React 19 + Vite + JavaScript, React Router 7, TanStack Query 5
 
 Plan para implementar el frontend de los requisitos **Must** (`02-requisitos-funcionales.md`). El
 backend de todos ya está hecho (`06-estado-de-implementacion.md`), así que el trabajo que queda es
@@ -22,9 +22,14 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Servicios | `src/services/auth.js`, `src/services/eventos.js` | Todos los endpoints de `/auth` y `/eventos` |
 | Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, `refrescarUsuario`, restauración al recargar. `user` tiene siempre la forma de `GET /auth/me`: `{ id, email, nombre, apellido, organizador: { id_organizador, nombre_publico, estado } \| null, es_admin }` |
 | Rutas privadas | `src/routes/PrivateRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login |
-| Componentes de formulario | `src/components/ui/` | `Button`, `Input`, `FormField`, `FormError`, `SubmitButton` |
+| Caché de datos del servidor | `src/queryClient.js`, `src/main.jsx` | `QueryClientProvider` envuelve la app. Un dato se considera actual durante 30 s; solo se reintentan las fallas de red y los 5xx (un 4xx daría lo mismo y el 401 lo resuelve `client.js`); las mutaciones no se reintentan. `AuthContext` vacía la caché al cerrar sesión o cuando la sesión vence |
+| Paleta de colores | `src/index.css` | Variables en `:root` (escala slate: base, botones, mensajes) redefinidas en `prefers-color-scheme: dark`. Los componentes no usan colores fijos, solo estas variables |
+| Navegación | `src/components/layout/` | `Layout` con `BarraNavegacion` y `<Outlet />` para las rutas privadas (ver etapa 1, paso 3) |
+| Componentes de interfaz | `src/components/ui/` | `Button`, `Input`, `PasswordInput`, `FormField`, `FormError`, `SubmitButton`, `Icono` y `Avatar` |
+| Íconos | `index.html`, `src/components/ui/Icono.jsx` | Material Symbols Outlined con el eje de relleno variable: `<Icono nombre="explore" relleno />`. Los nombres están en [fonts.google.com/icons](https://fonts.google.com/icons) |
 | Envío de formularios | `src/hooks/useFormSubmit.js` | Estado de envío y errores del backend mostrados en cada campo |
-| Login | `src/features/auth/components/Login.jsx` | Formulario completo |
+| Login y registro | `src/features/auth/components/` | Formularios completos |
+| Perfil | `src/pages/Perfil.jsx` | Datos de la cuenta, roles (organizador con su estado, administrador) y "Cerrar sesión" |
 
 Decisiones de `planning.md` que aplican al frontend:
 - **Mapa: Leaflet + react-leaflet** con tiles de OpenStreetMap.
@@ -58,9 +63,9 @@ sección siguiente.
 |---|---|---|---|---|
 | RF-01.1 | Registro con nombre, apellido, email y contraseña | Página `/registro` con `FormField` + `Input` y `useFormSubmit`, llamando a `registrar()` (ya existe en `auth.js`). Validar en el navegador contraseña de 8 a 128 caracteres. El backend no inicia sesión al registrar: después del alta, llamar a `login()` con los mismos datos para entrar directo. Un `409` (email ya registrado) aparece solo en `FormError`. | 1 | Hecho |
 | RF-01.2 | Todo usuario registrado puede descubrir eventos | Todas las rutas de descubrimiento (`/explorar`, `/eventos/:id`) van dentro de `PrivateRoute`, sin exigir ningún rol. | 2 | Parcial (`PrivateRoute` listo) |
-| RF-01.3 | Iniciar y cerrar sesión | Login hecho. Falta el `Header` con un menú de usuario y el botón "Cerrar sesión" (`logout()` de `useAuth`), y que `/` redirija a `/explorar`. | 1 | Parcial (login hecho) |
-| RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (`user.organizador.estado === 'PENDIENTE'`); después de enviarla, llamar a `refrescarUsuario()`. | 3 | Pendiente |
-| RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. El `Header` muestra "Crear evento" y "Mis eventos" solo a ellos. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Pendiente |
+| RF-01.3 | Iniciar y cerrar sesión | Login hecho. "Cerrar sesión" (`logout()` de `useAuth`) está en el menú de la cuenta, al pie de la barra lateral (`MenuCuenta`), y en `/perfil`, que es el único lugar en el celular. Falta que `/` redirija a `/explorar` (etapa 1, paso 6). | 1 | Parcial (falta redirigir `/`) |
+| RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (`user.organizador.estado === 'PENDIENTE'`); después de enviarla, llamar a `refrescarUsuario()`. Ya llevan a esta ruta el ítem "Ser organizador" de la barra (para quien no es organizador aprobado) y el enlace "Solicitar" de `/perfil`; hoy muestra `EnConstruccion`. | 3 | Pendiente |
+| RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. La barra de navegación ya muestra "Crear evento" y "Mis eventos" solo a ellos (`BarraNavegacion`); falta proteger las rutas, que hoy se pueden abrir escribiendo la URL. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Parcial (la barra filtra por rol) |
 
 ### RF-02 · Gestión de eventos (organizador)
 
@@ -104,7 +109,7 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. | 4 | Pendiente |
+| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. El ítem "Administración" de la barra ya aparece solo para administradores; la ruta hoy muestra `EnConstruccion`. | 4 | Pendiente |
 
 ---
 
@@ -121,14 +126,29 @@ Vite + proxy, `client.js` y servicios, `AuthContext`, `PrivateRoute`, componente
 
 ### Etapa 1 · Estructura de la app y registro
 Cierra **RF-01.1** y **RF-01.3**.
-1. Pasar los colores de `Button.css` e `Input.css` a las variables de `index.css`, para que
-   funcionen en modo claro y oscuro. Hacerlo ahora, antes de que haya más componentes.
-2. Instalar TanStack Query y envolver la app en `QueryClientProvider`.
-3. `Layout` con `Header` (logo, navegación, menú de usuario con "Cerrar sesión") y `<Outlet />`.
-   Las rutas privadas se renderizan adentro.
+1. ~~Pasar los colores de `Button.css` e `Input.css` a las variables de `index.css`, para que
+   funcionen en modo claro y oscuro.~~ **Hecho.** También se pasaron `PasswordInput`, `FormField`,
+   `FormError` y el aviso de `Auth.css`; no queda ningún color fijo fuera de `index.css`.
+2. ~~Instalar TanStack Query y envolver la app en `QueryClientProvider`.~~ **Hecho** (ver
+   `queryClient.js` en el punto de partida).
+3. ~~`Layout` con `Header` y `<Outlet />`.~~ **Hecho, con una barra de navegación lateral en lugar
+   del header**, al estilo de Instagram y X web. Mobile-first, en tres tamaños:
+   - menos de 768px: barra de pestañas fija abajo, solo íconos; "Crear evento" es un botón
+     relleno al medio;
+   - desde 768px: columna fija a la izquierda, solo íconos (el nombre aparece al pasar el mouse);
+   - desde 1264px: barra lateral con textos, el botón "Crear evento" (como "Postear" en X) y la
+     cuenta al pie, con un menú para "Cerrar sesión".
+
+   Los ítems dependen de los roles de `GET /auth/me`: "Explorar" y "Perfil" para todos, "Mis
+   eventos" y "Crear evento" para organizadores aprobados, "Ser organizador" para el resto y
+   "Administración" para administradores. El ítem activo muestra el ícono relleno y el texto en
+   negrita; "Perfil" muestra las iniciales del usuario. Se agregó `/perfil` (no estaba planificada)
+   y las rutas que todavía no tienen página muestran `EnConstruccion` (ver el mapa de rutas). El
+   nombre del producto es provisorio ("Eventos", `NOMBRE_APP` en `BarraNavegacion.jsx`) hasta
+   que se defina (`planning.md`, pendiente 7).
 4. Componentes genéricos que van a hacer falta en todas las etapas: `Spinner` (reemplaza el
    "Cargando..." de `PrivateRoute`), `Textarea`, `Select`, `Badge`, `EmptyState` y `ConfirmDialog`.
-5. Página de registro.
+5. ~~Página de registro.~~ **Hecho.**
 6. Redirigir `/` a `/explorar` y agregar una página 404.
 7. ~~Coordinar con el backend los pendientes B-1 y B-2.~~ Resueltos.
 
@@ -149,7 +169,7 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
 ### Etapa 3 · Organizador (CU-04 y CU-03)
 Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya está resuelto (`GET /auth/me`).
 1. `services/organizadores.js` y la página de solicitud.
-2. `OrganizadorRoute` y los enlaces del `Header` según el rol.
+2. `OrganizadorRoute`. Los enlaces según el rol ya están en `BarraNavegacion`.
 3. `SelectorUbicacion` (reutiliza `Mapa` y `BuscadorLugar`).
 4. `FormularioEvento` (reutiliza `SelectorCategorias`) y la página de alta.
 5. "Mis eventos" con `BadgeEstado`.
@@ -173,31 +193,39 @@ Cierra **RF-05.1**, más **RF-05.5** como recomendado.
 
 ## Mapa de rutas
 
-| Ruta | Página | Acceso | Etapa |
-|---|---|---|---|
-| `/ingresar` | Login | Pública (redirige si ya hay sesión) | 0 |
-| `/registro` | Registro | Pública | 1 |
-| `/` | Redirige a `/explorar` | — | 1 |
-| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 |
-| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 |
-| `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 |
-| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 |
-| `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 |
-| `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 |
-| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 |
-| `*` | No encontrado | — | 1 |
+Las rutas con sesión se renderizan dentro de `Layout` (barra de navegación + contenido). La
+columna **Hoy** indica qué se muestra en este momento.
+
+| Ruta | Página | Acceso | Etapa | Hoy |
+|---|---|---|---|---|
+| `/ingresar` | Login | Pública (redirige si ya hay sesión) | 0 | Hecha |
+| `/registro` | Registro | Pública | 1 | Hecha |
+| `/` | Redirige a `/explorar` | — | 1 | Muestra el login (con sesión, redirige a `/explorar`) |
+| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | `EnConstruccion` |
+| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | — |
+| `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
+| `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | `EnConstruccion` |
+| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | `EnConstruccion` (sin `OrganizadorRoute`) |
+| `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | `EnConstruccion` (sin `OrganizadorRoute`) |
+| `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | — |
+| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
+| `*` | No encontrado | — | 1 | — |
+
+`EnConstruccion` (`src/pages/EnConstruccion.jsx`) es una página provisoria con un aviso de
+"Próximamente", para que los ítems de la barra no lleven a una página en blanco. Al hacer cada
+página, reemplazarla en `App.jsx`.
 
 ## Componentes por ubicación
 
 | Carpeta | Componentes |
 |---|---|
-| `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `FormField`, `FormError`, `SubmitButton`. Faltan: `Textarea`, `Select`, `Badge`, `Spinner`, `EmptyState`, `ConfirmDialog` |
-| `components/layout/` | `Layout`, `Header` |
+| `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `PasswordInput`, `FormField`, `FormError`, `SubmitButton`, `Icono`, `Avatar`. Faltan: `Textarea`, `Select`, `Badge`, `Spinner`, `EmptyState`, `ConfirmDialog` |
+| `components/layout/` | Hechos: `Layout`, `BarraNavegacion`, `MenuCuenta` |
 | `components/mapa/` | `Mapa` (base de Leaflet, la usan descubrimiento y organizador) |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
-| `features/auth/` | Hecho: `Login`. Falta: `Registro` |
+| `features/auth/` | Hechos: `Login`, `Registro` |
 | `features/eventos/` | `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado`, `useBusquedaEventos` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/` |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil` y `EnConstruccion` (provisoria) |
 | `services/` | Hechos: `client`, `auth`, `eventos`. Faltan: `categorias`, `configuracion`, `geocodificacion`, `organizadores` |
