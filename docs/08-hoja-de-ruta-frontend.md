@@ -83,11 +83,11 @@ sección siguiente.
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
 | RF-03.1 | Vista de mapa centrada en la ubicación del usuario | Página `/explorar` con `MapaEventos` (react-leaflet + tiles OSM con su atribución). Hook `useUbicacionInicial`: pide `navigator.geolocation` con un timeout corto; si falla, usa `GET /config/ubicacion-default` (`lat`, `lng`, `zoom`). Un marcador por evento en `lugar.latitud/longitud`, con un popup que lleva al detalle. **Es el único Must pendiente del proyecto.** | 2 | Pendiente |
-| RF-03.2 | Vista de lista con los mismos resultados que el mapa | `ListaEventos` con `TarjetaEvento`, alimentada por el **mismo** hook `useBusquedaEventos` que el mapa, así nunca pueden mostrar cosas distintas. Mapa y lista lado a lado en escritorio, con selector en mobile. Paginación con `limit`/`offset` ("Cargar más"). | 2 | Pendiente |
+| RF-03.2 | Vista de lista con los mismos resultados que el mapa | `ListaEventos` con `TarjetaEvento`, alimentada por el **mismo** hook `useBusquedaEventos` que el mapa, así nunca pueden mostrar cosas distintas. Mapa y lista lado a lado en escritorio, con selector en mobile. Paginación con `limit`/`offset` ("Cargar más"). | 2 | Parcial (lista hecha, falta el mapa) |
 | RF-03.3 | Mover y hacer zoom re-ejecuta la búsqueda por viewport | En los eventos `moveend`/`zoomend` de Leaflet, leer `map.getBounds()` → `lat_min`, `lat_max`, `lng_min`, `lng_max`, con un debounce de unos 400 ms. `useBusquedaEventos` usa TanStack Query con el viewport y los filtros como clave de caché. Ojo: Leaflet puede devolver longitudes fuera de -180..180 si el mapa se repite horizontalmente, y el backend las rechaza (`422`); limitarlas o usar `worldCopyJump`/`maxBounds`. | 2 | Pendiente |
-| RF-03.4 | Filtrar por rango de fechas | `PanelFiltros` con dos `<input type="date">` → `desde`, `hasta`. Los filtros se guardan en la URL (`useSearchParams`), así sobreviven a una recarga y se pueden compartir. | 2 | Pendiente |
-| RF-03.5 | Filtrar por rango horario | Dos `<input type="time">` en `PanelFiltros` → `hora_desde`, `hora_hasta` (`HH:MM`). | 2 | Pendiente |
-| RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Pendiente |
+| RF-03.4 | Filtrar por rango de fechas | `PanelFiltros` con dos `<input type="date">` → `desde`, `hasta`. Los filtros se guardan en la URL (`useSearchParams`), así sobreviven a una recarga y se pueden compartir. | 2 | Hecho |
+| RF-03.5 | Filtrar por rango horario | Dos `<input type="time">` en `PanelFiltros` → `hora_desde`, `hora_hasta` (`HH:MM`). | 2 | Hecho |
+| RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Hecho |
 | RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (servicio listo) |
 | RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Pendiente |
 | RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Pendiente |
@@ -96,7 +96,7 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-04.1 | Catálogo cerrado de categorías | Nuevo `services/categorias.js` → `GET /categorias` (público). Se cachea con TanStack Query con un `staleTime` largo, porque el catálogo casi no cambia. Lo usan `SelectorCategorias` (filtros y formulario) y las tarjetas. | 2 | Parcial (servicio listo) |
+| RF-04.1 | Catálogo cerrado de categorías | Nuevo `services/categorias.js` → `GET /categorias` (público). Se cachea con TanStack Query con un `staleTime` largo, porque el catálogo casi no cambia. Lo usan `SelectorCategorias` (filtros y formulario) y las tarjetas. | 2 | Hecho |
 | RF-04.2 | Varias categorías por evento | Cubierto por `SelectorCategorias` en `FormularioEvento` (RF-02.3). `TarjetaEvento` y el detalle muestran todas las categorías del evento como chips. | 3 | Pendiente |
 
 ### RF-05 · Moderación y contenido
@@ -198,9 +198,25 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    - `habilitada: false` evita buscar antes de tener el primer viewport.
    - `clavesEventos.js`: todas las claves empiezan con `'eventos'`, para invalidarlas juntas después
      de crear, editar o cancelar un evento (etapa 3).
-3. **Primero la lista, sin mapa**: `TarjetaEvento` + `ListaEventos` + `PanelFiltros` (fechas,
-   horario, `SelectorCategorias`) con los filtros en la URL. Así se valida la búsqueda completa
-   sin pelear todavía con el mapa.
+3. ~~**Primero la lista, sin mapa**: `TarjetaEvento` + `ListaEventos` + `PanelFiltros` (fechas,
+   horario, `SelectorCategorias`) con los filtros en la URL.~~ **Hecho:** `/explorar` muestra la
+   lista con `useBusquedaEventos(null, filtros)` (sin viewport hasta el paso 7).
+   - `TarjetaEvento`: bloque de fecha, horario ("Mañana · 22:30 – 01:00", "hasta Dom 6 dic" si dura
+     más de un día), lugar, categorías y precio ("Gratis" si es 0; sin precio no se muestra nada).
+     Enlaza a `/eventos/:id`, que por ahora muestra `EnConstruccion`.
+   - `ListaEventos`: esqueleto de carga, resultados anteriores atenuados mientras se actualiza,
+     "Cargar más (n)", estados vacíos (con y sin filtros) y de error con "Reintentar".
+   - `PanelFiltros`: categorías siempre a la vista (en el celular, una fila que se desliza) y fecha y
+     horario en una sección desplegable; el botón resume lo elegido ("14 nov – 30 nov · 22:00 a
+     02:00"). Los cambios se aplican enseguida. Si "desde" pasa a ser posterior a "hasta", se borra
+     "hasta"; si el horario cruza la medianoche, se avisa.
+   - `SelectorCategorias`: chips con `aria-pressed`, reutilizable en el formulario de eventos.
+     `useCategorias()` pide el catálogo una vez por sesión (`staleTime: Infinity`).
+   - `useFiltrosBusqueda()`: los filtros viven en la URL (`replace`, sin ensuciar el historial) y
+     los valores mal formados se ignoran, así una URL vieja o escrita a mano no termina en un 422.
+   - `formato.js`: las fechas se muestran en `America/Argentina/Buenos_Aires`, la misma zona con la
+     que el backend aplica los filtros de fecha y horario. Una fecha que llega sin zona horaria
+     (pasa con SQLite) se toma como UTC.
 4. Ficha de detalle `/eventos/:id`.
 5. Instalar `leaflet` y `react-leaflet`. Crear un componente `Mapa` base (tiles, atribución,
    tamaño) y `MapaEventos` encima, con marcadores, popups y la búsqueda por viewport con debounce.
@@ -243,8 +259,8 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/ingresar` | Login | Pública (redirige si ya hay sesión) | 0 | Hecha |
 | `/registro` | Registro | Pública | 1 | Hecha |
 | `/` | Redirige a `/explorar` | — | 1 | Hecha |
-| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | `EnConstruccion` |
-| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | — |
+| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | Lista + filtros (falta el mapa) |
+| `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | `EnConstruccion` |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
 | `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | `EnConstruccion` |
 | `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | `EnConstruccion` (sin `OrganizadorRoute`) |
@@ -267,8 +283,8 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | `Mapa` (base de Leaflet, la usan descubrimiento y organizador) |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `useBusquedaEventos`, `clavesEventos`. Faltan: `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `clavesEventos`, `formato`. Faltan: `MapaEventos`, `FormularioEvento`, `BadgeEstado` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar` (sin mapa), `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`. Falta: `organizadores` |
