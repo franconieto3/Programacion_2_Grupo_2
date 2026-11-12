@@ -7,7 +7,7 @@
   border-radius: 0.375rem; /* rounded-md */
   font-size: 0.875rem; /* text-sm */
   font-weight: 500; /* font-medium */
-  transition: colors 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
   border: none;
   cursor: pointer;
   font-family: inherit;
@@ -17,7 +17,7 @@
 /* Efecto Focus (El clásico anillo de shadcn) */
 .btn-base:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #0f172a; 
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
 }
 
 /* Estado Deshabilitado */
@@ -32,49 +32,50 @@
 
 /* Default (Principal oscuro) */
 .btn-variant-default {
-  background-color: #0f172a; /* bg-slate-900 */
-  color: #f8fafc; /* text-slate-50 */
+  background-color: var(--primary);
+  color: var(--primary-fg);
 }
 .btn-variant-default:hover {
-  background-color: #1e293b; /* bg-slate-900/90 (simulado) */
+  background-color: var(--primary-hover);
 }
 
 /* Destructive (Rojo para eliminar/cancelar) */
 .btn-variant-destructive {
-  background-color: #ef4444; /* bg-red-500 */
-  color: #f8fafc; 
+  background-color: var(--destructive);
+  color: var(--destructive-fg);
 }
 .btn-variant-destructive:hover {
-  background-color: #dc2626; /* bg-red-600 */
+  background-color: var(--destructive-hover);
 }
 
 /* Outline (Borde gris, fondo transparente) */
 .btn-variant-outline {
-  border: 1px solid #e2e8f0; /* border-input */
-  background-color: #ffffff; /* bg-background */
-  color: #0f172a;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text-h);
 }
 .btn-variant-outline:hover {
-  background-color: #f1f5f9; /* bg-accent */
-  color: #0f172a; /* text-accent-foreground */
+  background-color: var(--accent);
+  color: var(--accent-fg);
 }
 
 /* Secondary (Gris claro) */
 .btn-variant-secondary {
-  background-color: #f1f5f9; /* bg-secondary */
-  color: #0f172a; /* text-secondary-foreground */
+  background-color: var(--secondary);
+  color: var(--secondary-fg);
 }
 .btn-variant-secondary:hover {
-  background-color: #e2e8f0; /* bg-secondary/80 */
+  background-color: var(--secondary-hover);
 }
 
 /* Ghost (Sin fondo ni borde hasta el hover) */
 .btn-variant-ghost {
   background-color: transparent;
-  color: #0f172a;
+  color: var(--text-h);
 }
 .btn-variant-ghost:hover {
-  background-color: #f1f5f9; 
+  background-color: var(--accent);
+  color: var(--accent-fg);
 }
 
 /* =========================================

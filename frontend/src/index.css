@@ -1,5 +1,37 @@
+/* Paleta de la app (escala slate). Los componentes usan solo estas variables,
+   nunca colores fijos: así el modo oscuro se resuelve redefiniéndolas abajo. */
 :root {
-  --bg: #fff;
+  /* Base */
+  --bg: #ffffff;
+  --text: #475569; /* texto común */
+  --text-h: #0f172a; /* títulos, etiquetas y texto de los campos */
+  --muted: #94a3b8; /* placeholders e íconos secundarios */
+  --border: #e2e8f0;
+  --code-bg: #f1f5f9;
+  --ring: #0f172a; /* anillo de foco */
+
+  /* Botones */
+  --primary: #0f172a;
+  --primary-fg: #f8fafc;
+  --primary-hover: #1e293b;
+  --secondary: #f1f5f9;
+  --secondary-fg: #0f172a;
+  --secondary-hover: #e2e8f0;
+  --accent: #f1f5f9; /* hover de los botones outline y ghost */
+  --accent-fg: #0f172a;
+  --destructive: #ef4444;
+  --destructive-fg: #f8fafc;
+  --destructive-hover: #dc2626;
+
+  /* Mensajes */
+  --error: #dc2626; /* error bajo un campo y borde del campo inválido */
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #b91c1c;
+  --success-bg: #f0fdf4;
+  --success-border: #bbf7d0;
+  --success-text: #15803d;
+
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
@@ -19,6 +51,41 @@
 
   @media (max-width: 1024px) {
     font-size: 16px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #020817;
+    --text: #94a3b8;
+    --text-h: #f8fafc;
+    --muted: #64748b;
+    --border: #1e293b;
+    --code-bg: #1e293b;
+    --ring: #cbd5e1;
+
+    --primary: #f8fafc;
+    --primary-fg: #0f172a;
+    --primary-hover: #e2e8f0;
+    --secondary: #1e293b;
+    --secondary-fg: #f8fafc;
+    --secondary-hover: #334155;
+    --accent: #1e293b;
+    --accent-fg: #f8fafc;
+    --destructive: #dc2626;
+    --destructive-fg: #f8fafc;
+    --destructive-hover: #b91c1c;
+
+    --error: #f87171;
+    --error-bg: #450a0a;
+    --error-border: #7f1d1d;
+    --error-text: #fca5a5;
+    --success-bg: #052e16;
+    --success-border: #14532d;
+    --success-text: #86efac;
+
+    --shadow:
+      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
   }
 }
 
