@@ -125,6 +125,19 @@
   font-size: 1rem;
 }
 
+.detalle-evento-mapa {
+  height: 13rem;
+  margin-top: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+@media (min-width: 768px) {
+  .detalle-evento-mapa {
+    height: 16rem;
+  }
+}
+
 .detalle-evento-seccion {
   margin-top: 2.5rem;
   padding-top: 2rem;

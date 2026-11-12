@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import MapaUbicacion from "../components/mapa/MapaUbicacion";
 import Avatar from "../components/ui/Avatar";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
@@ -10,9 +11,8 @@ import "./DetalleEvento.css";
 
 const CLASES_BOTON = "btn-base btn-variant-outline btn-size-default";
 
-// Ficha de detalle de un evento (RF-03.10, CU-01 paso 5): datos, lugar,
-// precio, categorías y quién lo publica. El mapa chico con el lugar se suma
-// en el paso 5 de la etapa 2, junto con el componente Mapa.
+// Ficha de detalle de un evento (RF-03.10, CU-01 paso 5): datos, lugar con un
+// mapa chico, precio, categorías y quién lo publica.
 const DetalleEvento = () => {
   const { idEvento } = useParams();
   const { data: evento, isPending, error, noEncontrado, refetch } = useEvento(idEvento);
@@ -129,6 +129,13 @@ const Ficha = ({ evento }) => {
           </li>
         )}
       </ul>
+
+      <MapaUbicacion
+        lat={lugar.latitud}
+        lng={lugar.longitud}
+        titulo={lugar.nombre ?? evento.titulo}
+        className="detalle-evento-mapa"
+      />
 
       <section className="detalle-evento-seccion" aria-labelledby="detalle-descripcion">
         <h2 id="detalle-descripcion" className="detalle-evento-seccion-titulo">
