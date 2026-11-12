@@ -104,7 +104,7 @@ sección siguiente.
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
 | RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a `/explorar`, porque el evento deja de verse. | 4 | Pendiente |
-| RF-05.2 | Eventos del equipo (seed) diferenciados | La carga es por script (`scripts/seed.py`), así que en el frontend no hay formulario. Solo hay que diferenciarlos: `Badge` "Equipo de la plataforma" cuando `origen === 'SEED_EQUIPO'` en `TarjetaEvento` y en el detalle. | 2 | Pendiente |
+| RF-05.2 | Eventos del equipo (seed) diferenciados | La carga es por script (`scripts/seed.py`), así que en el frontend no hay formulario. Solo hay que diferenciarlos: `BadgeEquipo` ("Equipo de la plataforma", variante `info`) cuando `origen === 'SEED_EQUIPO'`, en `TarjetaEvento` antes de las categorías y en el detalle arriba del título. En "Publicado por" el detalle muestra el logo de la app en lugar de iniciales. | 2 | Hecho |
 
 ### Recomendado aunque no es Must
 
@@ -174,7 +174,7 @@ Cierra **RF-01.1** y **RF-01.3**.
    "Iniciar sesión". Los enlaces con forma de botón usan las clases de `Button` sobre un `Link`.
 7. ~~Coordinar con el backend los pendientes B-1 y B-2.~~ Resueltos.
 
-### Etapa 2 · Descubrimiento (CU-01 y CU-02)
+### Etapa 2 · Descubrimiento (CU-01 y CU-02) (hecha)
 Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-05.2**.
 1. ~~Servicios nuevos: `categorias.js`, `configuracion.js`, `geocodificacion.js`.~~ **Hecho:**
    `listarCategorias()` y `obtenerUbicacionDefault()` (públicas, sin token) y `buscarLugar(texto,
@@ -310,7 +310,10 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    - Al cerrar el aviso con el teclado, el foco pasa al buscador en vez de perderse. Con el mouse
      o el dedo no, para no abrir el teclado del celular. `BuscadorLugar` acepta `ref` (el input).
 
-   Queda de la etapa: **RF-05.2** (diferenciar los eventos del equipo en la tarjeta y el detalle).
+9. ~~Diferenciar los eventos del equipo (RF-05.2).~~ **Hecho:** `BadgeEquipo` en
+   `features/eventos/components/` muestra "Equipo de la plataforma" si `origen === 'SEED_EQUIPO'` y
+   nada en los demás. Se usa en `TarjetaEvento` (antes de las categorías) y en `DetalleEvento`
+   (junto a los estados, arriba del título).
 
 ### Etapa 3 · Organizador (CU-04 y CU-03)
 Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya está resuelto (`GET /auth/me`).
@@ -371,7 +374,7 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`. Faltan: `FormularioEvento`, `BadgeEstado` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`. Faltan: `FormularioEvento`, `BadgeEstado` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`. Falta: `SelectorUbicacion` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
