@@ -290,7 +290,27 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
      eventos en esta zona" y sugiere mover el mapa.
    - Probado con permiso concedido, denegado, sin respuesta y aceptado tarde, en 390, 820, 1280 y
      1920 px, en modo claro y oscuro.
-8. Probar el flujo rechazando el permiso de ubicación (RF-03.8).
+8. ~~Probar el flujo rechazando el permiso de ubicación (RF-03.8).~~ **Hecho.** Casos probados en
+   el navegador:
+   | Caso | Resultado |
+   |---|---|
+   | Permiso denegado | El mapa abre en la ubicación por defecto con eventos, sin esperar el tope de 8 s, con el aviso "No tenemos permiso para ver tu ubicación…" y el buscador destacado |
+   | Navegador sin geolocalización | Igual, con "Tu navegador no comparte la ubicación" |
+   | Posición no disponible (GPS apagado) | Igual, con "No pudimos obtener tu ubicación" |
+   | Además falla `GET /config/ubicacion-default` | Usa el respaldo fijo (Buenos Aires) |
+   | Nominatim caído (`503`) | El buscador lo dice; el mapa se sigue moviendo a mano y busca eventos |
+   | Elegir un lugar (escritorio y celular) | El mapa va al lugar; el aviso y el destacado se van |
+   | Recargar | Abre donde estaba (la URL tiene la posición) y no muestra el aviso |
+   | Entrar de nuevo a `/explorar` sin parámetros | Vuelve a pedir la ubicación y muestra el aviso |
+
+   Ajustes que salieron de las pruebas:
+   - Con el mapa a la vista en el celular, el aviso ocupaba cuatro renglones (en 320×568 quedaban
+     235 px de mapa). Ahora muestra una versión corta: "Sin tu ubicación: te mostramos *Buenos
+     Aires*."
+   - Al cerrar el aviso con el teclado, el foco pasa al buscador en vez de perderse. Con el mouse
+     o el dedo no, para no abrir el teclado del celular. `BuscadorLugar` acepta `ref` (el input).
+
+   Queda de la etapa: **RF-05.2** (diferenciar los eventos del equipo en la tarjeta y el detalle).
 
 ### Etapa 3 · Organizador (CU-04 y CU-03)
 Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya está resuelto (`GET /auth/me`).
