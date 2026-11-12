@@ -25,7 +25,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Caché de datos del servidor | `src/queryClient.js`, `src/main.jsx` | `QueryClientProvider` envuelve la app. Un dato se considera actual durante 30 s; solo se reintentan las fallas de red y los 5xx (un 4xx daría lo mismo y el 401 lo resuelve `client.js`); las mutaciones no se reintentan. `AuthContext` vacía la caché al cerrar sesión o cuando la sesión vence |
 | Paleta de colores | `src/index.css` | Variables en `:root` (escala slate: base, botones, mensajes) redefinidas en `prefers-color-scheme: dark`. Los componentes no usan colores fijos, solo estas variables |
 | Navegación | `src/components/layout/` | `Layout` con `BarraNavegacion` y `<Outlet />` para las rutas privadas (ver etapa 1, paso 3) |
-| Componentes de interfaz | `src/components/ui/` | `Button`, `Input`, `PasswordInput`, `FormField`, `FormError`, `SubmitButton`, `Icono` y `Avatar` |
+| Componentes de interfaz | `src/components/ui/` | `Button`, `Input`, `PasswordInput`, `Textarea`, `Select`, `FormField`, `FormError`, `SubmitButton`, `Spinner`, `Badge`, `EmptyState`, `ConfirmDialog`, `Icono` y `Avatar`. Cada uno documenta su uso en un comentario al principio del archivo. En desarrollo, `/dev/componentes` los muestra todos (ver etapa 1, paso 4) |
 | Íconos | `index.html`, `src/components/ui/Icono.jsx` | Material Symbols Outlined con el eje de relleno variable: `<Icono nombre="explore" relleno />`. Los nombres están en [fonts.google.com/icons](https://fonts.google.com/icons) |
 | Envío de formularios | `src/hooks/useFormSubmit.js` | Estado de envío y errores del backend mostrados en cada campo |
 | Login y registro | `src/features/auth/components/` | Formularios completos |
@@ -146,8 +146,24 @@ Cierra **RF-01.1** y **RF-01.3**.
    y las rutas que todavía no tienen página muestran `EnConstruccion` (ver el mapa de rutas). El
    nombre del producto es provisorio ("Eventos", `NOMBRE_APP` en `BarraNavegacion.jsx`) hasta
    que se defina (`planning.md`, pendiente 7).
-4. Componentes genéricos que van a hacer falta en todas las etapas: `Spinner` (reemplaza el
-   "Cargando..." de `PrivateRoute`), `Textarea`, `Select`, `Badge`, `EmptyState` y `ConfirmDialog`.
+4. ~~Componentes genéricos que van a hacer falta en todas las etapas.~~ **Hecho:**
+   - `Spinner`: reemplaza el "Cargando..." de `PrivateRoute` (aparece a los 300 ms, para que las
+     cargas rápidas no parpadeen) y se muestra en `SubmitButton` mientras se envía.
+   - `Textarea` y `Select`: misma base visual que `Input` y conectados a `FormField`. `Textarea`
+     tiene un contador opcional (`contador` + `maxLength`); `Select` es el `<select>` nativo con
+     `placeholder` (una primera opción vacía que no se puede elegir).
+   - `Badge`: variantes `neutral`, `exito`, `advertencia`, `error` e `info`. `BadgeEstado` (etapa
+     3) se arma encima; ya se usa en `/perfil` para el estado del organizador.
+   - `EmptyState`: ícono, título, descripción y una acción opcional. `EnConstruccion` lo usa.
+   - `ConfirmDialog`: `<dialog>` nativo modal. `onConfirmar` puede ser async: mientras corre se
+     deshabilitan los botones y, si falla, el error del backend se muestra en el diálogo, que queda
+     abierto. Se cierra con "Volver", Escape o un clic afuera. El botón para cerrar dice "Volver" y
+     no "Cancelar" para no confundirlo con "Cancelar evento".
+
+   Se sumaron los colores `--warning-*`, `--info-*` y `--overlay` a la paleta. **`/dev/componentes`**
+   muestra todos los componentes en un catálogo para revisar el diseño en claro y oscuro (incluye
+   un `ConfirmDialog` que simula un `409`). Solo existe en desarrollo (`import.meta.env.DEV`): no
+   entra en el build de producción ni aparece en la barra.
 5. ~~Página de registro.~~ **Hecho.**
 6. Redirigir `/` a `/explorar` y agregar una página 404.
 7. ~~Coordinar con el backend los pendientes B-1 y B-2.~~ Resueltos.
@@ -209,6 +225,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | `EnConstruccion` (sin `OrganizadorRoute`) |
 | `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | — |
 | `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
+| `/dev/componentes` | Catálogo de `components/ui` | Usuario logueado, **solo en desarrollo** | 1 | Hecha |
 | `*` | No encontrado | — | 1 | — |
 
 `EnConstruccion` (`src/pages/EnConstruccion.jsx`) es una página provisoria con un aviso de
@@ -219,7 +236,7 @@ página, reemplazarla en `App.jsx`.
 
 | Carpeta | Componentes |
 |---|---|
-| `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `PasswordInput`, `FormField`, `FormError`, `SubmitButton`, `Icono`, `Avatar`. Faltan: `Textarea`, `Select`, `Badge`, `Spinner`, `EmptyState`, `ConfirmDialog` |
+| `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `PasswordInput`, `Textarea`, `Select`, `FormField`, `FormError`, `SubmitButton`, `Spinner`, `Badge`, `EmptyState`, `ConfirmDialog`, `Icono`, `Avatar` |
 | `components/layout/` | Hechos: `Layout`, `BarraNavegacion`, `MenuCuenta` |
 | `components/mapa/` | `Mapa` (base de Leaflet, la usan descubrimiento y organizador) |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
@@ -227,5 +244,5 @@ página, reemplazarla en `App.jsx`.
 | `features/eventos/` | `MapaEventos`, `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `FormularioEvento`, `BadgeEstado`, `useBusquedaEventos` |
 | `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil` y `EnConstruccion` (provisoria) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Perfil`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`. Faltan: `categorias`, `configuracion`, `geocodificacion`, `organizadores` |
