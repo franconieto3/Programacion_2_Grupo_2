@@ -9,6 +9,7 @@ import { Registro } from './features/auth/components/Registro';
 import Spinner from './components/ui/Spinner';
 import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
+import Explorar from './pages/Explorar';
 import NoEncontrado from './pages/NoEncontrado';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
@@ -32,13 +33,14 @@ function App() {
                 {/* Las rutas privadas van dentro de Layout (barra de navegación + contenido).
                     Las que usan EnConstruccion se reemplazan en su etapa de la hoja de ruta. */}
                 <Route element={<Layout />}>
+                  <Route path="/explorar" element={<Explorar />} />
                   <Route
-                    path="/explorar"
+                    path="/eventos/:idEvento"
                     element={
                       <EnConstruccion
-                        titulo="Explorar"
-                        icono="map"
-                        descripcion="Acá vas a ver el mapa y la lista de eventos cerca tuyo, con filtros por fecha, horario y categoría."
+                        titulo="Detalle del evento"
+                        icono="event"
+                        descripcion="Acá vas a ver todos los datos del evento, su ubicación en el mapa y quién lo publica."
                       />
                     }
                   />

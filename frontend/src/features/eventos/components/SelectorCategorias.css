@@ -1,0 +1,85 @@
+.selector-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* En el celular, una sola fila que se desliza con el dedo; el margen
+   negativo la deja llegar hasta el borde de la pantalla. */
+@media (max-width: 767px) {
+  .selector-categorias-desplazable {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -1rem;
+    padding: 0.25rem 1rem;
+    scrollbar-width: none;
+  }
+
+  .selector-categorias-desplazable::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background-color: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+}
+
+.chip:hover {
+  background-color: var(--accent);
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+}
+
+.chip-activo,
+.chip-activo:hover {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: var(--primary-fg);
+}
+
+.chip .icono {
+  margin-left: -0.25rem;
+  font-size: 1rem;
+}
+
+.chip-esqueleto {
+  border-color: transparent;
+  background-color: var(--secondary);
+  cursor: default;
+  animation: esqueleto 1.4s ease-in-out infinite;
+}
+
+.selector-categorias-error {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.selector-categorias-reintentar {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-h);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
