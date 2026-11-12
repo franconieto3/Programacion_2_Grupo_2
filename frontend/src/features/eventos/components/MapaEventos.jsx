@@ -14,19 +14,25 @@ import "./MapaEventos.css";
 //
 // - eventos: los de useBusquedaEventos().
 // - centro: { lat, lng, zoom } inicial.
-// - onCambioViewport(viewport): al montarse y cada vez que el usuario termina
-//   de mover o hacer zoom (con `espera` ms de debounce, 400 por defecto), con
-//   { lat_min, lat_max, lng_min, lng_max }. Pasárselo tal cual a
-//   useBusquedaEventos, que lo normaliza.
+// - onCambioViewport(viewport, { centro, zoom }): al montarse y cada vez que
+//   el usuario termina de mover o hacer zoom (con `espera` ms de debounce, 400
+//   por defecto). viewport es { lat_min, lat_max, lng_min, lng_max }:
+//   pasárselo tal cual a useBusquedaEventos, que lo normaliza. centro
+//   ({ lat, lng }) y zoom sirven para guardar la posición (p. ej. en la URL).
+// - onInteraccion(): cuando el usuario empieza a arrastrar o hacer zoom.
 // - actualizando: muestra "Buscando..." sobre el mapa.
+// - total: cuántos eventos cumplen la búsqueda; si son más que los marcados,
+//   lo avisa ("50 de 120 en el mapa").
 // - ref: la instancia de Leaflet, para moverlo desde afuera (fitBounds del
 //   buscador de lugares, paso 6).
 const MapaEventos = ({
   eventos,
   centro,
   onCambioViewport,
+  onInteraccion,
   espera = 400,
   actualizando = false,
+  total = 0,
   className = "",
   ref,
 }) => {
@@ -35,7 +41,7 @@ const MapaEventos = ({
   return (
     <div className={`mapa-eventos ${className}`.trim()}>
       <Mapa centro={centro} zoom={centro.zoom} ref={ref} className="mapa-eventos-mapa">
-        <EscuchaViewport onCambio={onCambioViewport} espera={espera} />
+        <EscuchaViewport onCambio={onCambioViewport} onInteraccion={onInteraccion} espera={espera} />
         {grupos.map((grupo) => (
           <Marker
             key={grupo.clave}
@@ -49,11 +55,17 @@ const MapaEventos = ({
           </Marker>
         ))}
       </Mapa>
-      {actualizando && (
+      {actualizando ? (
         <span className="mapa-eventos-estado">
           <Spinner tamano="sm" decorativo />
           Buscando...
         </span>
+      ) : (
+        total > eventos.length && (
+          <span className="mapa-eventos-estado">
+            {eventos.length} de {total} en el mapa
+          </span>
+        )
       )}
     </div>
   );
@@ -62,17 +74,30 @@ const MapaEventos = ({
 // Avisa el viewport al montarse (para la primera búsqueda) y después de cada
 // movimiento, esperando a que el usuario termine (debounce): arrastrar el
 // mapa dispara muchos "moveend" seguidos.
-const EscuchaViewport = ({ onCambio, espera }) => {
+const EscuchaViewport = ({ onCambio, onInteraccion, espera }) => {
   const map = useMap();
   const alCambiar = useRef(onCambio);
+  const alInteractuar = useRef(onInteraccion);
 
   useEffect(() => {
     alCambiar.current = onCambio;
-  }, [onCambio]);
+    alInteractuar.current = onInteraccion;
+  }, [onCambio, onInteraccion]);
+
+  // Arrastrar o hacer zoom (con la rueda, los botones o los dedos). Se
+  // escucha recién después de montarse: la posición inicial no cuenta.
+  useEffect(() => {
+    const interactuar = () => alInteractuar.current?.();
+    map.on("dragstart zoomstart", interactuar);
+    return () => map.off("dragstart zoomstart", interactuar);
+  }, [map]);
 
   useEffect(() => {
     let temporizador;
-    const avisar = () => alCambiar.current?.(viewportDe(map));
+    const avisar = () => {
+      const { lat, lng } = map.getCenter().wrap();
+      alCambiar.current?.(viewportDe(map), { centro: { lat, lng }, zoom: map.getZoom() });
+    };
     const alMover = () => {
       clearTimeout(temporizador);
       temporizador = setTimeout(avisar, espera);

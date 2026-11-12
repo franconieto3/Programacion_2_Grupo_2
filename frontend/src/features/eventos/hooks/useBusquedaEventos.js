@@ -15,7 +15,8 @@ import { clavesEventos } from '../clavesEventos'
 // filtros: { desde, hasta, hora_desde, hora_hasta, categorias }, todos
 //   opcionales; los vacíos se ignoran.
 // opciones.habilitada: false para no buscar todavía (p. ej. mientras el
-//   mapa no tiene su primer viewport). opciones.tamanoPagina: default 50.
+//   mapa no tiene su primer viewport); mientras tanto `cargando` es true.
+//   opciones.tamanoPagina: default 50.
 //
 // No hace debounce: el que cambia el viewport (el mapa, al moverse) tiene
 // que esperar a que el usuario termine. Si igual llegan cambios seguidos,
@@ -66,8 +67,9 @@ export function useBusquedaEventos(
     // Cantidad de eventos que cumplen la búsqueda; `eventos` puede tener
     // menos si todavía no se pidieron todas las páginas.
     total: data?.pages.at(-1)?.total ?? 0,
-    // Primera carga, todavía sin ningún resultado para mostrar.
-    cargando: consulta.isPending && habilitada,
+    // Todavía sin ningún resultado para mostrar: primera carga o búsqueda
+    // deshabilitada (la lista muestra el esqueleto, no "no hay eventos").
+    cargando: consulta.isPending,
     // Hay resultados en pantalla pero se está buscando de nuevo (cambió el
     // viewport o un filtro, o se refrescan los datos).
     actualizando:

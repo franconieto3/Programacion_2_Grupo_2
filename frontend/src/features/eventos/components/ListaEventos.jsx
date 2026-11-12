@@ -8,7 +8,9 @@ import "./ListaEventos.css";
 // useBusquedaEventos() tal cual: el mapa (paso 5) va a usar el mismo.
 // - hayFiltros / onLimpiarFiltros: para ofrecer "Limpiar filtros" cuando no
 //   hay resultados.
-const ListaEventos = ({ busqueda, hayFiltros, onLimpiarFiltros }) => {
+// - porZona: la búsqueda está limitada a lo que se ve en el mapa; cambia los
+//   textos de "no hay eventos" para sugerir moverlo.
+const ListaEventos = ({ busqueda, hayFiltros, onLimpiarFiltros, porZona = false }) => {
   const { eventos, total, cargando, actualizando, error, hayMas, cargarMas, cargandoMas, reintentar } =
     busqueda;
 
@@ -28,13 +30,23 @@ const ListaEventos = ({ busqueda, hayFiltros, onLimpiarFiltros }) => {
     return hayFiltros ? (
       <EmptyState
         icono="event_busy"
-        titulo="No hay eventos con estos filtros"
-        descripcion="Probá con otras fechas, otro horario o más categorías."
+        titulo={porZona ? "No hay eventos con estos filtros en esta zona" : "No hay eventos con estos filtros"}
+        descripcion={
+          porZona
+            ? "Probá con otras fechas, otro horario, más categorías o mové el mapa."
+            : "Probá con otras fechas, otro horario o más categorías."
+        }
       >
         <Button variant="outline" onClick={onLimpiarFiltros}>
           Limpiar filtros
         </Button>
       </EmptyState>
+    ) : porZona ? (
+      <EmptyState
+        icono="map"
+        titulo="No hay eventos en esta zona"
+        descripcion="Mové el mapa, alejá el zoom o buscá otro lugar."
+      />
     ) : (
       <EmptyState
         icono="event"

@@ -6,6 +6,9 @@ import { obtenerUbicacionDefault } from '../../../services/configuracion'
 //
 //   const { cargando, ubicacion, origen, motivo } = useUbicacionInicial()
 //
+// - activo: false para no pedir nada (p. ej. si la URL ya trae dónde estaba
+//   el mapa). Devuelve todo en null y cargando: false.
+//
 // - Pide la ubicación del navegador y, en paralelo, la ubicación por defecto
 //   del backend (GET /config/ubicacion-default).
 // - ubicacion: { lat, lng, zoom, nombre }. `nombre` es null si es la del
@@ -31,11 +34,12 @@ const RESPALDO = { lat: -34.6037, lng: -58.3816, zoom: 12, nombre: 'Buenos Aires
 
 const MOTIVOS = { 1: 'denegado', 2: 'no-disponible', 3: 'sin-respuesta' }
 
-export function useUbicacionInicial({ espera = ESPERA } = {}) {
+export function useUbicacionInicial({ espera = ESPERA, activo = true } = {}) {
   const defecto = useQuery({
     queryKey: ['configuracion', 'ubicacion-default'],
     queryFn: ({ signal }) => obtenerUbicacionDefault({ signal }),
     staleTime: Infinity,
+    enabled: activo,
   })
 
   const [geo, setGeo] = useState(() =>
@@ -45,7 +49,7 @@ export function useUbicacionInicial({ espera = ESPERA } = {}) {
   )
 
   useEffect(() => {
-    if (!('geolocation' in navigator)) return
+    if (!activo || !('geolocation' in navigator)) return
     let vigente = true
 
     const tope = setTimeout(() => {
@@ -75,7 +79,9 @@ export function useUbicacionInicial({ espera = ESPERA } = {}) {
       vigente = false
       clearTimeout(tope)
     }
-  }, [espera])
+  }, [espera, activo])
+
+  if (!activo) return { cargando: false, ubicacion: null, origen: null, motivo: null }
 
   if (geo.estado === 'ok') {
     return {
