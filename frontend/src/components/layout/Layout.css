@@ -1,0 +1,49 @@
+.layout {
+  --alto-barra-inferior: 3.25rem;
+  --ancho-columna: 4.5rem;
+  --ancho-barra: 15.25rem;
+
+  min-height: 100svh;
+}
+
+/* El contenido deja libre el lugar de la barra: abajo en el celular, a la
+   izquierda desde 768px. */
+.layout-contenido {
+  min-width: 0;
+  padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .layout-contenido {
+    margin-left: var(--ancho-columna);
+    padding-bottom: 0;
+  }
+}
+
+@media (min-width: 1264px) {
+  .layout-contenido {
+    margin-left: var(--ancho-barra);
+  }
+}
+
+/* Contenedor estándar de una página (las que no ocupan todo el ancho, como el mapa). */
+.pagina {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .pagina {
+    padding: 2.5rem 2rem;
+  }
+}
+
+.pagina-titulo {
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
