@@ -43,7 +43,7 @@ class NominatimGeocodificador:
     creado para reusar conexiones entre requests; quien lo crea (el
     composition root) es quien lo cierra."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 (parametros de Nominatim, por nombre)
         self,
         cliente: httpx.AsyncClient,
         *,
@@ -51,12 +51,14 @@ class NominatimGeocodificador:
         user_agent: str,
         timeout: float,
         countrycodes: str | None = None,
+        viewbox: str | None = None,
     ) -> None:
         self._cliente = cliente
         self._url = f'{base_url.rstrip("/")}/search'
         self._user_agent = user_agent
         self._timeout = timeout
         self._countrycodes = countrycodes
+        self._viewbox = viewbox
 
     async def buscar(
         self, consulta: str, limite: int
@@ -69,6 +71,10 @@ class NominatimGeocodificador:
         }
         if self._countrycodes:
             params['countrycodes'] = self._countrycodes
+        if self._viewbox:
+            # Sin `bounded`, el viewbox solo ordena: los lugares de adentro
+            # salen primero, pero los de afuera siguen apareciendo.
+            params['viewbox'] = self._viewbox
 
         try:
             response = await self._cliente.get(

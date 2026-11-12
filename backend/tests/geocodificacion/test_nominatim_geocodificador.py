@@ -20,7 +20,9 @@ _MAR_DEL_PLATA = {
 
 
 def _geocodificador(
-    handler, countrycodes: str | None = None
+    handler,
+    countrycodes: str | None = None,
+    viewbox: str | None = None,
 ) -> NominatimGeocodificador:
     cliente = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     return NominatimGeocodificador(
@@ -29,6 +31,7 @@ def _geocodificador(
         user_agent='eventos-api-test/1.0 (test@example.com)',
         timeout=5.0,
         countrycodes=countrycodes,
+        viewbox=viewbox,
     )
 
 
@@ -65,6 +68,35 @@ async def test_sin_countrycodes_no_manda_el_parametro():
     await _geocodificador(handler).buscar('Mar del Plata', 3)
 
     assert 'countrycodes' not in requests[0].url.params
+
+
+async def test_viewbox_prioriza_sin_acotar():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=[])
+
+    await _geocodificador(handler, viewbox='-73.6,-21.7,-53.5,-55.1').buscar(
+        'Cordoba', 5
+    )
+
+    params = requests[0].url.params
+    assert params['viewbox'] == '-73.6,-21.7,-53.5,-55.1'
+    # Con bounded=1 Nominatim descartaria todo lo de afuera.
+    assert 'bounded' not in params
+
+
+async def test_sin_viewbox_no_manda_el_parametro():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=[])
+
+    await _geocodificador(handler).buscar('Cordoba', 5)
+
+    assert 'viewbox' not in requests[0].url.params
 
 
 async def test_convierte_la_respuesta_a_lugares():
