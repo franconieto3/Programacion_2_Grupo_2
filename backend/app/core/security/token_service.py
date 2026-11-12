@@ -80,6 +80,16 @@ def _hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+def _como_utc(fecha: datetime) -> datetime:
+    """Las fechas se guardan siempre en UTC (DateTime(timezone=True)). En
+    PostgreSQL vuelven con zona horaria, pero SQLite no la guarda y las
+    devuelve sin ella; compararlas con una fecha con zona horaria lanza
+    TypeError. Una fecha sin zona horaria se interpreta como UTC."""
+    if fecha.tzinfo is None:
+        return fecha.replace(tzinfo=timezone.utc)
+    return fecha
+
+
 class JoseTokenService:
     """Unica implementacion hoy: JWT (python-jose) para access tokens y
     tokens opacos hasheados (SHA-256) en base de datos para refresh tokens
@@ -137,7 +147,7 @@ class JoseTokenService:
         record = await self._refresh_store.get_valid(_hash_token(raw_token))
         if record is None or record.revoked_at is not None:
             raise InvalidTokenError()
-        if record.expires_at < datetime.now(timezone.utc):
+        if _como_utc(record.expires_at) < datetime.now(timezone.utc):
             raise TokenExpiredError()
         usuario = await self._user_lookup.get_by_id(record.usuario_id)
         if usuario is None or not usuario.activo:
