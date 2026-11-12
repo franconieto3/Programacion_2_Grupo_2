@@ -5,6 +5,7 @@
   justify-content: center;
   gap: 0.5rem; /* entre un ícono o spinner y el texto */
   white-space: nowrap;
+  text-decoration: none; /* las clases también se usan en <Link> con forma de botón */
   border-radius: 0.375rem; /* rounded-md */
   font-size: 0.875rem; /* text-sm */
   font-weight: 500; /* font-medium */

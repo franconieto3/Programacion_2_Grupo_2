@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import PrivateRoute from './routes/PrivateRoute';
 import { AuthContextProvider } from './features/auth/context/AuthContext';
 import Layout from './components/layout/Layout';
@@ -9,6 +9,7 @@ import { Registro } from './features/auth/components/Registro';
 import Spinner from './components/ui/Spinner';
 import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
+import NoEncontrado from './pages/NoEncontrado';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -23,7 +24,8 @@ function App() {
       <AuthContextProvider>
         <BrowserRouter>
           <Routes>
-              <Route path="/" element={<Login />} />
+              {/* Sin sesión, PrivateRoute manda de /explorar a /ingresar. */}
+              <Route path="/" element={<Navigate to="/explorar" replace />} />
               <Route path="/ingresar" element={<Login />}/>
               <Route path="/registro" element={<Registro/>}/>
               <Route element={<PrivateRoute />}>
@@ -93,6 +95,8 @@ function App() {
                   )}
                 </Route>
               </Route>
+              {/* Fuera de PrivateRoute: decide ella sola si va con layout o sin. */}
+              <Route path="*" element={<NoEncontrado />} />
           </Routes>
         </BrowserRouter>
       </AuthContextProvider>
