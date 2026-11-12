@@ -39,6 +39,7 @@ def _get_geocodificador() -> Geocodificador:
         user_agent=settings.nominatim_user_agent,
         timeout=settings.nominatim_timeout_segundos,
         countrycodes=settings.nominatim_countrycodes,
+        viewbox=settings.nominatim_viewbox,
     )
     # La cache va por fuera: un acierto no consume el cupo de 1 req/s.
     return CachedGeocodificador(

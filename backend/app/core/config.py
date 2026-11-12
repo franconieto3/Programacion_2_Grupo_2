@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # Codigos ISO separados por coma (ej. "ar") para acotar los resultados;
     # vacio = sin restriccion.
     nominatim_countrycodes: str | None = None
+    # Zona que se prioriza sin excluir el resto (viewbox de Nominatim, sin
+    # `bounded`): "lng_oeste,lat_norte,lng_este,lat_sur". Por defecto,
+    # Argentina: "Cordoba" o "San Martin" devuelven primero los de aca, pero
+    # "Montevideo" se sigue encontrando. Vacio = sin prioridad.
+    nominatim_viewbox: str | None = '-73.6,-21.7,-53.5,-55.1'
 
     # RNF-01.4: cache local de busquedas de lugares.
     geocodificacion_cache_ttl_segundos: float = 86400
