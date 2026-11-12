@@ -88,8 +88,8 @@ sección siguiente.
 | RF-03.4 | Filtrar por rango de fechas | `PanelFiltros` con dos `<input type="date">` → `desde`, `hasta`. Los filtros se guardan en la URL (`useSearchParams`), así sobreviven a una recarga y se pueden compartir. | 2 | Hecho |
 | RF-03.5 | Filtrar por rango horario | Dos `<input type="time">` en `PanelFiltros` → `hora_desde`, `hora_hasta` (`HH:MM`). | 2 | Hecho |
 | RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Hecho |
-| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (servicio listo) |
-| RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Pendiente |
+| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (`BuscadorLugar` listo, falta en `/explorar`) |
+| RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Parcial (`useUbicacionInicial` listo, falta en `/explorar`) |
 | RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Hecho |
 
 ### RF-04 · Categorías
@@ -247,7 +247,24 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    - `MapaUbicacion`: el mapa chico de la ficha. No hace zoom con la rueda ni se arrastra con un
      dedo en pantallas táctiles, para no atrapar el scroll de la página.
    - Leaflet suma unos 50 kB comprimidos al bundle; si pesa, se puede cargar el mapa con `lazy`.
-6. `useUbicacionInicial` (geolocalización o ubicación por defecto) y `BuscadorLugar`.
+6. ~~`useUbicacionInicial` (geolocalización o ubicación por defecto) y `BuscadorLugar`.~~ **Hecho**
+   (`features/ubicacion/`):
+   - `useUbicacionInicial()` → `{ cargando, ubicacion: { lat, lng, zoom, nombre }, origen, motivo }`.
+     Pide la ubicación del navegador y, en paralelo, la por defecto del backend. `origen` es
+     `'usuario'` (zoom 14) o `'defecto'`, con `motivo`: `'denegado'`, `'sin-respuesta'`,
+     `'no-disponible'` o `'no-soportado'`. Tiene un tope propio de 8 s, porque mientras el cartel de
+     permiso está abierto el `timeout` de la geolocalización no corre; si el usuario acepta
+     después, `ubicacion` cambia a la suya y la página tiene que recentrar el mapa. Si el backend
+     tampoco responde, usa un respaldo fijo (Buenos Aires, el mismo valor por defecto del backend).
+   - `BuscadorLugar` (`onSeleccionar(lugar)`, `destacado`): combobox con el patrón de ARIA (flechas,
+     Enter, Escape cierra y después borra). Busca desde 3 letras y 500 ms después de la última
+     tecla, cancela las búsquedas viejas y no vuelve a buscar al poner en el input el lugar
+     elegido. Mensajes: "Buscando...", "No encontramos lugares para…" y, ante un `503`, "El
+     buscador de lugares no está disponible". Un `503` no se reintenta solo (Nominatim admite 1
+     request por segundo).
+   - `useDebounce` genérico en `src/hooks/`.
+   - Pendiente del backend para charlar: Nominatim no prioriza Argentina ("Rosario" trae también
+     resultados de Filipinas, México y Uruguay). Se puede pasar `countrycodes` o un `viewbox`.
 7. Juntar mapa y lista en `/explorar`, alimentados por la misma búsqueda.
 8. Probar el flujo rechazando el permiso de ubicación (RF-03.8).
 
@@ -311,7 +328,7 @@ página, reemplazarla en `App.jsx`.
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
 | `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`. Faltan: `FormularioEvento`, `BadgeEstado` |
-| `features/ubicacion/` | `BuscadorLugar`, `SelectorUbicacion`, `useUbicacionInicial` |
+| `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`. Falta: `SelectorUbicacion` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar` (sin mapa), `DetalleEvento`, `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`. Falta: `organizadores` |
