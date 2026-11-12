@@ -10,6 +10,7 @@ import Spinner from './components/ui/Spinner';
 import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
 import Explorar from './pages/Explorar';
+import DetalleEvento from './pages/DetalleEvento';
 import NoEncontrado from './pages/NoEncontrado';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
@@ -34,16 +35,7 @@ function App() {
                     Las que usan EnConstruccion se reemplazan en su etapa de la hoja de ruta. */}
                 <Route element={<Layout />}>
                   <Route path="/explorar" element={<Explorar />} />
-                  <Route
-                    path="/eventos/:idEvento"
-                    element={
-                      <EnConstruccion
-                        titulo="Detalle del evento"
-                        icono="event"
-                        descripcion="Acá vas a ver todos los datos del evento, su ubicación en el mapa y quién lo publica."
-                      />
-                    }
-                  />
+                  <Route path="/eventos/:idEvento" element={<DetalleEvento />} />
                   <Route
                     path="/mis-eventos"
                     element={

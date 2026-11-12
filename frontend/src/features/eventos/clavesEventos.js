@@ -10,4 +10,5 @@ export const clavesEventos = {
     parametros,
     tamanoPagina,
   ],
+  detalle: (idEvento) => ['eventos', 'detalle', idEvento],
 }

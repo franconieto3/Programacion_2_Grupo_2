@@ -94,6 +94,48 @@ export function cuando(evento, ahora = new Date()) {
   return `${inicio} · hasta ${diaRelativo(evento.fecha_fin, ahora)}`
 }
 
+const formatoFechaLarga = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: ZONA_HORARIA,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+// 'Viernes 13 de noviembre'; con el año solo si no es el actual
+// ('Lunes 4 de enero de 2027').
+export function fechaLarga(fecha, ahora = new Date()) {
+  const p = {}
+  for (const { type, value } of formatoFechaLarga.formatToParts(aFecha(fecha))) {
+    p[type] = value
+  }
+  const anio = p.year === claveDia(ahora).slice(0, 4) ? '' : ` de ${p.year}`
+  return `${capitalizar(p.weekday)} ${p.day} de ${p.month}${anio}`
+}
+
+// Cuándo es el evento, en dos renglones para la ficha de detalle:
+//   { principal: 'Viernes 13 de noviembre', secundario: '22:30 – 01:00' }
+//   { principal: 'Viernes 4 de diciembre, 10:00',
+//     secundario: 'Hasta el domingo 6 de diciembre, 18:00' }  (más de un día)
+export function cuandoDetalle(evento, ahora = new Date()) {
+  const { fecha_inicio: inicio, fecha_fin: fin } = evento
+  if (!fin) return { principal: fechaLarga(inicio, ahora), secundario: hora(inicio) }
+  if (aFecha(fin) - aFecha(inicio) < MS_POR_DIA) {
+    return { principal: fechaLarga(inicio, ahora), secundario: `${hora(inicio)} – ${hora(fin)}` }
+  }
+  const finLargo = fechaLarga(fin, ahora)
+  return {
+    principal: `${fechaLarga(inicio, ahora)}, ${hora(inicio)}`,
+    secundario: `Hasta el ${finLargo.charAt(0).toLowerCase()}${finLargo.slice(1)}, ${hora(fin)}`,
+  }
+}
+
+// Ya pasó: terminó o, si no tiene fecha de fin, ya empezó. El backend igual
+// lo muestra (un evento cancelado o terminado se puede seguir consultando).
+export function yaTermino(evento, ahora = new Date()) {
+  return aFecha(evento.fecha_fin ?? evento.fecha_inicio) < ahora
+}
+
 // El precio es opcional (RF-02.1): sin precio no se muestra nada, porque no
 // se sabe si es gratis. 0 es 'Gratis'. Llega como texto ("6000.00").
 export function precio(valor) {
