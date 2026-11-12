@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { cerrarSesion, iniciarSesion, restaurarSesion } from '../../../services/auth'
+import {
+  cerrarSesion,
+  iniciarSesion,
+  obtenerUsuarioActual,
+  restaurarSesion,
+} from '../../../services/auth'
 import { onSesionExpirada } from '../../../services/client'
 
 const AuthContext = createContext(null)
@@ -32,8 +37,18 @@ export const AuthContextProvider = ({ children }) => {
     }
   }
 
+  // Vuelve a pedir el usuario cuando cambian sus roles sin un nuevo login
+  // (p. ej. después de enviar la solicitud de organizador).
+  const refrescarUsuario = async () => {
+    const usuario = await obtenerUsuarioActual()
+    setUser(usuario)
+    return usuario
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, loading, login, logout, refrescarUsuario }}
+    >
       {children}
     </AuthContext.Provider>
   )
