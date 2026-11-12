@@ -63,7 +63,7 @@ sección siguiente.
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
 | RF-01.1 | Registro con nombre, apellido, email y contraseña | Página `/registro` con `FormField` + `Input` y `useFormSubmit`, llamando a `registrar()` (ya existe en `auth.js`). Validar en el navegador contraseña de 8 a 128 caracteres. El backend no inicia sesión al registrar: después del alta, llamar a `login()` con los mismos datos para entrar directo. Un `409` (email ya registrado) aparece solo en `FormError`. | 1 | Hecho |
-| RF-01.2 | Todo usuario registrado puede descubrir eventos | Todas las rutas de descubrimiento (`/explorar`, `/eventos/:id`) van dentro de `PrivateRoute`, sin exigir ningún rol. | 2 | Parcial (`PrivateRoute` listo) |
+| RF-01.2 | Todo usuario registrado puede descubrir eventos | Todas las rutas de descubrimiento (`/explorar`, `/eventos/:id`) van dentro de `PrivateRoute`, sin exigir ningún rol. | 2 | Hecho |
 | RF-01.3 | Iniciar y cerrar sesión | Login hecho. "Cerrar sesión" (`logout()` de `useAuth`) está en el menú de la cuenta, al pie de la barra lateral (`MenuCuenta`), y en `/perfil`, que es el único lugar en el celular. `/` redirige a `/explorar` (sin sesión, `PrivateRoute` lleva a `/ingresar`). | 1 | Hecho |
 | RF-01.6 | Solicitar ser organizador (queda `PENDIENTE`) | Página `/organizador/solicitud` con `nombre_publico` y `descripcion` (`Textarea`). Nuevo `services/organizadores.js` con `solicitarOrganizador()` → `POST /organizadores/solicitud`. Mensajes para `409` (ya tiene una solicitud pendiente o aprobada) y `403` (perfil suspendido). Si la solicitud está pendiente, mostrar ese estado en lugar del formulario (`user.organizador.estado === 'PENDIENTE'`); después de enviarla, llamar a `refrescarUsuario()`. Ya llevan a esta ruta el ítem "Ser organizador" de la barra (para quien no es organizador aprobado) y el enlace "Solicitar" de `/perfil`; hoy muestra `EnConstruccion`. | 3 | Pendiente |
 | RF-01.7 | Solo un organizador `APROBADO` crea y edita eventos | `OrganizadorRoute`: igual que `PrivateRoute`, pero además exige `user.organizador.estado === 'APROBADO'`. La barra de navegación ya muestra "Crear evento" y "Mis eventos" solo a ellos (`BarraNavegacion`); falta proteger las rutas, que hoy se pueden abrir escribiendo la URL. El backend igual valida (`403`), esto es para no ofrecer acciones que van a fallar. | 3 | Parcial (la barra filtra por rol) |
@@ -82,14 +82,14 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-03.1 | Vista de mapa centrada en la ubicación del usuario | Página `/explorar` con `MapaEventos` (react-leaflet + tiles OSM con su atribución). Hook `useUbicacionInicial`: pide `navigator.geolocation` con un timeout corto; si falla, usa `GET /config/ubicacion-default` (`lat`, `lng`, `zoom`). Un marcador por evento en `lugar.latitud/longitud`, con un popup que lleva al detalle. **Es el único Must pendiente del proyecto.** | 2 | Pendiente |
-| RF-03.2 | Vista de lista con los mismos resultados que el mapa | `ListaEventos` con `TarjetaEvento`, alimentada por el **mismo** hook `useBusquedaEventos` que el mapa, así nunca pueden mostrar cosas distintas. Mapa y lista lado a lado en escritorio, con selector en mobile. Paginación con `limit`/`offset` ("Cargar más"). | 2 | Parcial (lista hecha, falta el mapa) |
-| RF-03.3 | Mover y hacer zoom re-ejecuta la búsqueda por viewport | En los eventos `moveend`/`zoomend` de Leaflet, leer `map.getBounds()` → `lat_min`, `lat_max`, `lng_min`, `lng_max`, con un debounce de unos 400 ms. `useBusquedaEventos` usa TanStack Query con el viewport y los filtros como clave de caché. Ojo: Leaflet puede devolver longitudes fuera de -180..180 si el mapa se repite horizontalmente, y el backend las rechaza (`422`); limitarlas o usar `worldCopyJump`/`maxBounds`. | 2 | Parcial (`MapaEventos` listo, falta en `/explorar`) |
+| RF-03.1 | Vista de mapa centrada en la ubicación del usuario | Página `/explorar` con `MapaEventos` (react-leaflet + tiles OSM con su atribución). Hook `useUbicacionInicial`: pide `navigator.geolocation` con un timeout corto; si falla, usa `GET /config/ubicacion-default` (`lat`, `lng`, `zoom`). Un marcador por evento en `lugar.latitud/longitud`, con un popup que lleva al detalle. La posición del mapa queda en la URL (`?lat=&lng=&zoom=`): al volver de la ficha no se vuelve a pedir la ubicación. | 2 | Hecho |
+| RF-03.2 | Vista de lista con los mismos resultados que el mapa | `ListaEventos` con `TarjetaEvento`, alimentada por el **mismo** hook `useBusquedaEventos` que el mapa, así nunca pueden mostrar cosas distintas. Mapa y lista lado a lado en escritorio, con selector en mobile. Paginación con `limit`/`offset` ("Cargar más"). | 2 | Hecho |
+| RF-03.3 | Mover y hacer zoom re-ejecuta la búsqueda por viewport | En los eventos `moveend`/`zoomend` de Leaflet, leer `map.getBounds()` → `lat_min`, `lat_max`, `lng_min`, `lng_max`, con un debounce de unos 400 ms. `useBusquedaEventos` usa TanStack Query con el viewport y los filtros como clave de caché. Ojo: Leaflet puede devolver longitudes fuera de -180..180 si el mapa se repite horizontalmente, y el backend las rechaza (`422`); limitarlas o usar `worldCopyJump`/`maxBounds`. | 2 | Hecho |
 | RF-03.4 | Filtrar por rango de fechas | `PanelFiltros` con dos `<input type="date">` → `desde`, `hasta`. Los filtros se guardan en la URL (`useSearchParams`), así sobreviven a una recarga y se pueden compartir. | 2 | Hecho |
 | RF-03.5 | Filtrar por rango horario | Dos `<input type="time">` en `PanelFiltros` → `hora_desde`, `hora_hasta` (`HH:MM`). | 2 | Hecho |
 | RF-03.6 | Filtrar por una o varias categorías | `SelectorCategorias` en modo filtro (sin selección = todas) → `categorias` como lista; `client.js` ya la manda repitiendo el parámetro. | 2 | Hecho |
-| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Parcial (`BuscadorLugar` listo, falta en `/explorar`) |
-| RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Parcial (`useUbicacionInicial` listo, falta en `/explorar`) |
+| RF-03.7 | Buscar una ubicación distinta a la actual | `BuscadorLugar`: input con debounce que busca desde 3 caracteres (mínimo del backend) → nuevo `services/geocodificacion.js` → `GET /geocodificacion/buscar?q=`. Al elegir una sugerencia, `map.fitBounds()` con su bounding box, que tiene los mismos nombres que el viewport. Mensajes para `[]` ("sin coincidencias") y `503` ("el buscador no está disponible"). | 2 | Hecho |
+| RF-03.8 | Usable sin permiso de geolocalización | Si se rechaza el permiso o vence el timeout, `useUbicacionInicial` usa la ubicación por defecto y la página muestra `BuscadorLugar` destacado, con un aviso que no bloquea ("No pudimos obtener tu ubicación, mostramos *{nombre}*"). Probarlo rechazando el permiso en el navegador. | 2 | Hecho |
 | RF-03.10 | Ficha de detalle con los datos del organizador | Página `/eventos/:id` con `obtenerEvento()`: datos del evento, categorías, un mapa chico con el lugar y el bloque "Publicado por" con `organizador.nombre_publico` y `descripcion` (para los eventos de seed, el backend ya manda "Equipo de la plataforma"). Un `404` muestra "Evento no encontrado". | 2 | Hecho |
 
 ### RF-04 · Categorías
@@ -118,7 +118,7 @@ sección siguiente.
 
 El orden sigue dos criterios:
 1. **Primero el descubrimiento**: es "el corazón del producto" según `planning.md` y contiene el
-   único Must que falta en todo el proyecto (RF-03.1).
+   único Must que faltaba en todo el proyecto (RF-03.1, hecho en la etapa 2).
 2. **Construir antes lo que se reutiliza**: el `Mapa` y el `SelectorCategorias` de la etapa 2 los
    vuelve a usar el formulario de eventos de la etapa 3.
 
@@ -263,9 +263,33 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
      buscador de lugares no está disponible". Un `503` no se reintenta solo (Nominatim admite 1
      request por segundo).
    - `useDebounce` genérico en `src/hooks/`.
-   - Pendiente del backend para charlar: Nominatim no prioriza Argentina ("Rosario" trae también
-     resultados de Filipinas, México y Uruguay). Se puede pasar `countrycodes` o un `viewbox`.
-7. Juntar mapa y lista en `/explorar`, alimentados por la misma búsqueda.
+   - Nominatim no priorizaba Argentina ("Córdoba" empezaba por España y "San Martín" por Países
+     Bajos). **Resuelto en el backend** con `NOMINATIM_VIEWBOX` (por defecto, la caja de Argentina):
+     se manda sin `bounded`, así los lugares de Argentina salen primero pero "Montevideo" se sigue
+     encontrando. `NOMINATIM_COUNTRYCODES` queda para restringir del todo.
+7. ~~Juntar mapa y lista en `/explorar`, alimentados por la misma búsqueda.~~ **Hecho**
+   (`pages/Explorar.jsx`):
+   - `useBusquedaEventos(viewport, filtros, { habilitada: viewport !== null })`: el viewport lo da
+     `MapaEventos` al montarse y después de cada movimiento; mapa y lista muestran lo mismo.
+     Mientras no hay viewport, la lista muestra el esqueleto (`cargando` es `isPending`).
+   - Desde 1024px, panel (título, buscador, filtros y lista, con su propio scroll) y mapa lado a
+     lado. Más chico, un botón flotante alterna "Mapa" / "Lista"; con el mapa a la vista, el
+     buscador y los filtros quedan arriba y el mapa ocupa el resto de la pantalla. Con la lista, el
+     mapa sigue montado (oculto y con tamaño real) para que su viewport siga valiendo.
+   - `useEstadoExplorar()` guarda en la URL la posición del mapa (`?lat=&lng=&zoom=`) y la vista
+     del celular (`?vista=mapa`), con `replace`. Al volver de la ficha con "atrás", el mapa abre
+     donde estaba y no se pide de nuevo la ubicación (`useUbicacionInicial({ activo: false })`).
+   - Sin ubicación del usuario (RF-03.8): aviso que se puede cerrar ("No tenemos permiso para ver tu
+     ubicación: te mostramos *Buenos Aires*…") y buscador destacado. Se van al elegir un lugar.
+     Si el usuario acepta el permiso tarde y todavía no movió el mapa ni buscó, se lo lleva a su
+     ubicación.
+   - Al elegir un lugar en `BuscadorLugar`, `fitBounds` con su recuadro (hasta zoom 16, para que
+     una dirección no quede demasiado cerca).
+   - `MapaEventos` suma `onInteraccion`, el centro y el zoom en `onCambioViewport`, y "50 de 120 en
+     el mapa" cuando hay más resultados que los cargados. `ListaEventos` con `porZona` dice "No hay
+     eventos en esta zona" y sugiere mover el mapa.
+   - Probado con permiso concedido, denegado, sin respuesta y aceptado tarde, en 390, 820, 1280 y
+     1920 px, en modo claro y oscuro.
 8. Probar el flujo rechazando el permiso de ubicación (RF-03.8).
 
 ### Etapa 3 · Organizador (CU-04 y CU-03)
@@ -303,7 +327,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/ingresar` | Login | Pública (redirige si ya hay sesión) | 0 | Hecha |
 | `/registro` | Registro | Pública | 1 | Hecha |
 | `/` | Redirige a `/explorar` | — | 1 | Hecha |
-| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | Lista + filtros (falta el mapa) |
+| `/explorar` | Mapa + lista + filtros + buscador de lugar | Usuario logueado | 2 | Hecha |
 | `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | Hecha |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
 | `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | `EnConstruccion` |
@@ -327,8 +351,8 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
 | `routes/` | Hecho: `PrivateRoute`. Faltan: `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`. Faltan: `FormularioEvento`, `BadgeEstado` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`. Faltan: `FormularioEvento`, `BadgeEstado` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`. Falta: `SelectorUbicacion` |
 | `features/organizadores/` | `FormularioSolicitud`, panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar` (sin mapa), `DetalleEvento`, `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`. Falta: `organizadores` |
