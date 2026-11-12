@@ -1,0 +1,92 @@
+.perfil-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.perfil-identidad {
+  min-width: 0;
+}
+
+.perfil-nombre {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.perfil-email {
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9375rem;
+}
+
+.perfil-seccion {
+  margin-top: 2rem;
+}
+
+.perfil-seccion-titulo {
+  margin: 0 0 0.75rem;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.perfil-lista {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  list-style: none;
+}
+
+.perfil-fila {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  color: var(--text-h);
+}
+
+.perfil-fila + .perfil-fila {
+  border-top: 1px solid var(--border);
+}
+
+.perfil-fila-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.perfil-fila-titulo {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.perfil-fila-detalle {
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.perfil-fila-accion {
+  color: var(--text-h);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.perfil-salir {
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.perfil-salir .icono {
+  font-size: 1.25rem;
+}

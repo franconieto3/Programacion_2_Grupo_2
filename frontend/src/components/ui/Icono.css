@@ -1,0 +1,9 @@
+.icono {
+  font-variation-settings: "FILL" 0;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.icono-relleno {
+  font-variation-settings: "FILL" 1;
+}

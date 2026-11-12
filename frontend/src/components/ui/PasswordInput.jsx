@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icono from "./Icono";
 import Input from "./Input";
 import "./PasswordInput.css";
 
@@ -18,9 +19,7 @@ const PasswordInput = (props) => {
         aria-pressed={visible}
       >
         {/* El ícono muestra la acción: ojo abierto para mostrar, tachado para ocultar. */}
-        <i className="material-icons" aria-hidden="true">
-          {visible ? "visibility_off" : "visibility"}
-        </i>
+        <Icono nombre={visible ? "visibility_off" : "visibility"} />
       </button>
     </div>
   );

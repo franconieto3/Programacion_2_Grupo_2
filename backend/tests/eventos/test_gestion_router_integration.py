@@ -20,16 +20,17 @@ from app.eventos.models import EstadoEvento
 from app.main import app
 from app.organizadores.dependencies import get_organizador_repository
 from app.organizadores.models import EstadoOrganizador, Organizador
-from tests.conftest import FakeTokenService, InMemoryUserRepository
+from tests.conftest import (
+    FakeTokenService,
+    InMemoryAdministradorRepository,
+    InMemoryUserRepository,
+)
 from tests.eventos.test_gestion_eventos import (
     BAR,
     InMemoryCategoriaRepository,
     InMemoryEventoRepository,
     evento,
     organizador,
-)
-from tests.organizadores.test_admin_router_integration import (
-    InMemoryAdministradorRepository,
 )
 from tests.organizadores.test_solicitar_organizador import (
     InMemoryOrganizadorRepository,

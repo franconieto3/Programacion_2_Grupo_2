@@ -1,0 +1,85 @@
+.lista-eventos {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Mientras llegan los resultados de la búsqueda nueva, los anteriores
+   quedan atenuados en vez de desaparecer. */
+.lista-eventos-actualizando .lista-eventos-items {
+  opacity: 0.55;
+  transition: opacity 0.2s ease-in-out 0.15s;
+}
+
+.lista-eventos-total {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.25rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Las tarjetas tienen su propio padding: la lista se corre para que el
+   bloque de fecha quede alineado con el resto de la página. */
+.lista-eventos-items {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-eventos-items > li + li {
+  border-top: 1px solid var(--border);
+}
+
+/* Sin la línea al pasar el mouse: la tarjeta resaltada no queda cortada. */
+.lista-eventos-items > li:hover,
+.lista-eventos-items > li:hover + li {
+  border-top-color: transparent;
+}
+
+.lista-eventos-mas {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.lista-eventos-error {
+  margin: 1rem 0 0;
+  color: var(--error-text);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.lista-eventos-error button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Esqueleto de carga (la clase .esqueleto está en index.css) */
+.lista-eventos-esqueleto {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.lista-eventos-esqueleto-fecha {
+  flex-shrink: 0;
+  width: 3.25rem;
+  height: 3.5rem;
+  border-radius: 0.625rem;
+}
+
+.lista-eventos-esqueleto-cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.25rem;
+}

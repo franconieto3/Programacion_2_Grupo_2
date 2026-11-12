@@ -1,0 +1,291 @@
+/* Mobile-first: hasta 1024px se ve la lista o el mapa (?vista=mapa) y se
+   alterna con el botón flotante. Desde 1024px van lado a lado: el panel a la
+   izquierda con su propio scroll y el mapa a la derecha, de toda la altura.
+   Las medidas de la barra de navegación vienen de Layout.css. */
+
+.explorar {
+  --alto-disponible: calc(100svh - var(--alto-barra-inferior) - env(safe-area-inset-bottom));
+}
+
+.explorar-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 1rem 0;
+}
+
+.explorar-titulo {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.explorar-lista {
+  padding: 1.5rem 1rem 6rem; /* abajo: lugar para el botón flotante */
+}
+
+/* ---------- Aviso de ubicación (RF-03.8) ---------- */
+
+.explorar-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.5rem 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background-color: var(--accent);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.explorar-aviso p {
+  flex: 1;
+  margin: 0.0625rem 0 0;
+}
+
+.explorar-aviso-corto {
+  display: none;
+}
+
+.explorar-aviso strong {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.explorar-aviso-icono {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 1.25rem;
+}
+
+.explorar-aviso-cerrar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 9999px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.explorar-aviso-cerrar:hover {
+  background-color: var(--bg);
+  color: var(--text-h);
+}
+
+.explorar-aviso-cerrar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.explorar-aviso-cerrar .icono {
+  font-size: 1.125rem;
+}
+
+/* ---------- Mapa ---------- */
+
+.explorar-mapa-eventos,
+.explorar-mapa-esqueleto {
+  width: 100%;
+  height: 100%;
+}
+
+/* Con la lista a la vista el mapa sigue montado, oculto pero con tamaño
+   real: así su viewport (y la búsqueda de la lista) sigue siendo válido. */
+.explorar-vista-lista .explorar-mapa {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Con el mapa a la vista: el encabezado arriba y el mapa ocupa el resto de
+   la pantalla, sin scroll de la página. */
+.explorar-vista-mapa {
+  display: flex;
+  flex-direction: column;
+  height: var(--alto-disponible);
+}
+
+.explorar-vista-mapa .explorar-encabezado {
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.explorar-vista-mapa .explorar-titulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.explorar-vista-mapa .explorar-lista {
+  display: none;
+}
+
+.explorar-vista-mapa .explorar-aviso {
+  align-items: center;
+  padding-block: 0.375rem;
+}
+
+.explorar-vista-mapa .explorar-aviso-largo {
+  display: none;
+}
+
+.explorar-vista-mapa .explorar-aviso-corto {
+  display: block;
+  margin: 0;
+}
+
+.explorar-vista-mapa .explorar-mapa {
+  flex: 1;
+  min-height: 0;
+}
+
+.explorar-vista-mapa .mapa-eventos {
+  border-radius: 0;
+}
+
+/* ---------- Botón flotante Mapa / Lista ---------- */
+
+.explorar-alternar {
+  position: fixed;
+  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 1rem);
+  left: 50%;
+  z-index: 1050; /* sobre los controles de Leaflet, bajo las sugerencias del buscador */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: 9999px;
+  background-color: var(--primary);
+  box-shadow: var(--shadow);
+  color: var(--primary-fg);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: translateX(-50%);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.explorar-alternar:active {
+  transform: translateX(-50%) scale(0.97);
+}
+
+.explorar-alternar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+}
+
+.explorar-alternar .icono {
+  font-size: 1.25rem;
+}
+
+/* ---------- Desde 768px: la barra pasa a la izquierda ---------- */
+
+@media (min-width: 768px) {
+  .explorar {
+    --alto-disponible: 100svh;
+  }
+
+  .explorar-encabezado {
+    padding: 2.5rem 2rem 0;
+  }
+
+  .explorar-lista {
+    padding: 1.5rem 2rem 6rem;
+  }
+
+  .explorar-vista-mapa .explorar-encabezado {
+    padding: 1rem 1.5rem;
+  }
+
+  /* Centrado en el contenido, no en la ventana (la barra ocupa la izquierda). */
+  .explorar-alternar {
+    bottom: 1.5rem;
+    left: calc(50% + var(--ancho-columna) / 2);
+  }
+}
+
+/* ---------- Desde 1024px: panel y mapa lado a lado ---------- */
+
+@media (min-width: 1024px) {
+  .explorar,
+  .explorar-vista-mapa {
+    display: grid;
+    /* El panel crece con la pantalla, pero el mapa se queda con la mayor parte. */
+    grid-template-columns: clamp(21rem, 34%, 28rem) 1fr;
+    height: 100svh;
+  }
+
+  .explorar-panel {
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  /* Lo de la vista del celular no aplica: se ve todo siempre. */
+  .explorar-vista-mapa .explorar-encabezado,
+  .explorar-encabezado {
+    gap: 1rem;
+    padding: 2rem 1.5rem 0;
+  }
+
+  .explorar-vista-mapa .explorar-titulo {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+
+  .explorar-vista-mapa .explorar-lista,
+  .explorar-lista {
+    display: block;
+    padding: 1.5rem 1.5rem 2rem;
+  }
+
+  .explorar-vista-lista .explorar-mapa,
+  .explorar-mapa {
+    position: static;
+    z-index: auto;
+    min-height: 0;
+    padding: 0.75rem;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .explorar-vista-mapa .mapa-eventos {
+    border-radius: 1rem;
+  }
+
+  .explorar-vista-mapa .explorar-aviso {
+    align-items: flex-start;
+    padding-block: 0.625rem;
+  }
+
+  .explorar-vista-mapa .explorar-aviso-largo {
+    display: block;
+  }
+
+  .explorar-vista-mapa .explorar-aviso-corto {
+    display: none;
+  }
+
+  .explorar-alternar {
+    display: none;
+  }
+}

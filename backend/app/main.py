@@ -27,7 +27,9 @@ from app.geocodificacion.router import router as geocodificacion_router
 from app.organizadores.admin_router import router as admin_organizadores_router
 from app.organizadores.error_handlers import register_organizadores_exception_handlers
 from app.organizadores.router import router as organizadores_router
+from app.perfil.router import router as perfil_router
 from app.core.email_sender import ConsoleEmailSender
+from app.core.validation_errors import register_validation_exception_handler
 from app.db.session import async_session_factory
 
 logging.basicConfig(level=logging.INFO)
@@ -66,12 +68,14 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    register_validation_exception_handler(app)
     register_auth_exception_handlers(app)
     register_organizadores_exception_handlers(app)
     register_administradores_exception_handlers(app)
     register_eventos_exception_handlers(app)
     register_geocodificacion_exception_handlers(app)
     app.include_router(auth_router)
+    app.include_router(perfil_router)
     app.include_router(organizadores_router)
     app.include_router(admin_organizadores_router)
     app.include_router(categorias_router)

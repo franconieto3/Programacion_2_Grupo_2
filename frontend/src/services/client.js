@@ -90,7 +90,14 @@ export function renovarSesion() {
 
 // opciones.auth = false para las rutas públicas (login, registro...): no se manda
 // el token y un 401 no dispara la renovación de sesión.
-export async function request(ruta, { method = 'GET', body, query, auth = true } = {}) {
+// opciones.signal (AbortSignal) cancela la request. TanStack Query pasa uno a
+// cada consulta y lo activa cuando la respuesta ya no hace falta (cambió la
+// búsqueda o se desmontó el componente); la promesa se rechaza con un
+// AbortError, que TanStack Query ignora.
+export async function request(
+  ruta,
+  { method = 'GET', body, query, auth = true, signal } = {},
+) {
   const enviar = () => {
     const headers = {}
     if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -100,6 +107,7 @@ export async function request(ruta, { method = 'GET', body, query, auth = true }
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       credentials: 'include',
+      signal,
     })
   }
 

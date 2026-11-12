@@ -1,22 +1,38 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { cerrarSesion, iniciarSesion, restaurarSesion } from '../../../services/auth'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import {
+  cerrarSesion,
+  iniciarSesion,
+  obtenerUsuarioActual,
+  restaurarSesion,
+} from '../../../services/auth'
 import { onSesionExpirada } from '../../../services/client'
+import { useQueryClient } from '@tanstack/react-query'
 
 const AuthContext = createContext(null)
 
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true) // solo la verificación inicial
+  const queryClient = useQueryClient()
+
+  // Al salir de la sesión se vacía la caché de TanStack Query, para que el
+  // próximo usuario en este navegador no vea datos del anterior (p. ej. "Mis eventos").
+  const limpiarSesion = useCallback(() => {
+    setUser(null)
+    queryClient.clear()
+  }, [queryClient])
 
   // Al cargar la app se intenta recuperar la sesión con la cookie del refresh token.
   // Si después la sesión vence y no se puede renovar, client.js avisa y se limpia el usuario.
+  // queryClient es único (queryClient.js), así que limpiarSesion no cambia y esto
+  // corre una sola vez.
   useEffect(() => {
-    onSesionExpirada(() => setUser(null))
+    onSesionExpirada(limpiarSesion)
     restaurarSesion()
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
-  }, [])
+  }, [limpiarSesion])
 
   const login = async (email, password) => {
     const usuario = await iniciarSesion({ email, password })
@@ -28,12 +44,22 @@ export const AuthContextProvider = ({ children }) => {
     try {
       await cerrarSesion()
     } finally {
-      setUser(null)
+      limpiarSesion()
     }
   }
 
+  // Vuelve a pedir el usuario cuando cambian sus roles sin un nuevo login
+  // (p. ej. después de enviar la solicitud de organizador).
+  const refrescarUsuario = async () => {
+    const usuario = await obtenerUsuarioActual()
+    setUser(usuario)
+    return usuario
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated: !!user, loading, login, logout, refrescarUsuario }}
+    >
       {children}
     </AuthContext.Provider>
   )
