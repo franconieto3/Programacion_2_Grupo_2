@@ -9,10 +9,12 @@ import Select from "../components/ui/Select";
 import Spinner from "../components/ui/Spinner";
 import SubmitButton from "../components/ui/SubmitButton";
 import Textarea from "../components/ui/Textarea";
+import SelectorUbicacion from "../features/ubicacion/components/SelectorUbicacion";
 import { ApiError } from "../services/client";
 import "./CatalogoComponentes.css";
 
-// Catálogo de los componentes de components/ui, solo en desarrollo
+// Catálogo de los componentes de components/ui (y de alguno de features/ que
+// conviene probar suelto, como SelectorUbicacion), solo en desarrollo
 // (/dev/componentes, ver App.jsx). Sirve para revisar el diseño en claro y
 // oscuro sin tener que llegar a la pantalla donde se usa cada uno.
 
@@ -27,6 +29,9 @@ const Seccion = ({ titulo, children }) => (
 
 const CatalogoComponentes = () => {
   const [dialogo, setDialogo] = useState(null); // "ok" | "falla" | null
+  const [punto, setPunto] = useState(null);
+  const [lugarBuscado, setLugarBuscado] = useState(null);
+  const [errorUbicacion, setErrorUbicacion] = useState(false);
 
   return (
     <div className="pagina catalogo">
@@ -135,6 +140,28 @@ const CatalogoComponentes = () => {
           descripcion="Simula una respuesta 409 del backend: el error se muestra y el diálogo queda abierto."
           textoConfirmar="Ocultar"
         />
+      </Seccion>
+
+      <Seccion titulo="SelectorUbicacion (features/ubicacion)">
+        <SelectorUbicacion
+          valor={punto}
+          onCambiar={(nuevo, { lugar }) => {
+            setPunto(nuevo);
+            setLugarBuscado(lugar?.nombre ?? null);
+          }}
+          error={errorUbicacion && !punto ? "Marcá dónde es el evento." : null}
+        />
+        <div className="catalogo-fila catalogo-selector-acciones">
+          <Button variant="outline" size="sm" onClick={() => setErrorUbicacion((valor) => !valor)}>
+            {errorUbicacion ? "Sin error" : "Simular error sin punto"}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setPunto(null)}>
+            Quitar el punto
+          </Button>
+        </div>
+        <pre className="catalogo-valor">
+          {JSON.stringify({ valor: punto, lugarBuscado }, null, 2)}
+        </pre>
       </Seccion>
     </div>
   );

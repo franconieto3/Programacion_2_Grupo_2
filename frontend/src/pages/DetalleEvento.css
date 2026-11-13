@@ -56,6 +56,14 @@
   font-weight: 500;
 }
 
+/* Confirmación al llegar recién publicado: va arriba de la ficha. */
+.detalle-evento-aviso-exito {
+  margin: 0 0 1.5rem;
+  border-color: var(--success-border);
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
 /* Fecha, lugar y precio: filas con un ícono en un recuadro. */
 .detalle-evento-datos {
   display: flex;
@@ -176,4 +184,20 @@
 
 .detalle-evento-equipo .icono {
   font-size: 1.25rem;
+}
+
+/* Editar y cancelar, para el organizador del evento. */
+.detalle-evento-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.detalle-evento-acciones .btn-base {
+  text-decoration: none;
+}
+
+.detalle-evento-acciones .icono {
+  font-size: 1.125rem;
 }

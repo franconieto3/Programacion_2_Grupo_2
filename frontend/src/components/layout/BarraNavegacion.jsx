@@ -11,8 +11,13 @@ export const NOMBRE_APP = "Eventos";
 // Ítems según los roles del usuario (GET /auth/me). El backend igual valida
 // cada acción: esto es para no ofrecer lo que va a responder 403.
 // `ordenMovil` acomoda la barra inferior del celular, donde "Crear" va al medio.
+// "Ser organizador" lleva a la solicitud: se ofrece sin perfil, con uno
+// rechazado (puede volver a pedirlo) o pendiente (ahí ve que está en revisión).
+// Aprobado no la necesita y suspendido no puede volver a pedirlo.
 function itemsPara(user) {
-  const esOrganizador = user.organizador?.estado === "APROBADO";
+  const estadoOrganizador = user.organizador?.estado;
+  const esOrganizador = estadoOrganizador === "APROBADO";
+  const puedeSolicitar = !esOrganizador && estadoOrganizador !== "SUSPENDIDO";
   return [
     { a: "/explorar", texto: "Explorar", icono: "explore", ordenMovil: 1 },
     esOrganizador && {
@@ -21,7 +26,7 @@ function itemsPara(user) {
       icono: "calendar_month",
       ordenMovil: 2,
     },
-    !esOrganizador && {
+    puedeSolicitar && {
       a: "/organizador/solicitud",
       texto: "Ser organizador",
       icono: "storefront",

@@ -7,7 +7,10 @@ import EmptyState from "../components/ui/EmptyState";
 import Icono from "../components/ui/Icono";
 import BadgeEquipo from "../features/eventos/components/BadgeEquipo";
 import { cuandoDetalle, precio, yaTermino } from "../features/eventos/formato";
+import { useAuth } from "../features/auth/context/AuthContext";
+import BotonCancelarEvento from "../features/eventos/components/BotonCancelarEvento";
 import { useEvento } from "../features/eventos/hooks/useEvento";
+import { permisosSobre } from "../features/eventos/permisos";
 import "./DetalleEvento.css";
 
 const CLASES_BOTON = "btn-base btn-variant-outline btn-size-default";
@@ -17,6 +20,9 @@ const CLASES_BOTON = "btn-base btn-variant-outline btn-size-default";
 const DetalleEvento = () => {
   const { idEvento } = useParams();
   const { data: evento, isPending, error, noEncontrado, refetch } = useEvento(idEvento);
+  // Confirmación de la página anterior: "Publicaste el evento" (CrearEvento),
+  // "Guardaste los cambios" (EditarEvento).
+  const aviso = useLocation().state?.aviso;
 
   let contenido;
   if (noEncontrado) {
@@ -42,7 +48,17 @@ const DetalleEvento = () => {
   } else if (isPending) {
     contenido = <EsqueletoDetalle />;
   } else {
-    contenido = <Ficha evento={evento} />;
+    contenido = (
+      <>
+        {aviso && (
+          <p className="detalle-evento-aviso detalle-evento-aviso-exito" role="status">
+            <Icono nombre="check_circle" />
+            {aviso}
+          </p>
+        )}
+        <Ficha evento={evento} />
+      </>
+    );
   }
 
   return (
@@ -54,6 +70,8 @@ const DetalleEvento = () => {
 };
 
 const Ficha = ({ evento }) => {
+  const { user } = useAuth();
+  const { puedeEditar, puedeCancelar } = permisosSobre(evento, user);
   const { lugar, organizador } = evento;
   const cuando = cuandoDetalle(evento);
   const textoPrecio = precio(evento.precio);
@@ -87,6 +105,17 @@ const Ficha = ({ evento }) => {
           </ul>
         )}
       </header>
+
+      {/* Acciones del organizador sobre su evento (RF-02.4). */}
+      {puedeEditar && (
+        <div className="detalle-evento-acciones">
+          <Link to={`/eventos/${evento.id_evento}/editar`} className={CLASES_BOTON}>
+            <Icono nombre="edit" />
+            Editar
+          </Link>
+          {puedeCancelar && <BotonCancelarEvento evento={evento} />}
+        </div>
+      )}
 
       {evento.estado === "CANCELADO" && (
         <p className="detalle-evento-aviso" role="status">

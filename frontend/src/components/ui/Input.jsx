@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { FormFieldContext } from "./formFieldContext";
+import { descripcionesDe, FormFieldContext } from "./formFieldContext";
 import "./Input.css";
 
 // Dentro de un FormField toma de ahí el id (para el label) y el estado de error;
@@ -11,7 +11,7 @@ const Input = ({ className = "", ...props }) => {
     <input
       id={campo?.id}
       aria-invalid={campo?.invalido || undefined}
-      aria-describedby={campo?.invalido ? campo.errorId : undefined}
+      aria-describedby={descripcionesDe(campo)}
       className={`input-base ${className}`.trim()}
       {...props}
     />

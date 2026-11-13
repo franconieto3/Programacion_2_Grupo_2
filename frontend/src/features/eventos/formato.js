@@ -143,3 +143,53 @@ export function precio(valor) {
   const numero = Number(valor)
   return numero === 0 ? 'Gratis' : formatoPrecio.format(numero)
 }
+
+// --- <input type="datetime-local"> ---
+// El input da y recibe 'YYYY-MM-DDTHH:MM' sin zona. Se interpreta en la zona
+// de la plataforma y no en la del navegador: así lo que escribe el
+// organizador es lo mismo que después muestran la tarjeta y la ficha.
+
+const formatoPartes = new Intl.DateTimeFormat('en-CA', {
+  timeZone: ZONA_HORARIA,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+function partesEnZona(fecha) {
+  return Object.fromEntries(
+    formatoPartes.formatToParts(fecha).map(({ type, value }) => [type, value]),
+  )
+}
+
+// Fecha (o texto ISO de la API) -> valor para el input.
+export function aValorFechaHora(valor) {
+  const { year, month, day, hour, minute } = partesEnZona(aFecha(valor))
+  return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
+// Diferencia en ms entre la hora de la zona y UTC en un instante dado.
+function desfasaje(instante) {
+  const { year, month, day, hour, minute } = partesEnZona(new Date(instante))
+  const comoUtc = Date.UTC(year, month - 1, day, hour, minute)
+  return comoUtc - Math.floor(instante / 60000) * 60000
+}
+
+// Valor del input -> Date. La primera estimación usa el desfasaje de esa hora
+// tomada como UTC; la segunda corrige si justo cae en un cambio de horario.
+export function deValorFechaHora(valor) {
+  const [fecha, horaMinutos] = valor.split('T')
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  const [horas, minutos] = horaMinutos.split(':').map(Number)
+  const comoUtc = Date.UTC(anio, mes - 1, dia, horas, minutos)
+  const estimado = comoUtc - desfasaje(comoUtc)
+  return new Date(comoUtc - desfasaje(estimado))
+}
+
+// true si el navegador está en otra zona: el formulario lo aclara.
+export function navegadorEnOtraZona() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone !== ZONA_HORARIA
+}

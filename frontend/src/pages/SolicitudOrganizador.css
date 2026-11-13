@@ -1,0 +1,48 @@
+/* El formulario no necesita todo el ancho de .pagina. */
+.solicitud {
+  max-width: 36rem;
+}
+
+.solicitud-intro {
+  margin: -0.75rem 0 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+/* Mismo formato que los avisos de DetalleEvento, en amarillo. */
+.solicitud-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--warning-border);
+  border-radius: 0.75rem;
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+/* La introducción se pega al título, salvo que haya un aviso en el medio. */
+.solicitud-aviso + .solicitud-intro {
+  margin-top: 0;
+}
+
+.solicitud-aviso-info {
+  border-color: var(--info-border);
+  background-color: var(--info-bg);
+  color: var(--info-text);
+}
+
+.solicitud-aviso .icono {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+.solicitud-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
