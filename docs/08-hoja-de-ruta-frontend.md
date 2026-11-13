@@ -21,7 +21,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Cliente HTTP | `src/services/client.js` | Token, renovación de sesión ante un 401, errores del backend como `ApiError` |
 | Servicios | `src/services/` | Todos los endpoints de `/auth`, `/eventos`, `/categorias`, `/config`, `/geocodificacion` y la solicitud de `/organizadores`. Las consultas aceptan `{ signal }` para que TanStack Query cancele las que quedan viejas |
 | Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, `refrescarUsuario`, restauración al recargar. `user` tiene siempre la forma de `GET /auth/me`: `{ id, email, nombre, apellido, organizador: { id_organizador, nombre_publico, estado } \| null, es_admin }` |
-| Rutas privadas | `src/routes/PrivateRoute.jsx`, `OrganizadorRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login. `OrganizadorRoute` deja pasar solo a organizadores `APROBADO` |
+| Rutas privadas | `src/routes/PrivateRoute.jsx`, `OrganizadorRoute.jsx`, `AdminRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login. `OrganizadorRoute` deja pasar solo a organizadores `APROBADO` y `AdminRoute`, solo a administradores |
 | Caché de datos del servidor | `src/queryClient.js`, `src/main.jsx` | `QueryClientProvider` envuelve la app. Un dato se considera actual durante 30 s; solo se reintentan las fallas de red y los 5xx (un 4xx daría lo mismo y el 401 lo resuelve `client.js`); las mutaciones no se reintentan. `AuthContext` vacía la caché al cerrar sesión o cuando la sesión vence |
 | Paleta de colores | `src/index.css` | Variables en `:root` (escala slate: base, botones, mensajes) redefinidas en `prefers-color-scheme: dark`. Los componentes no usan colores fijos, solo estas variables |
 | Navegación | `src/components/layout/` | `Layout` con `BarraNavegacion` y `<Outlet />` para las rutas privadas (ver etapa 1, paso 3) |
@@ -382,7 +382,10 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
 
 ### Etapa 4 · Administración
 Cierra **RF-05.1**, más **RF-05.5** como recomendado.
-1. `AdminRoute`.
+1. ~~`AdminRoute`.~~ **Hecho:** `routes/AdminRoute.jsx`, ruta contenedora dentro de `Layout` que deja
+   pasar solo a `user.es_admin`. A diferencia de `OrganizadorRoute` no redirige (el rol no se
+   solicita desde la app): muestra en el lugar "Esta sección es solo para administradores" con un
+   enlace a Explorar. Protege `/admin/organizadores`.
 2. Botón "Ocultar evento" en el detalle.
 3. Página `/admin/organizadores`.
 
@@ -413,7 +416,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | Hecha |
 | `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | Hecha |
 | `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | Hecha |
-| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
+| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (con `AdminRoute`) |
 | `/dev/componentes` | Catálogo de `components/ui` | Usuario logueado, **solo en desarrollo** | 1 | Hecha |
 | `*` | No encontrado | Pública (con sesión, dentro de `Layout`) | 1 | Hecha |
 
@@ -428,7 +431,7 @@ página, reemplazarla en `App.jsx`.
 | `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `PasswordInput`, `Textarea`, `Select`, `FormField`, `FormError`, `SubmitButton`, `Spinner`, `Badge`, `EmptyState`, `ConfirmDialog`, `Icono`, `Avatar` |
 | `components/layout/` | Hechos: `Layout`, `BarraNavegacion`, `MenuCuenta` |
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
-| `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`. Falta: `AdminRoute` |
+| `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
 | `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `permisos`, `cambiosEvento` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
