@@ -9,8 +9,10 @@ import BadgeEquipo from "../features/eventos/components/BadgeEquipo";
 import { cuandoDetalle, precio, yaTermino } from "../features/eventos/formato";
 import { useAuth } from "../features/auth/context/AuthContext";
 import BotonCancelarEvento from "../features/eventos/components/BotonCancelarEvento";
+import BotonOcultarEvento from "../features/eventos/components/BotonOcultarEvento";
 import { useEvento } from "../features/eventos/hooks/useEvento";
 import { permisosSobre } from "../features/eventos/permisos";
+import { avatarDeOrganizador } from "../features/organizadores/avatar";
 import "./DetalleEvento.css";
 
 const CLASES_BOTON = "btn-base btn-variant-outline btn-size-default";
@@ -71,7 +73,12 @@ const DetalleEvento = () => {
 
 const Ficha = ({ evento }) => {
   const { user } = useAuth();
-  const { puedeEditar, puedeCancelar } = permisosSobre(evento, user);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { puedeEditar, puedeCancelar, puedeOcultar } = permisosSobre(evento, user);
+  // Oculto, la ficha da 404: se vuelve a donde estaba (o a Explorar).
+  const alOcultar = () =>
+    location.key !== "default" ? navigate(-1) : navigate("/explorar", { replace: true });
   const { lugar, organizador } = evento;
   const cuando = cuandoDetalle(evento);
   const textoPrecio = precio(evento.precio);
@@ -106,14 +113,18 @@ const Ficha = ({ evento }) => {
         )}
       </header>
 
-      {/* Acciones del organizador sobre su evento (RF-02.4). */}
-      {puedeEditar && (
+      {/* Acciones del organizador sobre su evento (RF-02.4) y moderación de
+          un administrador (RF-05.1). */}
+      {(puedeEditar || puedeOcultar) && (
         <div className="detalle-evento-acciones">
-          <Link to={`/eventos/${evento.id_evento}/editar`} className={CLASES_BOTON}>
-            <Icono nombre="edit" />
-            Editar
-          </Link>
+          {puedeEditar && (
+            <Link to={`/eventos/${evento.id_evento}/editar`} className={CLASES_BOTON}>
+              <Icono nombre="edit" />
+              Editar
+            </Link>
+          )}
           {puedeCancelar && <BotonCancelarEvento evento={evento} />}
+          {puedeOcultar && <BotonOcultarEvento evento={evento} onOcultado={alOcultar} />}
         </div>
       )}
 
@@ -183,7 +194,7 @@ const Ficha = ({ evento }) => {
         </h2>
         <div className="detalle-evento-organizador">
           {organizador.id_organizador ? (
-            <Avatar usuario={inicialesDe(organizador.nombre_publico)} />
+            <Avatar usuario={avatarDeOrganizador(organizador.nombre_publico)} />
           ) : (
             // Eventos de seed (RF-05.2): el "organizador" es el equipo, con el logo.
             <span className="avatar avatar-md detalle-evento-equipo" aria-hidden="true">
@@ -199,13 +210,6 @@ const Ficha = ({ evento }) => {
     </article>
   );
 };
-
-// Avatar espera { nombre, apellido }: con la primera y la última palabra del
-// nombre público, "Bar Los Pinos" muestra "BP".
-function inicialesDe(nombrePublico) {
-  const palabras = nombrePublico.trim().split(/\s+/);
-  return { nombre: palabras[0], apellido: palabras.length > 1 ? palabras.at(-1) : "" };
-}
 
 // Vuelve a la página anterior (la lista, con sus filtros). Si se entró
 // directo a la ficha (un enlace compartido), no hay página anterior en la

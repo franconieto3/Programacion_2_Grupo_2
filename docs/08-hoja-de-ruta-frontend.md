@@ -21,7 +21,7 @@ Lo que ya está hecho y no hay que volver a resolver:
 | Cliente HTTP | `src/services/client.js` | Token, renovación de sesión ante un 401, errores del backend como `ApiError` |
 | Servicios | `src/services/` | Todos los endpoints de `/auth`, `/eventos`, `/categorias`, `/config`, `/geocodificacion` y la solicitud de `/organizadores`. Las consultas aceptan `{ signal }` para que TanStack Query cancele las que quedan viejas |
 | Sesión | `src/features/auth/context/AuthContext.jsx` | `useAuth()`: usuario, `login`, `logout`, `refrescarUsuario`, restauración al recargar. `user` tiene siempre la forma de `GET /auth/me`: `{ id, email, nombre, apellido, organizador: { id_organizador, nombre_publico, estado } \| null, es_admin }` |
-| Rutas privadas | `src/routes/PrivateRoute.jsx`, `OrganizadorRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login. `OrganizadorRoute` deja pasar solo a organizadores `APROBADO` |
+| Rutas privadas | `src/routes/PrivateRoute.jsx`, `OrganizadorRoute.jsx`, `AdminRoute.jsx` | Redirige a `/ingresar` sin sesión y vuelve a la página pedida después del login. `OrganizadorRoute` deja pasar solo a organizadores `APROBADO` y `AdminRoute`, solo a administradores |
 | Caché de datos del servidor | `src/queryClient.js`, `src/main.jsx` | `QueryClientProvider` envuelve la app. Un dato se considera actual durante 30 s; solo se reintentan las fallas de red y los 5xx (un 4xx daría lo mismo y el 401 lo resuelve `client.js`); las mutaciones no se reintentan. `AuthContext` vacía la caché al cerrar sesión o cuando la sesión vence |
 | Paleta de colores | `src/index.css` | Variables en `:root` (escala slate: base, botones, mensajes) redefinidas en `prefers-color-scheme: dark`. Los componentes no usan colores fijos, solo estas variables |
 | Navegación | `src/components/layout/` | `Layout` con `BarraNavegacion` y `<Outlet />` para las rutas privadas (ver etapa 1, paso 3) |
@@ -103,14 +103,14 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a `/explorar`, porque el evento deja de verse. | 4 | Pendiente |
+| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a la página anterior (o a `/explorar`), porque el evento deja de verse. | 4 | Hecho |
 | RF-05.2 | Eventos del equipo (seed) diferenciados | La carga es por script (`scripts/seed.py`), así que en el frontend no hay formulario. Solo hay que diferenciarlos: `BadgeEquipo` ("Equipo de la plataforma", variante `info`) cuando `origen === 'SEED_EQUIPO'`, en `TarjetaEvento` antes de las categorías y en el detalle arriba del título. En "Publicado por" el detalle muestra el logo de la app en lugar de iniciales. | 2 | Hecho |
 
 ### Recomendado aunque no es Must
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. El ítem "Administración" de la barra ya aparece solo para administradores; la ruta hoy muestra `EnConstruccion`. | 4 | Pendiente |
+| RF-05.5 (S) | Un administrador aprueba, rechaza y suspende organizadores | Página `/admin/organizadores` con pestañas por estado → `GET /admin/organizadores?estado=` y acciones aprobar/rechazar/suspender. El backend ya está. **Sin esta pantalla no se puede probar de punta a punta el flujo de organizador** (RF-01.6 → RF-01.7 → RF-02.x) sin llamar a la API a mano. El ítem "Administración" de la barra aparece solo para administradores. | 4 | Hecho |
 
 ---
 
@@ -380,11 +380,34 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
    evento con fin responde 500, porque `EditarEvento._reprogramar` compara la fecha guardada (SQLite
    la devuelve sin zona) con la nueva (con zona). Con PostgreSQL no pasa.
 
-### Etapa 4 · Administración
+### Etapa 4 · Administración (hecha)
 Cierra **RF-05.1**, más **RF-05.5** como recomendado.
-1. `AdminRoute`.
-2. Botón "Ocultar evento" en el detalle.
-3. Página `/admin/organizadores`.
+1. ~~`AdminRoute`.~~ **Hecho:** `routes/AdminRoute.jsx`, ruta contenedora dentro de `Layout` que deja
+   pasar solo a `user.es_admin`. A diferencia de `OrganizadorRoute` no redirige (el rol no se
+   solicita desde la app): muestra en el lugar "Esta sección es solo para administradores" con un
+   enlace a Explorar. Protege `/admin/organizadores`.
+2. ~~Botón "Ocultar evento" en el detalle.~~ **Hecho:** `BotonOcultarEvento` (`features/eventos/components/`)
+   con `ConfirmDialog` → `ocultarEvento()`. Se ofrece si `permisosSobre().puedeOcultar`: el usuario es
+   administrador y el evento está `PUBLICADO` o `CANCELADO` (los estados desde los que el backend
+   lo permite), sea de quien sea. Va en la barra de acciones de la ficha, junto a las del
+   organizador. Como la ficha de un oculto da 404, al confirmar primero vuelve a la página anterior
+   (o a Explorar) y después saca el detalle de la caché e invalida la de eventos; al revés, se
+   vería "No encontramos este evento" por un instante.
+3. ~~Página `/admin/organizadores`.~~ **Hecho:** `pages/AdminOrganizadores.jsx` con una pestaña por estado
+   (patrón "tabs" de ARIA, con flechas; la elegida queda en la URL, `?estado=aprobados`) y la
+   cantidad de pendientes en la primera. Cada perfil es una `FilaOrganizador`
+   (`features/organizadores/components/`): nombre público, fecha de la solicitud, descripción y las
+   acciones que permite su estado (aprobar o rechazar un `PENDIENTE`, suspender un `APROBADO`).
+   Aprobar es directo; rechazar y suspender, con `ConfirmDialog`. Después de cada una se invalidan
+   las listas (el perfil cambia de pestaña) y se anuncia el resultado arriba de la lista; si el
+   administrador resolvió su propia solicitud, se refresca su usuario para que cambie la barra. Un
+   `409` (otro administrador lo resolvió antes) se muestra en la fila y actualiza la lista.
+   La API no devuelve el nombre ni el email del usuario, solo `id_usuario`: se muestra el nombre
+   público. `services/organizadores.js` suma `listarOrganizadores`, `aprobarOrganizador`,
+   `rechazarOrganizador` y `suspenderOrganizador`; `useOrganizadores(estado)` con
+   `clavesOrganizadores`. Las iniciales del nombre público (`avatarDeOrganizador`) pasaron de
+   `DetalleEvento` a `features/organizadores/avatar.js`. Con esta página ya no queda ninguna ruta en
+   `EnConstruccion`, que se borró.
 
 ### Etapa 5 · Cierre
 1. Tests con Vitest + Testing Library: `useFormSubmit`, `useBusquedaEventos`, `useUbicacionInicial`
@@ -413,13 +436,12 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | Hecha |
 | `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | Hecha |
 | `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | Hecha |
-| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
+| `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | Hecha |
 | `/dev/componentes` | Catálogo de `components/ui` | Usuario logueado, **solo en desarrollo** | 1 | Hecha |
 | `*` | No encontrado | Pública (con sesión, dentro de `Layout`) | 1 | Hecha |
 
-`EnConstruccion` (`src/pages/EnConstruccion.jsx`) es una página provisoria con un aviso de
-"Próximamente", para que los ítems de la barra no lleven a una página en blanco. Al hacer cada
-página, reemplazarla en `App.jsx`.
+Mientras faltaban páginas, sus rutas mostraban `EnConstruccion`, una página provisoria con un aviso
+de "Próximamente". Se borró al terminar la etapa 4, cuando ya no la usaba ninguna ruta.
 
 ## Componentes por ubicación
 
@@ -428,10 +450,10 @@ página, reemplazarla en `App.jsx`.
 | `components/ui/` (genéricos) | Hechos: `Button`, `Input`, `PasswordInput`, `Textarea`, `Select`, `FormField`, `FormError`, `SubmitButton`, `Spinner`, `Badge`, `EmptyState`, `ConfirmDialog`, `Icono`, `Avatar` |
 | `components/layout/` | Hechos: `Layout`, `BarraNavegacion`, `MenuCuenta` |
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
-| `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`. Falta: `AdminRoute` |
+| `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `permisos`, `cambiosEvento` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `BotonOcultarEvento`, `permisos`, `cambiosEvento` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
-| `features/organizadores/` | Hecho: `FormularioSolicitud`. Falta: panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `EditarEvento`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
-| `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`, `organizadores` (solicitud; falta lo de admin en la etapa 4) |
+| `features/organizadores/` | Hechos: `FormularioSolicitud`, `FilaOrganizador`, `useOrganizadores`, `avatarDeOrganizador` |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `EditarEvento`, `AdminOrganizadores`, `NoEncontrado` y `CatalogoComponentes` (solo desarrollo) |
+| `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`, `organizadores` |
