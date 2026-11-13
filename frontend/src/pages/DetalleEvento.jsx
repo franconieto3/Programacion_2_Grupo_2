@@ -9,6 +9,7 @@ import BadgeEquipo from "../features/eventos/components/BadgeEquipo";
 import { cuandoDetalle, precio, yaTermino } from "../features/eventos/formato";
 import { useAuth } from "../features/auth/context/AuthContext";
 import BotonCancelarEvento from "../features/eventos/components/BotonCancelarEvento";
+import BotonOcultarEvento from "../features/eventos/components/BotonOcultarEvento";
 import { useEvento } from "../features/eventos/hooks/useEvento";
 import { permisosSobre } from "../features/eventos/permisos";
 import "./DetalleEvento.css";
@@ -71,7 +72,12 @@ const DetalleEvento = () => {
 
 const Ficha = ({ evento }) => {
   const { user } = useAuth();
-  const { puedeEditar, puedeCancelar } = permisosSobre(evento, user);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { puedeEditar, puedeCancelar, puedeOcultar } = permisosSobre(evento, user);
+  // Oculto, la ficha da 404: se vuelve a donde estaba (o a Explorar).
+  const alOcultar = () =>
+    location.key !== "default" ? navigate(-1) : navigate("/explorar", { replace: true });
   const { lugar, organizador } = evento;
   const cuando = cuandoDetalle(evento);
   const textoPrecio = precio(evento.precio);
@@ -106,14 +112,18 @@ const Ficha = ({ evento }) => {
         )}
       </header>
 
-      {/* Acciones del organizador sobre su evento (RF-02.4). */}
-      {puedeEditar && (
+      {/* Acciones del organizador sobre su evento (RF-02.4) y moderación de
+          un administrador (RF-05.1). */}
+      {(puedeEditar || puedeOcultar) && (
         <div className="detalle-evento-acciones">
-          <Link to={`/eventos/${evento.id_evento}/editar`} className={CLASES_BOTON}>
-            <Icono nombre="edit" />
-            Editar
-          </Link>
+          {puedeEditar && (
+            <Link to={`/eventos/${evento.id_evento}/editar`} className={CLASES_BOTON}>
+              <Icono nombre="edit" />
+              Editar
+            </Link>
+          )}
           {puedeCancelar && <BotonCancelarEvento evento={evento} />}
+          {puedeOcultar && <BotonOcultarEvento evento={evento} onOcultado={alOcultar} />}
         </div>
       )}
 
