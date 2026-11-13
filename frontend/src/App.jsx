@@ -15,6 +15,7 @@ import DetalleEvento from './pages/DetalleEvento';
 import NoEncontrado from './pages/NoEncontrado';
 import SolicitudOrganizador from './pages/SolicitudOrganizador';
 import CrearEvento from './pages/CrearEvento';
+import MisEventos from './pages/MisEventos';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -41,16 +42,7 @@ function App() {
                   <Route path="/eventos/:idEvento" element={<DetalleEvento />} />
                   {/* Solo organizadores aprobados (RF-01.7). */}
                   <Route element={<OrganizadorRoute />}>
-                    <Route
-                      path="/mis-eventos"
-                      element={
-                        <EnConstruccion
-                          titulo="Mis eventos"
-                          icono="calendar_month"
-                          descripcion="Acá vas a ver los eventos que publicaste, con su estado, y vas a poder editarlos o cancelarlos."
-                        />
-                      }
-                    />
+                    <Route path="/mis-eventos" element={<MisEventos />} />
                     <Route path="/eventos/nuevo" element={<CrearEvento />} />
                   </Route>
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />

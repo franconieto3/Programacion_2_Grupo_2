@@ -20,9 +20,10 @@ export function obtenerEvento(idEvento, { signal } = {}) {
   return api.get(`/eventos/${idEvento}`, { signal })
 }
 
-// Solo organizadores aprobados: sus eventos en cualquier estado.
-export function listarMisEventos() {
-  return api.get('/eventos/mios')
+// Solo organizadores aprobados: sus eventos en cualquier estado, del inicio
+// más lejano al más cercano. Sin paginación.
+export function listarMisEventos({ signal } = {}) {
+  return api.get('/eventos/mios', { signal })
 }
 
 export function crearEvento(datos) {
