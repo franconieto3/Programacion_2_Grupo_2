@@ -73,7 +73,7 @@ sección siguiente.
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
 | RF-02.1 | Alta de evento: título, descripción, inicio, fin y precio opcionales | Página `/eventos/nuevo` con `FormularioEvento` → `crearEvento()`. Fechas con `<input type="datetime-local">`: el backend exige zona horaria, así que convertir con `new Date(valor).toISOString()`. Precio `type="number"` con `min="0"` y `step="0.01"`; si queda vacío, no mandarlo. Validar en el navegador que el fin sea posterior al inicio. | 3 | Pendiente |
-| RF-02.2 | Ubicar el evento marcando un punto en el mapa | `SelectorUbicacion`: usa el mismo componente `Mapa` de la etapa 2, con un marcador arrastrable que también se mueve con un clic. Opcionalmente reutiliza `BuscadorLugar` para centrar el mapa en una dirección. Envía `lugar: { latitud, longitud, nombre?, direccion? }`: las coordenadas mandan, nombre y dirección son descriptivos. | 3 | Pendiente |
+| RF-02.2 | Ubicar el evento marcando un punto en el mapa | `SelectorUbicacion`: usa el mismo componente `Mapa` de la etapa 2, con un marcador arrastrable que también se mueve con un clic. Reutiliza `BuscadorLugar` para centrar el mapa en una dirección. Envía `lugar: { latitud, longitud, nombre?, direccion? }`: las coordenadas mandan, nombre y dirección son descriptivos. | 3 | Parcial (falta usarlo en `FormularioEvento`) |
 | RF-02.3 | Asociar una o varias categorías del catálogo | `SelectorCategorias` (el mismo de los filtros, RF-03.6) con al menos una seleccionada. Muestra `nombre` y envía `slug`. | 3 | Pendiente |
 | RF-02.4 | Editar y cancelar un evento propio | `/eventos/:id/editar` reutiliza `FormularioEvento`, cargado con `obtenerEvento()`, y manda solo los campos modificados con `editarEvento()` (PATCH). Botón "Cancelar evento" con `ConfirmDialog` → `cancelarEvento()`. Ambas acciones solo se habilitan si el estado es `BORRADOR` o `PUBLICADO` (si no, el backend responde `409`). | 3 | Pendiente |
 | RF-02.5 | Listado "mis eventos" con su estado | Página `/mis-eventos` con `listarMisEventos()`. Cada fila tiene un `BadgeEstado` (`BORRADOR`, `PUBLICADO`, `CANCELADO`, `OCULTO`) y las acciones editar/cancelar de RF-02.4. Estado vacío con un enlace a "Crear evento". | 3 | Pendiente |
@@ -332,7 +332,16 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
    (el usuario ya está cargado por `PrivateRoute`). En vez de una página de "sin permiso", redirige a
    `/organizador/solicitud` con `state.requiereOrganizador`: esa página ya explica cada caso (sin
    perfil, pendiente, rechazado o suspendido) y suma un aviso de por qué se llegó ahí.
-3. `SelectorUbicacion` (reutiliza `Mapa` y `BuscadorLugar`).
+3. ~~`SelectorUbicacion` (reutiliza `Mapa` y `BuscadorLugar`).~~ **Hecho:** en `features/ubicacion/components/`.
+   Controlado (`valor` = `{ latitud, longitud }` o `null`, `onCambiar(punto, { lugar })`, `error`); el
+   formulario arma el `lugar` de la API. Se marca con un clic, arrastrando el pin o con el buscador:
+   si el resultado es un punto (recuadro de menos de ~500 m: una dirección, un local) pone el pin ahí
+   y pasa el `lugar` encontrado (para sugerir la dirección); si es una zona (barrio, ciudad) solo
+   acerca el mapa. Con teclado: flechas para mover el mapa y "Marcar el centro del mapa", con una
+   mira visible mientras el mapa tiene el foco. Las coordenadas se normalizan a -180..180 y se
+   redondean a 6 decimales. Sin valor inicial abre en la ubicación del usuario o la por defecto
+   (`useUbicacionInicial`); con valor (edición), en el punto. La rueda del mouse hace zoom, como en el
+   resto de los mapas. Se puede probar suelto en `/dev/componentes`.
 4. `FormularioEvento` (reutiliza `SelectorCategorias`) y la página de alta.
 5. "Mis eventos" con `BadgeEstado`.
 6. Edición (mismo `FormularioEvento`) y cancelación.
@@ -388,7 +397,7 @@ página, reemplazarla en `App.jsx`.
 | `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`. Falta: `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
 | `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`. Faltan: `FormularioEvento`, `BadgeEstado` |
-| `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`. Falta: `SelectorUbicacion` |
+| `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
 | `features/organizadores/` | Hecho: `FormularioSolicitud`. Falta: panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`, `organizadores` (solicitud; falta lo de admin en la etapa 4) |
