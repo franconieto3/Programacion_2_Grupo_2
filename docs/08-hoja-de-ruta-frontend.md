@@ -76,7 +76,7 @@ sección siguiente.
 | RF-02.2 | Ubicar el evento marcando un punto en el mapa | `SelectorUbicacion`: usa el mismo componente `Mapa` de la etapa 2, con un marcador arrastrable que también se mueve con un clic. Reutiliza `BuscadorLugar` para centrar el mapa en una dirección. Envía `lugar: { latitud, longitud, nombre?, direccion? }`: las coordenadas mandan, nombre y dirección son descriptivos. | 3 | Hecho |
 | RF-02.3 | Asociar una o varias categorías del catálogo | `SelectorCategorias` (el mismo de los filtros, RF-03.6) con al menos una seleccionada. Muestra `nombre` y envía `slug`. | 3 | Hecho |
 | RF-02.4 | Editar y cancelar un evento propio | `/eventos/:id/editar` reutiliza `FormularioEvento`, cargado con `obtenerEvento()`, y manda solo los campos modificados con `editarEvento()` (PATCH). Botón "Cancelar evento" con `ConfirmDialog` → `cancelarEvento()`. Ambas acciones solo se habilitan si el estado es `BORRADOR` o `PUBLICADO` (si no, el backend responde `409`). | 3 | Pendiente |
-| RF-02.5 | Listado "mis eventos" con su estado | Página `/mis-eventos` con `listarMisEventos()`. Cada fila tiene un `BadgeEstado` (`BORRADOR`, `PUBLICADO`, `CANCELADO`, `OCULTO`) y las acciones editar/cancelar de RF-02.4. Estado vacío con un enlace a "Crear evento". | 3 | Pendiente |
+| RF-02.5 | Listado "mis eventos" con su estado | Página `/mis-eventos` con `listarMisEventos()`. Cada fila tiene un `BadgeEstado` (`BORRADOR`, `PUBLICADO`, `CANCELADO`, `OCULTO`) y las acciones editar/cancelar de RF-02.4. Estado vacío con un enlace a "Crear evento". | 3 | Parcial (faltan las acciones de RF-02.4) |
 
 ### RF-03 · Descubrimiento y búsqueda
 
@@ -356,7 +356,15 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
    `pages/CrearEvento.jsx` publica con `crearEvento()` (el backend lo deja `PUBLICADO`), invalida la
    caché de eventos y va a la ficha reemplazando el formulario en el historial, con un aviso de
    "Publicaste el evento".
-5. "Mis eventos" con `BadgeEstado`.
+5. ~~"Mis eventos" con `BadgeEstado`.~~ **Hecho:** `pages/MisEventos.jsx` con `useMisEventos` (clave
+   `clavesEventos.mios`, que se invalida junto con las demás de eventos). Separa "Próximos" (el más
+   cercano primero) de "Finalizados" (el más reciente primero). Cada evento es una `FilaMiEvento`: se
+   ve como `TarjetaEvento`, con `BadgeEstado` adelante (`Borrador`, `Publicado`, `Cancelado`, `Oculto`,
+   y `Finalizado` para un publicado que ya terminó). El título es el enlace a la ficha y cubre la
+   fila, así las acciones del paso 6 pueden ser botones aparte (`children`). Un `OCULTO` no tiene
+   enlace (su ficha da 404 también para el dueño) y explica que lo ocultó un administrador. Estado
+   vacío con "Crear evento"; con eventos, el botón va en el encabezado (en el celular ya está en la
+   barra).
 6. Edición (mismo `FormularioEvento`) y cancelación.
 
 ### Etapa 4 · Administración
@@ -389,7 +397,7 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | Hecha |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
 | `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | Hecha |
-| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | `EnConstruccion` (con `OrganizadorRoute`) |
+| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | Hecha (faltan editar y cancelar) |
 | `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | Hecha |
 | `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | — |
 | `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
@@ -409,8 +417,8 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
 | `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`. Falta: `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`. Falta: `BadgeEstado` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
 | `features/organizadores/` | Hecho: `FormularioSolicitud`. Falta: panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`, `organizadores` (solicitud; falta lo de admin en la etapa 4) |
