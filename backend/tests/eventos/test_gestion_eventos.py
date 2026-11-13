@@ -228,6 +228,46 @@ async def test_editar_con_fin_anterior_al_inicio_falla(repo):
         )
 
 
+def _como_vuelve_de_sqlite(original: Evento) -> Evento:
+    """SQLite no guarda la zona horaria: las fechas vuelven sin ella."""
+    original.fecha_inicio = original.fecha_inicio.replace(tzinfo=None)
+    if original.fecha_fin is not None:
+        original.fecha_fin = original.fecha_fin.replace(tzinfo=None)
+    return original
+
+
+async def test_editar_solo_fecha_fin_con_fechas_guardadas_sin_zona(repo):
+    yo = organizador()
+    original = await repo.add(
+        _como_vuelve_de_sqlite(evento(yo, fin=INICIO + timedelta(hours=2)))
+    )
+    fin = INICIO + timedelta(hours=4)
+
+    editado = await _editar(repo).ejecutar(
+        yo, original.id_evento, EditarEventoRequest(fecha_fin=fin)
+    )
+
+    assert editado.fecha_inicio == INICIO
+    assert editado.fecha_fin == fin
+    # El inicio sin zona se toma como UTC: 00:30 UTC son las 21:30 en
+    # Buenos Aires, no la hora local de la maquina que corre el test.
+    assert editado.hora_inicio_local == time(21, 30)
+
+
+async def test_editar_solo_inicio_valida_contra_fin_guardado_sin_zona(repo):
+    yo = organizador()
+    original = await repo.add(
+        _como_vuelve_de_sqlite(evento(yo, fin=INICIO + timedelta(hours=2)))
+    )
+
+    with pytest.raises(FechasEventoInvalidasError):
+        await _editar(repo).ejecutar(
+            yo,
+            original.id_evento,
+            EditarEventoRequest(fecha_inicio=INICIO + timedelta(hours=3)),
+        )
+
+
 async def test_editar_reemplaza_categorias_y_lugar(repo):
     yo = organizador()
     original = await repo.add(evento(yo))

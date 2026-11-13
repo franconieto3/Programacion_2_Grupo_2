@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from app.categorias.models import Categoria
 from app.categorias.repository import CategoriaRepository
+from app.core.fechas import como_utc
 from app.eventos.exceptions import (
     CategoriasInvalidasError,
     EventoNoEditableError,
@@ -228,17 +229,27 @@ class EditarEvento:
 
     def _reprogramar(self, evento: Evento, datos: EditarEventoRequest) -> None:
         """Combina las fechas enviadas con las actuales del evento: cambiar
-        solo el inicio conserva el fin, y viceversa."""
+        solo el inicio conserva el fin, y viceversa. Las guardadas pasan por
+        como_utc: con SQLite vuelven sin zona horaria, y compararlas con las
+        enviadas (que siempre la tienen) lanzaria TypeError."""
         enviados = datos.model_fields_set
         inicio = (
             datos.fecha_inicio
             if 'fecha_inicio' in enviados
-            else evento.fecha_inicio
+            else como_utc(evento.fecha_inicio)
         )
-        fin = datos.fecha_fin if 'fecha_fin' in enviados else evento.fecha_fin
+        fin = (
+            datos.fecha_fin
+            if 'fecha_fin' in enviados
+            else _como_utc_o_none(evento.fecha_fin)
+        )
         if fin is not None and fin <= inicio:
             raise FechasEventoInvalidasError()
         evento.programar(inicio, fin, self._zona)
+
+
+def _como_utc_o_none(fecha: datetime | None) -> datetime | None:
+    return None if fecha is None else como_utc(fecha)
 
 
 class CancelarEvento:

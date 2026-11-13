@@ -4,6 +4,7 @@ la persistencia reemplazada por dobles en memoria via
 Se recorre la cadena completa de dependencias: get_usuario_actual (401) ->
 get_admin_actual (403) -> caso de uso."""
 
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -56,6 +57,8 @@ async def _usuario_con_token(user_repository, token_service, email) -> tuple[Usu
 
 
 async def _perfil(organizador_repo, estado) -> Organizador:
+    # En memoria no corre el default de la columna fecha_creacion, y la
+    # respuesta (OrganizadorPublic) la exige.
     return await organizador_repo.add(
         Organizador(
             id_organizador=uuid4(),
@@ -63,6 +66,7 @@ async def _perfil(organizador_repo, estado) -> Organizador:
             nombre_publico="Bar Los Pinos",
             descripcion="Musica en vivo",
             estado=estado,
+            fecha_creacion=datetime.now(timezone.utc),
         )
     )
 
@@ -89,9 +93,7 @@ async def test_admin_lista_solo_las_pendientes(wired_app):
     user_repository, token_service, admin_repo, organizador_repo = wired_app
     usuario, token = await _usuario_con_token(user_repository, token_service, "admin@a.com")
     admin_repo.add(usuario.id)
-    # En memoria no corre el default de la columna fecha_creacion.
     pendiente = await _perfil(organizador_repo, EstadoOrganizador.PENDIENTE)
-    pendiente.fecha_creacion = usuario.creado_en
     await _perfil(organizador_repo, EstadoOrganizador.APROBADO)
 
     async with _client() as client:
