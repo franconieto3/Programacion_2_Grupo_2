@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import PrivateRoute from './routes/PrivateRoute';
+import OrganizadorRoute from './routes/OrganizadorRoute';
 import { AuthContextProvider } from './features/auth/context/AuthContext';
 import Layout from './components/layout/Layout';
 
@@ -37,26 +38,29 @@ function App() {
                 <Route element={<Layout />}>
                   <Route path="/explorar" element={<Explorar />} />
                   <Route path="/eventos/:idEvento" element={<DetalleEvento />} />
-                  <Route
-                    path="/mis-eventos"
-                    element={
-                      <EnConstruccion
-                        titulo="Mis eventos"
-                        icono="calendar_month"
-                        descripcion="Acá vas a ver los eventos que publicaste, con su estado, y vas a poder editarlos o cancelarlos."
-                      />
-                    }
-                  />
-                  <Route
-                    path="/eventos/nuevo"
-                    element={
-                      <EnConstruccion
-                        titulo="Crear evento"
-                        icono="add_location_alt"
-                        descripcion="Acá vas a poder publicar un evento: datos, categorías y ubicación en el mapa."
-                      />
-                    }
-                  />
+                  {/* Solo organizadores aprobados (RF-01.7). */}
+                  <Route element={<OrganizadorRoute />}>
+                    <Route
+                      path="/mis-eventos"
+                      element={
+                        <EnConstruccion
+                          titulo="Mis eventos"
+                          icono="calendar_month"
+                          descripcion="Acá vas a ver los eventos que publicaste, con su estado, y vas a poder editarlos o cancelarlos."
+                        />
+                      }
+                    />
+                    <Route
+                      path="/eventos/nuevo"
+                      element={
+                        <EnConstruccion
+                          titulo="Crear evento"
+                          icono="add_location_alt"
+                          descripcion="Acá vas a poder publicar un evento: datos, categorías y ubicación en el mapa."
+                        />
+                      }
+                    />
+                  </Route>
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
                   <Route
                     path="/admin/organizadores"

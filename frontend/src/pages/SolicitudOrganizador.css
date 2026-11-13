@@ -24,6 +24,17 @@
   line-height: 1.4;
 }
 
+/* La introducción se pega al título, salvo que haya un aviso en el medio. */
+.solicitud-aviso + .solicitud-intro {
+  margin-top: 0;
+}
+
+.solicitud-aviso-info {
+  border-color: var(--info-border);
+  background-color: var(--info-bg);
+  color: var(--info-text);
+}
+
 .solicitud-aviso .icono {
   flex-shrink: 0;
   font-size: 1.25rem;

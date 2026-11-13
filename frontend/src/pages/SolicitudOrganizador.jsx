@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import EmptyState from "../components/ui/EmptyState";
 import Icono from "../components/ui/Icono";
 import { useAuth } from "../features/auth/context/AuthContext";
@@ -22,6 +22,8 @@ const SolicitudOrganizador = () => {
   const estado = organizador?.estado;
   // Para decir "enviada" en vez de "en revisión" justo después de enviarla.
   const [recienEnviada, setRecienEnviada] = useState(false);
+  // Viene de OrganizadorRoute: quiso abrir una página solo para organizadores.
+  const redirigido = useLocation().state?.requiereOrganizador === true;
 
   // Con la solicitud pendiente, al entrar se vuelve a pedir el usuario: si un
   // administrador la resolvió, se ve sin tener que recargar la página. Se usa
@@ -94,6 +96,12 @@ const SolicitudOrganizador = () => {
   return (
     <div className="pagina solicitud">
       <h1 className="pagina-titulo">Ser organizador</h1>
+      {redirigido && estado !== "APROBADO" && (
+        <p className="solicitud-aviso solicitud-aviso-info" role="status">
+          <Icono nombre="lock" />
+          Para crear y gestionar eventos necesitás un perfil de organizador aprobado.
+        </p>
+      )}
       {contenido}
     </div>
   );
