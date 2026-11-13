@@ -15,3 +15,9 @@
   font-size: 0.8125rem;
   color: var(--error);
 }
+
+.form-field-ayuda {
+  color: var(--text);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}

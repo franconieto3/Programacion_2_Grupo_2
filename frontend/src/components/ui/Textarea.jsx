@@ -1,5 +1,5 @@
 import { useContext, useId, useState } from "react";
-import { FormFieldContext } from "./formFieldContext";
+import { descripcionesDe, FormFieldContext } from "./formFieldContext";
 import "./Input.css";
 import "./Textarea.css";
 
@@ -21,9 +21,7 @@ const Textarea = ({
   const largo = props.value !== undefined ? String(props.value).length : largoNoControlado;
   const conContador = contador && maxLength !== undefined;
 
-  const describedBy =
-    [campo?.invalido && campo.errorId, conContador && contadorId].filter(Boolean).join(" ") ||
-    undefined;
+  const describedBy = descripcionesDe(campo, conContador && contadorId);
 
   return (
     <div className="textarea">

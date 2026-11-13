@@ -14,6 +14,7 @@ import Explorar from './pages/Explorar';
 import DetalleEvento from './pages/DetalleEvento';
 import NoEncontrado from './pages/NoEncontrado';
 import SolicitudOrganizador from './pages/SolicitudOrganizador';
+import CrearEvento from './pages/CrearEvento';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -50,16 +51,7 @@ function App() {
                         />
                       }
                     />
-                    <Route
-                      path="/eventos/nuevo"
-                      element={
-                        <EnConstruccion
-                          titulo="Crear evento"
-                          icono="add_location_alt"
-                          descripcion="Acá vas a poder publicar un evento: datos, categorías y ubicación en el mapa."
-                        />
-                      }
-                    />
+                    <Route path="/eventos/nuevo" element={<CrearEvento />} />
                   </Route>
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
                   <Route

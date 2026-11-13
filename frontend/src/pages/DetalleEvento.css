@@ -56,6 +56,14 @@
   font-weight: 500;
 }
 
+/* Confirmación al llegar recién publicado: va arriba de la ficha. */
+.detalle-evento-aviso-exito {
+  margin: 0 0 1.5rem;
+  border-color: var(--success-border);
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
 /* Fecha, lugar y precio: filas con un ícono en un recuadro. */
 .detalle-evento-datos {
   display: flex;

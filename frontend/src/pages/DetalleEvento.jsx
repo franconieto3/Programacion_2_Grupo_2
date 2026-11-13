@@ -17,6 +17,8 @@ const CLASES_BOTON = "btn-base btn-variant-outline btn-size-default";
 const DetalleEvento = () => {
   const { idEvento } = useParams();
   const { data: evento, isPending, error, noEncontrado, refetch } = useEvento(idEvento);
+  // Recién creado desde "Crear evento" (CrearEvento pasa este estado).
+  const publicado = useLocation().state?.publicado === true;
 
   let contenido;
   if (noEncontrado) {
@@ -42,7 +44,17 @@ const DetalleEvento = () => {
   } else if (isPending) {
     contenido = <EsqueletoDetalle />;
   } else {
-    contenido = <Ficha evento={evento} />;
+    contenido = (
+      <>
+        {publicado && (
+          <p className="detalle-evento-aviso detalle-evento-aviso-exito" role="status">
+            <Icono nombre="check_circle" />
+            Publicaste el evento: ya aparece en el mapa y en las búsquedas.
+          </p>
+        )}
+        <Ficha evento={evento} />
+      </>
+    );
   }
 
   return (

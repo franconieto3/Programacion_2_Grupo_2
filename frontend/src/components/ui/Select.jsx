@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { FormFieldContext } from "./formFieldContext";
+import { descripcionesDe, FormFieldContext } from "./formFieldContext";
 import Icono from "./Icono";
 import "./Input.css";
 import "./Select.css";
@@ -18,7 +18,7 @@ const Select = ({ className = "", placeholder, children, ...props }) => {
       <select
         id={campo?.id}
         aria-invalid={campo?.invalido || undefined}
-        aria-describedby={campo?.invalido ? campo.errorId : undefined}
+        aria-describedby={descripcionesDe(campo)}
         className="input-base select-control"
         defaultValue={placeholder && sinValorInicial ? "" : undefined}
         {...props}
