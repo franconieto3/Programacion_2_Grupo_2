@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import PrivateRoute from './routes/PrivateRoute';
 import OrganizadorRoute from './routes/OrganizadorRoute';
+import AdminRoute from './routes/AdminRoute';
 import { AuthContextProvider } from './features/auth/context/AuthContext';
 import Layout from './components/layout/Layout';
 
@@ -48,16 +49,19 @@ function App() {
                     <Route path="/eventos/:idEvento/editar" element={<EditarEvento />} />
                   </Route>
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
-                  <Route
-                    path="/admin/organizadores"
-                    element={
-                      <EnConstruccion
-                        titulo="Administración"
-                        icono="admin_panel_settings"
-                        descripcion="Acá vas a poder aprobar, rechazar y suspender solicitudes de organizador."
-                      />
-                    }
-                  />
+                  {/* Solo administradores (RF-05.1, RF-05.5). */}
+                  <Route element={<AdminRoute />}>
+                    <Route
+                      path="/admin/organizadores"
+                      element={
+                        <EnConstruccion
+                          titulo="Administración"
+                          icono="admin_panel_settings"
+                          descripcion="Acá vas a poder aprobar, rechazar y suspender solicitudes de organizador."
+                        />
+                      }
+                    />
+                  </Route>
                   <Route path="/perfil" element={<Perfil />} />
                   {CatalogoComponentes && (
                     <Route
