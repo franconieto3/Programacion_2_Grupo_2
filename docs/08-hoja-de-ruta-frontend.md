@@ -103,7 +103,7 @@ sección siguiente.
 
 | # | Requisito | Implementación en el frontend | Etapa | Estado |
 |---|---|---|---|---|
-| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a `/explorar`, porque el evento deja de verse. | 4 | Pendiente |
+| RF-05.1 | Un administrador oculta cualquier evento publicado | En el detalle (RF-03.10), botón "Ocultar evento" visible solo para administradores, con `ConfirmDialog` → `ocultarEvento()` (ya existe en `eventos.js`). Después vuelve a la página anterior (o a `/explorar`), porque el evento deja de verse. | 4 | Hecho |
 | RF-05.2 | Eventos del equipo (seed) diferenciados | La carga es por script (`scripts/seed.py`), así que en el frontend no hay formulario. Solo hay que diferenciarlos: `BadgeEquipo` ("Equipo de la plataforma", variante `info`) cuando `origen === 'SEED_EQUIPO'`, en `TarjetaEvento` antes de las categorías y en el detalle arriba del título. En "Publicado por" el detalle muestra el logo de la app en lugar de iniciales. | 2 | Hecho |
 
 ### Recomendado aunque no es Must
@@ -386,7 +386,13 @@ Cierra **RF-05.1**, más **RF-05.5** como recomendado.
    pasar solo a `user.es_admin`. A diferencia de `OrganizadorRoute` no redirige (el rol no se
    solicita desde la app): muestra en el lugar "Esta sección es solo para administradores" con un
    enlace a Explorar. Protege `/admin/organizadores`.
-2. Botón "Ocultar evento" en el detalle.
+2. ~~Botón "Ocultar evento" en el detalle.~~ **Hecho:** `BotonOcultarEvento` (`features/eventos/components/`)
+   con `ConfirmDialog` → `ocultarEvento()`. Se ofrece si `permisosSobre().puedeOcultar`: el usuario es
+   administrador y el evento está `PUBLICADO` o `CANCELADO` (los estados desde los que el backend
+   lo permite), sea de quien sea. Va en la barra de acciones de la ficha, junto a las del
+   organizador. Como la ficha de un oculto da 404, al confirmar primero vuelve a la página anterior
+   (o a Explorar) y después saca el detalle de la caché e invalida la de eventos; al revés, se
+   vería "No encontramos este evento" por un instante.
 3. Página `/admin/organizadores`.
 
 ### Etapa 5 · Cierre
@@ -433,7 +439,7 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
 | `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`, `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `permisos`, `cambiosEvento` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `BotonOcultarEvento`, `permisos`, `cambiosEvento` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
 | `features/organizadores/` | Hecho: `FormularioSolicitud`. Falta: panel de administración |
 | `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `EditarEvento`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
