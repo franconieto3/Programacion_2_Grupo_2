@@ -4,8 +4,8 @@ import "leaflet/dist/leaflet.css";
 import "./Mapa.css";
 
 // Mapa base de la app (Leaflet + tiles de OpenStreetMap). Lo usan el
-// descubrimiento (MapaEventos), la ficha de un evento (MapaUbicacion) y, en la
-// etapa 3, el selector de ubicación del formulario de eventos.
+// descubrimiento (MapaEventos), la ficha de un evento (MapaUbicacion) y el
+// selector de ubicación del formulario de eventos (SelectorUbicacion).
 //
 // - centro: { lat, lng } y zoom: posición inicial. Como en react-leaflet, no
 //   se pueden cambiar después de montarlo: para mover el mapa usar la
