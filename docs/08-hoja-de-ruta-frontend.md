@@ -75,8 +75,8 @@ sección siguiente.
 | RF-02.1 | Alta de evento: título, descripción, inicio, fin y precio opcionales | Página `/eventos/nuevo` con `FormularioEvento` → `crearEvento()`. Fechas con `<input type="datetime-local">` interpretadas en la zona de la plataforma (`deValorFechaHora` en `formato.js`) y mandadas en ISO. Precio `type="number"` con `min="0"` y `step="0.01"`; vacío va como `null` (no se muestra precio). Se valida en el navegador que el inicio sea futuro y el fin posterior al inicio. | 3 | Hecho |
 | RF-02.2 | Ubicar el evento marcando un punto en el mapa | `SelectorUbicacion`: usa el mismo componente `Mapa` de la etapa 2, con un marcador arrastrable que también se mueve con un clic. Reutiliza `BuscadorLugar` para centrar el mapa en una dirección. Envía `lugar: { latitud, longitud, nombre?, direccion? }`: las coordenadas mandan, nombre y dirección son descriptivos. | 3 | Hecho |
 | RF-02.3 | Asociar una o varias categorías del catálogo | `SelectorCategorias` (el mismo de los filtros, RF-03.6) con al menos una seleccionada. Muestra `nombre` y envía `slug`. | 3 | Hecho |
-| RF-02.4 | Editar y cancelar un evento propio | `/eventos/:id/editar` reutiliza `FormularioEvento`, cargado con `obtenerEvento()`, y manda solo los campos modificados con `editarEvento()` (PATCH). Botón "Cancelar evento" con `ConfirmDialog` → `cancelarEvento()`. Ambas acciones solo se habilitan si el estado es `BORRADOR` o `PUBLICADO` (si no, el backend responde `409`). | 3 | Pendiente |
-| RF-02.5 | Listado "mis eventos" con su estado | Página `/mis-eventos` con `listarMisEventos()`. Cada fila tiene un `BadgeEstado` (`BORRADOR`, `PUBLICADO`, `CANCELADO`, `OCULTO`) y las acciones editar/cancelar de RF-02.4. Estado vacío con un enlace a "Crear evento". | 3 | Parcial (faltan las acciones de RF-02.4) |
+| RF-02.4 | Editar y cancelar un evento propio | `/eventos/:id/editar` reutiliza `FormularioEvento`, cargado con `obtenerEvento()`, y manda solo los campos modificados con `editarEvento()` (PATCH). Botón "Cancelar evento" con `ConfirmDialog` → `cancelarEvento()`. Ambas acciones solo se habilitan si el estado es `BORRADOR` o `PUBLICADO` (si no, el backend responde `409`); cancelar, además, si el evento no terminó. | 3 | Hecho |
+| RF-02.5 | Listado "mis eventos" con su estado | Página `/mis-eventos` con `listarMisEventos()`. Cada fila tiene un `BadgeEstado` (`BORRADOR`, `PUBLICADO`, `CANCELADO`, `OCULTO`) y las acciones editar/cancelar de RF-02.4. Estado vacío con un enlace a "Crear evento". | 3 | Hecho |
 
 ### RF-03 · Descubrimiento y búsqueda
 
@@ -315,7 +315,7 @@ Cierra **RF-01.2**, **RF-03.1** a **RF-03.8**, **RF-03.10**, **RF-04.1** y **RF-
    nada en los demás. Se usa en `TarjetaEvento` (antes de las categorías) y en `DetalleEvento`
    (junto a los estados, arriba del título).
 
-### Etapa 3 · Organizador (CU-04 y CU-03)
+### Etapa 3 · Organizador (CU-04 y CU-03) (hecha)
 Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya está resuelto (`GET /auth/me`).
 1. ~~`services/organizadores.js` y la página de solicitud.~~ **Hecho:** `pages/SolicitudOrganizador.jsx`
    decide qué mostrar según `user.organizador.estado`: el formulario (`FormularioSolicitud` en
@@ -365,7 +365,20 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
    enlace (su ficha da 404 también para el dueño) y explica que lo ocultó un administrador. Estado
    vacío con "Crear evento"; con eventos, el botón va en el encabezado (en el celular ya está en la
    barra).
-6. Edición (mismo `FormularioEvento`) y cancelación.
+6. ~~Edición (mismo `FormularioEvento`) y cancelación.~~ **Hecho:** `permisosSobre(evento, usuario)`
+   (`features/eventos/permisos.js`) decide qué se ofrece: editar si es propio y está en `BORRADOR` o
+   `PUBLICADO` (aunque haya terminado, para corregir datos); cancelar, además, si no terminó.
+   `pages/EditarEvento.jsx` carga el evento con `useEvento`, explica si no se puede editar (ajeno,
+   cancelado u oculto) y manda en el PATCH solo lo que cambió (`cambiosEntre` en
+   `cambiosEvento.js`: fechas al minuto, precio como número, lugar completo si cambió algo,
+   categorías sin importar el orden); sin cambios, vuelve a la ficha sin llamar a la API.
+   `BotonCancelarEvento` abre un `ConfirmDialog` → `cancelarEvento()` e invalida la caché de eventos.
+   Las acciones están en las filas de "Mis eventos" (íconos) y en la ficha, para su organizador.
+   La ficha muestra el aviso que le pase la página anterior (`state.aviso`): "Publicaste el evento",
+   "Guardaste los cambios".
+   Pendiente del backend, solo con SQLite: un PATCH que cambia una sola de las dos fechas de un
+   evento con fin responde 500, porque `EditarEvento._reprogramar` compara la fecha guardada (SQLite
+   la devuelve sin zona) con la nueva (con zona). Con PostgreSQL no pasa.
 
 ### Etapa 4 · Administración
 Cierra **RF-05.1**, más **RF-05.5** como recomendado.
@@ -397,9 +410,9 @@ columna **Hoy** indica qué se muestra en este momento.
 | `/eventos/:id` | Ficha de detalle | Usuario logueado | 2 | Hecha |
 | `/perfil` | Datos de la cuenta, roles y "Cerrar sesión" | Usuario logueado | 1 | Hecha |
 | `/organizador/solicitud` | Solicitud de perfil de organizador | Usuario logueado | 3 | Hecha |
-| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | Hecha (faltan editar y cancelar) |
+| `/mis-eventos` | Mis eventos | Organizador aprobado | 3 | Hecha |
 | `/eventos/nuevo` | Alta de evento | Organizador aprobado | 3 | Hecha |
-| `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | — |
+| `/eventos/:id/editar` | Edición de evento | Organizador aprobado (dueño) | 3 | Hecha |
 | `/admin/organizadores` | Solicitudes de organizador | Administrador | 4 | `EnConstruccion` (sin `AdminRoute`) |
 | `/dev/componentes` | Catálogo de `components/ui` | Usuario logueado, **solo en desarrollo** | 1 | Hecha |
 | `*` | No encontrado | Pública (con sesión, dentro de `Layout`) | 1 | Hecha |
@@ -417,8 +430,8 @@ página, reemplazarla en `App.jsx`.
 | `components/mapa/` | Hechos: `Mapa` (base de Leaflet, la usan descubrimiento y organizador), `MapaUbicacion`, `iconoMarcador` |
 | `routes/` | Hechos: `PrivateRoute`, `OrganizadorRoute`. Falta: `AdminRoute` |
 | `features/auth/` | Hechos: `Login`, `Registro` |
-| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos` |
+| `features/eventos/` | Hechos: `ListaEventos`, `TarjetaEvento`, `BadgeEquipo`, `PanelFiltros`, `SelectorCategorias`, `useBusquedaEventos`, `useFiltrosBusqueda`, `useCategorias`, `useEvento`, `clavesEventos`, `formato`, `MapaEventos`, `useEstadoExplorar`, `FormularioEvento`, `BadgeEstado`, `FilaMiEvento`, `useMisEventos`, `BotonCancelarEvento`, `permisos`, `cambiosEvento` |
 | `features/ubicacion/` | Hechos: `BuscadorLugar`, `useUbicacionInicial`, `SelectorUbicacion` |
 | `features/organizadores/` | Hecho: `FormularioSolicitud`. Falta: panel de administración |
-| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
+| `pages/` | Una página por ruta del mapa de rutas: arma los componentes de `features/`. Hechas: `Explorar`, `DetalleEvento`, `Perfil`, `SolicitudOrganizador`, `CrearEvento`, `MisEventos`, `EditarEvento`, `NoEncontrado`, `EnConstruccion` (provisoria) y `CatalogoComponentes` (solo desarrollo) |
 | `services/` | Hechos: `client`, `auth`, `eventos`, `categorias`, `configuracion`, `geocodificacion`, `organizadores` (solicitud; falta lo de admin en la etapa 4) |

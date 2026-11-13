@@ -18,7 +18,10 @@ const CrearEvento = () => {
     const evento = await crearEvento(datos);
     // El mapa, la lista y "Mis eventos" lo tienen que mostrar.
     await queryClient.invalidateQueries({ queryKey: clavesEventos.todas });
-    navigate(`/eventos/${evento.id_evento}`, { replace: true, state: { publicado: true } });
+    navigate(`/eventos/${evento.id_evento}`, {
+      replace: true,
+      state: { aviso: "Publicaste el evento: ya aparece en el mapa y en las búsquedas." },
+    });
   };
 
   const descartar = () => (location.key !== "default" ? navigate(-1) : navigate("/mis-eventos"));

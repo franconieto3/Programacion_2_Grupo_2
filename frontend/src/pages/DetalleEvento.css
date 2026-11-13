@@ -185,3 +185,19 @@
 .detalle-evento-equipo .icono {
   font-size: 1.25rem;
 }
+
+/* Editar y cancelar, para el organizador del evento. */
+.detalle-evento-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.detalle-evento-acciones .btn-base {
+  text-decoration: none;
+}
+
+.detalle-evento-acciones .icono {
+  font-size: 1.125rem;
+}

@@ -16,6 +16,7 @@ import NoEncontrado from './pages/NoEncontrado';
 import SolicitudOrganizador from './pages/SolicitudOrganizador';
 import CrearEvento from './pages/CrearEvento';
 import MisEventos from './pages/MisEventos';
+import EditarEvento from './pages/EditarEvento';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -44,6 +45,7 @@ function App() {
                   <Route element={<OrganizadorRoute />}>
                     <Route path="/mis-eventos" element={<MisEventos />} />
                     <Route path="/eventos/nuevo" element={<CrearEvento />} />
+                    <Route path="/eventos/:idEvento/editar" element={<EditarEvento />} />
                   </Route>
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
                   <Route

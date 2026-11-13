@@ -3,11 +3,15 @@ import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Icono from "../components/ui/Icono";
+import BotonCancelarEvento from "../features/eventos/components/BotonCancelarEvento";
 import FilaMiEvento from "../features/eventos/components/FilaMiEvento";
+import { useAuth } from "../features/auth/context/AuthContext";
 import { useMisEventos } from "../features/eventos/hooks/useMisEventos";
+import { permisosSobre } from "../features/eventos/permisos";
 import "./MisEventos.css";
 
 const CLASES_BOTON = "btn-base btn-variant-default btn-size-default";
+const CLASES_ICONO = "btn-base btn-variant-ghost btn-size-icon";
 
 // "Mis eventos" del organizador (RF-02.5): todos sus eventos con su estado,
 // separados en próximos y finalizados. Solo para organizadores aprobados
@@ -69,6 +73,7 @@ const MisEventos = () => {
 
 const Grupo = ({ titulo, eventos, vacio }) => {
   const id = useId();
+  const { user } = useAuth();
   return (
     <section className="mis-eventos-grupo" aria-labelledby={id}>
       <h2 id={id} className="mis-eventos-grupo-titulo">
@@ -81,7 +86,9 @@ const Grupo = ({ titulo, eventos, vacio }) => {
         <ul className="mis-eventos-lista">
           {eventos.map((evento) => (
             <li key={evento.id_evento}>
-              <FilaMiEvento evento={evento} />
+              <FilaMiEvento evento={evento}>
+                <Acciones evento={evento} permisos={permisosSobre(evento, user)} />
+              </FilaMiEvento>
             </li>
           ))}
         </ul>
@@ -89,6 +96,23 @@ const Grupo = ({ titulo, eventos, vacio }) => {
     </section>
   );
 };
+
+// Editar y cancelar (RF-02.4), solo los que permite el estado del evento.
+const Acciones = ({ evento, permisos }) => (
+  <>
+    {permisos.puedeEditar && (
+      <Link
+        to={`/eventos/${evento.id_evento}/editar`}
+        className={CLASES_ICONO}
+        aria-label={`Editar «${evento.titulo}»`}
+        title="Editar"
+      >
+        <Icono nombre="edit" />
+      </Link>
+    )}
+    {permisos.puedeCancelar && <BotonCancelarEvento evento={evento} compacto />}
+  </>
+);
 
 const EsqueletoMisEventos = () => (
   <ul className="mis-eventos-lista" role="status" aria-label="Cargando tus eventos">
