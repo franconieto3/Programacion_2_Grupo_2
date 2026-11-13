@@ -376,9 +376,10 @@ Cierra **RF-01.6**, **RF-01.7**, **RF-02.1** a **RF-02.5** y **RF-04.2**. B-1 ya
    Las acciones están en las filas de "Mis eventos" (íconos) y en la ficha, para su organizador.
    La ficha muestra el aviso que le pase la página anterior (`state.aviso`): "Publicaste el evento",
    "Guardaste los cambios".
-   Pendiente del backend, solo con SQLite: un PATCH que cambia una sola de las dos fechas de un
-   evento con fin responde 500, porque `EditarEvento._reprogramar` compara la fecha guardada (SQLite
-   la devuelve sin zona) con la nueva (con zona). Con PostgreSQL no pasa.
+   Con SQLite, un PATCH que cambiaba una sola de las dos fechas de un evento con fin respondía 500:
+   `EditarEvento._reprogramar` comparaba la fecha guardada (SQLite la devuelve sin zona) con la
+   nueva (con zona). Se corrigió en el backend con `como_utc` (`app/core/fechas.py`), que también
+   usa `token_service`.
 
 ### Etapa 4 · Administración (hecha)
 Cierra **RF-05.1**, más **RF-05.5** como recomendado.
