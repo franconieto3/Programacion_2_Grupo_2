@@ -49,12 +49,13 @@ export const AuthContextProvider = ({ children }) => {
   }
 
   // Vuelve a pedir el usuario cuando cambian sus roles sin un nuevo login
-  // (p. ej. después de enviar la solicitud de organizador).
-  const refrescarUsuario = async () => {
+  // (p. ej. después de enviar la solicitud de organizador). Es estable entre
+  // renders, así se puede usar como dependencia de un efecto.
+  const refrescarUsuario = useCallback(async () => {
     const usuario = await obtenerUsuarioActual()
     setUser(usuario)
     return usuario
-  }
+  }, [])
 
   return (
     <AuthContext.Provider

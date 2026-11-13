@@ -12,6 +12,7 @@ import Perfil from './pages/Perfil';
 import Explorar from './pages/Explorar';
 import DetalleEvento from './pages/DetalleEvento';
 import NoEncontrado from './pages/NoEncontrado';
+import SolicitudOrganizador from './pages/SolicitudOrganizador';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -56,16 +57,7 @@ function App() {
                       />
                     }
                   />
-                  <Route
-                    path="/organizador/solicitud"
-                    element={
-                      <EnConstruccion
-                        titulo="Ser organizador"
-                        icono="storefront"
-                        descripcion="Acá vas a poder pedir un perfil de organizador para publicar tus propios eventos."
-                      />
-                    }
-                  />
+                  <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
                   <Route
                     path="/admin/organizadores"
                     element={

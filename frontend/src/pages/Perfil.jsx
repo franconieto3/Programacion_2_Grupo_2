@@ -54,6 +54,11 @@ const Perfil = () => {
                 Solicitar
               </Link>
             )}
+            {organizador?.estado === "PENDIENTE" && (
+              <Link to="/organizador/solicitud" className="perfil-fila-accion">
+                Ver
+              </Link>
+            )}
           </li>
           {user.es_admin && (
             <li className="perfil-fila">
