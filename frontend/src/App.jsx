@@ -9,7 +9,6 @@ import Layout from './components/layout/Layout';
 import { Login } from './features/auth/components/Login';
 import { Registro } from './features/auth/components/Registro';
 import Spinner from './components/ui/Spinner';
-import EnConstruccion from './pages/EnConstruccion';
 import Perfil from './pages/Perfil';
 import Explorar from './pages/Explorar';
 import DetalleEvento from './pages/DetalleEvento';
@@ -18,6 +17,7 @@ import SolicitudOrganizador from './pages/SolicitudOrganizador';
 import CrearEvento from './pages/CrearEvento';
 import MisEventos from './pages/MisEventos';
 import EditarEvento from './pages/EditarEvento';
+import AdminOrganizadores from './pages/AdminOrganizadores';
 
 // Catálogo de componentes solo en desarrollo: en el build de producción
 // import.meta.env.DEV es false y Vite descarta la ruta y el import.
@@ -37,8 +37,7 @@ function App() {
               <Route path="/ingresar" element={<Login />}/>
               <Route path="/registro" element={<Registro/>}/>
               <Route element={<PrivateRoute />}>
-                {/* Las rutas privadas van dentro de Layout (barra de navegación + contenido).
-                    Las que usan EnConstruccion se reemplazan en su etapa de la hoja de ruta. */}
+                {/* Las rutas privadas van dentro de Layout (barra de navegación + contenido). */}
                 <Route element={<Layout />}>
                   <Route path="/explorar" element={<Explorar />} />
                   <Route path="/eventos/:idEvento" element={<DetalleEvento />} />
@@ -51,16 +50,7 @@ function App() {
                   <Route path="/organizador/solicitud" element={<SolicitudOrganizador />} />
                   {/* Solo administradores (RF-05.1, RF-05.5). */}
                   <Route element={<AdminRoute />}>
-                    <Route
-                      path="/admin/organizadores"
-                      element={
-                        <EnConstruccion
-                          titulo="Administración"
-                          icono="admin_panel_settings"
-                          descripcion="Acá vas a poder aprobar, rechazar y suspender solicitudes de organizador."
-                        />
-                      }
-                    />
+                    <Route path="/admin/organizadores" element={<AdminOrganizadores />} />
                   </Route>
                   <Route path="/perfil" element={<Perfil />} />
                   {CatalogoComponentes && (
