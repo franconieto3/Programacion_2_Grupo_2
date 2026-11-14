@@ -13,7 +13,10 @@ services:
       # Volumen con nombre: los datos sobreviven a `docker compose down`.
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Solo para correr la API con Poetry contra esta base (la API del compose
+      # la alcanza por la red interna). Atado a 127.0.0.1: no queda expuesto en
+      # la red. Si el 5432 ya esta ocupado: DB_PUERTO_HOST=5433 docker compose up -d
+      - "127.0.0.1:${DB_PUERTO_HOST:-5432}:5432"
     healthcheck:
       # La API espera a que PostgreSQL acepte conexiones antes de migrar.
       test: ["CMD-SHELL", "pg_isready -U postgres -d eventos"]

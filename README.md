@@ -7,7 +7,7 @@ El backend (FastAPI) se gestiona con [Poetry](https://python-poetry.org/) (>= 2.
 ```bash
 cd backend
 poetry install                               # crea backend/.venv e instala dependencias + grupo dev
-cp .env.example .env                         # completar variables de entorno
+cp .env.example .env                         # completar variables de entorno (JWT_SECRET_KEY es obligatoria)
 poetry run alembic upgrade head              # aplicar migraciones
 poetry run python -m scripts.seed            # cargar eventos de ejemplo (--reset para recargarlos)
 poetry run uvicorn app.main:app --reload     # levantar la API
@@ -41,7 +41,18 @@ cada vez que arranca el contenedor de la API.
   los datos. Para borrar también los datos: `docker compose down -v`.
 
 Para desarrollar con recarga automática se puede levantar solo la base (`docker compose up -d db`) y
-correr la API con Poetry como se explica en la sección Backend.
+correr la API con Poetry como se explica en la sección Backend. La base se publica solo en
+`127.0.0.1:5432`. Si ese puerto ya está ocupado (por ejemplo, por un PostgreSQL instalado), se
+elige otro con `DB_PUERTO_HOST=5433 docker compose up -d`, y en el `.env` hay que usar ese puerto
+en `DATABASE_URL`.
+
+La imagen de la API instala exactamente las versiones de `backend/poetry.lock`: el `Dockerfile` las
+exporta con Poetry a un `requirements.txt` con hashes. Si se cambian dependencias en
+`pyproject.toml` sin actualizar el lock (`poetry lock`), el build falla.
+
+El `compose.yaml` es solo para desarrollo y demos: tiene contraseñas y un `JWT_SECRET_KEY` de
+desarrollo escritos en el archivo. En producción la configuración se carga en el proveedor (ver
+abajo).
 
 ## Deploy en un PaaS (Render, Railway, Fly)
 
@@ -50,7 +61,7 @@ proveedor:
 
 | Servicio | Carpeta (Dockerfile) | Variables de entorno |
 |---|---|---|
-| `api` | `backend/` | `DATABASE_URL`, `JWT_SECRET_KEY`, `COOKIE_SECURE=true`, `COOKIE_DOMAIN` vacío, `NOMINATIM_USER_AGENT` (con un contacto real). Ver `backend/.env.example` |
+| `api` | `backend/` | `DATABASE_URL`, `JWT_SECRET_KEY` (propia de producción, distinta de la de desarrollo; la API no arranca sin ella), `COOKIE_SECURE=true`, `COOKIE_DOMAIN` vacío, `NOMINATIM_USER_AGENT` (con un contacto real). Ver `backend/.env.example` |
 | `web` | `frontend/` | `API_UPSTREAM`: URL de la API **sin barra final**. Puede ser la interna del proveedor (por ejemplo `http://api.railway.internal:8000` o `http://<app>.internal:8000` en Fly) o la pública (`https://...`) |
 
 - **El dominio que usa la gente es el de `web`.** El navegador le habla solo a nginx, que reenvía
