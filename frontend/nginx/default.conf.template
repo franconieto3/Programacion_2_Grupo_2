@@ -1,0 +1,52 @@
+# Plantilla de nginx: ${PORT} y ${API_UPSTREAM} se reemplazan al arrancar el
+# contenedor (ver frontend/Dockerfile). Replica en produccion lo que hace el
+# proxy de Vite en desarrollo (frontend/vite.config.js).
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # API: /api/eventos -> ${API_UPSTREAM}/eventos.
+    location /api/ {
+        # Con un host fijo en proxy_pass, nginx lo resuelve una sola vez al
+        # arrancar: si la API se redeploya y cambia de IP, todo da 502 hasta
+        # reiniciar nginx. Con el upstream en una variable lo vuelve a
+        # resolver con este DNS (el del contenedor, ver
+        # NGINX_ENTRYPOINT_LOCAL_RESOLVERS en el Dockerfile) cada 10 s.
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+        set $api_upstream ${API_UPSTREAM};
+
+        # Saca el prefijo /api, como el rewrite de Vite (la query string se
+        # conserva). Con variable, proxy_pass manda la URI ya reescrita.
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass $api_upstream;
+
+        # Si el upstream es la URL publica https del PaaS: SNI y Host de la
+        # API (el proveedor enruta por Host, no puede ir el del frontend).
+        proxy_ssl_server_name on;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+
+        # El backend setea la cookie del refresh token con path /auth, pero el
+        # navegador ve esas rutas como /api/auth: sin esto la cookie nunca
+        # vuelve al backend. Tambien aplica al Set-Cookie de borrado del logout.
+        proxy_cookie_path /auth /api/auth;
+    }
+
+    # Archivos del build con hash en el nombre: se pueden cachear para siempre.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA con BrowserRouter: cualquier otra ruta (/eventos/12, /mis-eventos...)
+    # devuelve index.html. Sin cache, para que un deploy nuevo se vea enseguida.
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}

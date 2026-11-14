@@ -2,6 +2,15 @@
 solo dependen de Protocols (DIP), estos dobles no tocan SQLAlchemy, argon2 ni
 python-jose: son simples estructuras en memoria."""
 
+import os
+
+# Settings exige un JWT_SECRET_KEY valido (app/core/config.py) y hay modulos
+# que lo leen al importarse (app/db/session.py). En CI no hay .env, asi que
+# se define antes de importar la app. setdefault: no pisa uno ya definido.
+os.environ.setdefault(
+    "JWT_SECRET_KEY", "secreto-solo-para-los-tests-automatizados"
+)
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4

@@ -410,13 +410,18 @@ Cierra **RF-05.1**, más **RF-05.5** como recomendado.
    `DetalleEvento` a `features/organizadores/avatar.js`. Con esta página ya no queda ninguna ruta en
    `EnConstruccion`, que se borró.
 
-### Etapa 5 · Cierre
+### Etapa 5 · Cierre (hecha, salvo los tests, que quedaron fuera de alcance)
 1. Tests con Vitest + Testing Library: `useFormSubmit`, `useBusquedaEventos`, `useUbicacionInicial`
-   y los formularios. `planning.md` prevé Vitest en el CI.
-2. Agregar el build y los tests del frontend al pipeline de GitHub Actions.
-3. Configuración de producción: `VITE_API_URL`, y frontend y backend bajo el mismo dominio para que
-   la cookie del refresh token (`SameSite=lax`) siga funcionando.
-4. Completar el README con la arquitectura del frontend.
+   y los formularios. **Fuera de alcance** por decisión del equipo (14/11/2026).
+2. ~~Agregar el build del frontend al pipeline de GitHub Actions.~~ **Hecho:** el job "Lint y build
+   del frontend" corre `npm run lint` y `npm run build`, y el job "Imágenes Docker" construye la
+   imagen del frontend y prueba la app completa a través de nginx.
+3. ~~Configuración de producción.~~ **Hecho:** `frontend/Dockerfile` sirve el build con nginx, que
+   reenvía `/api` a la API y reescribe el path de la cookie del refresh token (`/auth` →
+   `/api/auth`), así front y API quedan en el mismo origen. `VITE_API_URL` no hace falta: queda el
+   default `/api`. Ver "Deploy en un PaaS" en el README.
+4. ~~Completar el README con la arquitectura del frontend.~~ **Hecho:** sección "Arquitectura del
+   frontend".
 
 ---
 
