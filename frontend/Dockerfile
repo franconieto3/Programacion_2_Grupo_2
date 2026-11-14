@@ -33,4 +33,9 @@ COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 ENV PORT=8080
 ENV API_UPSTREAM=http://api:8000
 
+# El entrypoint de nginx lee los DNS de /etc/resolv.conf y los deja en
+# NGINX_LOCAL_RESOLVERS para la plantilla (directiva resolver). Asi funciona
+# igual en docker compose (127.0.0.11) y en cada PaaS, con su DNS interno.
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+
 EXPOSE 8080
