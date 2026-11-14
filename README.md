@@ -98,9 +98,16 @@ Con el `compose.yaml` local, la consola SQL es `docker compose exec db psql -U p
 
 ## Integración continua
 
-`.github/workflows/pipeline.yaml` corre en cada push y pull request: ejecuta los tests del backend
-(`poetry run pytest`) y el linter y el build del frontend. El resultado se ve en la pestaña *Actions*
-del repositorio.
+`.github/workflows/pipeline.yaml` corre en cada push y pull request, con tres jobs en paralelo:
+
+- **Tests del backend:** `poetry run pytest`.
+- **Lint y build del frontend:** `npm run lint` y `npm run build`.
+- **Imágenes Docker:** construye las dos imágenes con `docker compose up -d --build` y prueba la app
+  completa a través de nginx: que la API responda en `/api`, que la SPA devuelva `index.html` en
+  una ruta profunda y que el login setee la cookie del refresh token con `Path=/api/auth`. Detecta
+  un Dockerfile roto o un `poetry.lock` desactualizado. Las imágenes no se publican.
+
+El resultado se ve en la pestaña *Actions* del repositorio.
 
 ## Frontend
 

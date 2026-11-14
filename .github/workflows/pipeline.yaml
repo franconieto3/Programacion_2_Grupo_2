@@ -1,6 +1,8 @@
 # Integracion continua: corre en cada push y en cada pull request.
 # - backend: instala las dependencias con Poetry y ejecuta los tests.
 # - frontend: instala las dependencias, corre el linter y verifica el build.
+# - docker: construye las imagenes, levanta el compose y prueba la app
+#   completa a traves de nginx (las imagenes no se publican).
 name: Pipeline
 
 on: [push, pull_request]
@@ -60,3 +62,45 @@ jobs:
 
       - name: Verificar el build
         run: npm run build
+
+  docker:
+    name: Imagenes Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Copiar los archivos del repositorio
+        uses: actions/checkout@v5
+
+      # Construye las imagenes de backend/ y frontend/. Falla si un Dockerfile
+      # esta roto o si poetry.lock quedo desactualizado respecto de
+      # pyproject.toml (lo exporta el Dockerfile del backend).
+      - name: Construir las imagenes y levantar el compose
+        run: docker compose up -d --build
+
+      # La API corre las migraciones al arrancar: se reintenta hasta que
+      # responda. Todo pasa por nginx (puerto 8080), como en produccion.
+      - name: Probar la app a traves de nginx
+        run: |
+          curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-all-errors \
+            --output /dev/null http://localhost:8080/api/categorias
+          # El frontend y una ruta profunda de la SPA devuelven index.html.
+          curl --fail --silent --show-error http://localhost:8080/ | grep -q '<div id="root">'
+          curl --fail --silent --show-error http://localhost:8080/mis-eventos | grep -q '<div id="root">'
+          # El login setea la cookie del refresh token con el path reescrito por nginx.
+          curl --fail --silent --show-error --output /dev/null \
+            -X POST http://localhost:8080/api/auth/register \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@example.com","password":"ci-12345678","nombre":"CI","apellido":"Pipeline"}'
+          curl --fail --silent --show-error --output /dev/null --dump-header headers.txt \
+            -X POST http://localhost:8080/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci@example.com","password":"ci-12345678"}'
+          grep -qi '^set-cookie: refresh_token=.*Path=/api/auth' headers.txt
+
+      - name: Logs de los contenedores (si algo fallo)
+        if: failure()
+        run: docker compose logs
+
+      - name: Bajar el compose
+        if: always()
+        run: docker compose down -v
