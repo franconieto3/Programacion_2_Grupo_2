@@ -81,14 +81,15 @@ propósito. Un usuario es administrador si tiene una fila en la tabla `administr
 2. Desde la consola SQL del proveedor (o con `psql` y la URL de la base), se corre:
 
    ```sql
-   INSERT INTO administradores (id_admin, id_usuario)
-   SELECT gen_random_uuid(), id_usuario FROM usuario WHERE email = '<email>'
+   INSERT INTO administradores (id_usuario)
+   SELECT id_usuario FROM usuario WHERE email = '<email>'
    ON CONFLICT (id_usuario) DO NOTHING;
    ```
 
-   `id_admin` va explícito porque la columna no tiene valor por defecto en la base (lo genera la
-   app). Repetir la consulta no duplica nada. Si responde `INSERT 0 0` y la persona todavía no era
-   administradora, el email no está registrado.
+   `id_admin` y `fecha_alta` los completa la base (`gen_random_uuid()` y `now()`; el default de
+   `id_admin` lo agrega la migración `0005_administradores_id_default`). Repetir la consulta no
+   duplica nada. Si responde `INSERT 0 0` y la persona todavía no era administradora, el email no
+   está registrado.
 3. La persona recarga la página y le aparece "Administración" en la barra. El permiso se consulta
    en la base en cada request, así que no hace falta reiniciar nada.
 
