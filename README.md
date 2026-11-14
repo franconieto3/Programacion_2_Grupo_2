@@ -72,6 +72,30 @@ proveedor:
 - Las dos imágenes escuchan en el puerto de la variable `PORT` si el proveedor la inyecta
   (8080 para `web` y 8000 para `api` si no).
 
+### Alta de administradores
+
+Los administradores se asignan a mano en la base: no hay endpoint ni pantalla para crearlos, a
+propósito. Un usuario es administrador si tiene una fila en la tabla `administradores`.
+
+1. La persona se registra desde la app, como cualquier usuario.
+2. Desde la consola SQL del proveedor (o con `psql` y la URL de la base), se corre:
+
+   ```sql
+   INSERT INTO administradores (id_admin, id_usuario)
+   SELECT gen_random_uuid(), id_usuario FROM usuario WHERE email = '<email>'
+   ON CONFLICT (id_usuario) DO NOTHING;
+   ```
+
+   `id_admin` va explícito porque la columna no tiene valor por defecto en la base (lo genera la
+   app). Repetir la consulta no duplica nada. Si responde `INSERT 0 0` y la persona todavía no era
+   administradora, el email no está registrado.
+3. La persona recarga la página y le aparece "Administración" en la barra. El permiso se consulta
+   en la base en cada request, así que no hace falta reiniciar nada.
+
+Para quitarle el rol: `DELETE FROM administradores WHERE id_usuario = (SELECT id_usuario FROM usuario WHERE email = '<email>');`
+
+Con el `compose.yaml` local, la consola SQL es `docker compose exec db psql -U postgres -d eventos`.
+
 ## Integración continua
 
 `.github/workflows/pipeline.yaml` corre en cada push y pull request: ejecuta los tests del backend
