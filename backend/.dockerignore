@@ -1,0 +1,23 @@
+# Lo que NO se copia a la imagen.
+
+# Entorno virtual local y caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secretos locales: la configuracion entra por variables de entorno
+.env
+.env.*
+!.env.example
+
+# Bases de datos locales de tests
+*.db
+*.sqlite
+*.sqlite3
+
+# Los tests no hacen falta para ejecutar la API
+tests/

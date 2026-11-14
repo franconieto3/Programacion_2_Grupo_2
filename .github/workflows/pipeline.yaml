@@ -1,0 +1,62 @@
+# Integracion continua: corre en cada push y en cada pull request.
+# - backend: instala las dependencias con Poetry y ejecuta los tests.
+# - frontend: instala las dependencias, corre el linter y verifica el build.
+name: Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  backend:
+    name: Tests del backend
+    runs-on: ubuntu-latest
+
+    # El proyecto Python vive en backend/, no en la raiz del repositorio.
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Copiar los archivos del repositorio
+        uses: actions/checkout@v5
+
+      - name: Instalar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Instalar Poetry
+        run: pipx install poetry
+
+      - name: Instalar dependencias
+        run: poetry install
+
+      # Los tests usan SQLite en memoria y dobles de test: no necesitan
+      # PostgreSQL ni variables de entorno (Settings tiene valores por defecto).
+      - name: Ejecutar tests
+        run: poetry run pytest
+
+  frontend:
+    name: Lint y build del frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Copiar los archivos del repositorio
+        uses: actions/checkout@v5
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar linter
+        run: npm run lint
+
+      - name: Verificar el build
+        run: npm run build

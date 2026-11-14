@@ -16,6 +16,34 @@ poetry run pytest                            # correr los tests
 
 Para agregar dependencias: `poetry add <paquete>` (o `poetry add --group dev <paquete>` para desarrollo).
 
+## Levantar la API con Docker
+
+Con [Docker](https://docs.docker.com/get-docker/) instalado, la API y su base de datos PostgreSQL
+se levantan con un solo comando desde la raíz del repositorio, sin instalar Python ni PostgreSQL:
+
+```bash
+docker compose up -d --build                        # construye la imagen y levanta API + base
+docker compose exec api python -m scripts.seed      # (opcional) cargar eventos de ejemplo
+docker compose logs -f api                          # ver los logs de la API
+docker compose down                                 # detener todo (los datos se conservan)
+```
+
+La API queda en `http://localhost:8000` y su documentación interactiva en `http://localhost:8000/docs`.
+Las migraciones se aplican solas cada vez que arranca el contenedor de la API.
+
+- `backend/Dockerfile` define la imagen de la API.
+- `compose.yaml` define los dos servicios (`api` y `db`) y el volumen `pgdata` donde persisten los datos.
+  Para borrar también los datos: `docker compose down -v`.
+
+Para desarrollar con recarga automática se puede levantar solo la base (`docker compose up -d db`) y
+correr la API con Poetry como se explica en la sección Backend.
+
+## Integración continua
+
+`.github/workflows/pipeline.yaml` corre en cada push y pull request: ejecuta los tests del backend
+(`poetry run pytest`) y el linter y el build del frontend. El resultado se ve en la pestaña *Actions*
+del repositorio.
+
 ## Frontend
 
 El frontend es una app React + Vite (JavaScript) gestionada con npm.
