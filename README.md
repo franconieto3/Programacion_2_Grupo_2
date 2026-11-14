@@ -124,3 +124,55 @@ npm run lint       # linter
 En desarrollo, Vite reenvía todo lo que empiece con `/api` al backend sacándole el prefijo
 (`fetch('/api/eventos')` → `http://localhost:8000/eventos`), así que hay que levantar el backend también.
 Si el backend corre en otro puerto, crear `frontend/.env.local` con `API_PROXY_TARGET=http://localhost:<puerto>`.
+
+### Arquitectura del frontend
+
+**Stack:** React 19 + Vite (JavaScript), React Router 7 para las rutas, TanStack Query 5 para los
+datos del servidor y Leaflet (react-leaflet) con tiles de OpenStreetMap para los mapas.
+
+```
+frontend/src/
+├── main.jsx, App.jsx      arranque, QueryClientProvider y definición de las rutas
+├── queryClient.js         configuración de la caché de TanStack Query
+├── services/              acceso a la API: client.js + un módulo por recurso
+├── routes/                PrivateRoute, OrganizadorRoute y AdminRoute (guardas de acceso)
+├── pages/                 una página por ruta (Explorar, DetalleEvento, MisEventos, ...)
+├── features/              lógica por dominio: componentes y hooks propios
+│   ├── auth/              AuthContext (sesión) y formularios de login y registro
+│   ├── eventos/           búsqueda, filtros, formulario, tarjetas, permisos
+│   ├── organizadores/     solicitud y administración de organizadores
+│   └── ubicacion/         ubicación inicial, buscador de lugar y selector de punto
+├── components/            piezas reutilizables sin lógica de dominio
+│   ├── ui/                Button, Input, FormField, ConfirmDialog, Badge, ...
+│   ├── layout/            Layout, BarraNavegacion y MenuCuenta
+│   └── mapa/              componente Mapa compartido
+└── hooks/                 hooks genéricos (useFormSubmit, useDebounce)
+```
+
+**Cómo fluyen los datos:**
+- `services/client.js` es el **único módulo que usa `fetch`**. Arma la URL (`VITE_API_URL`, por
+  defecto `/api`), agrega el access token, convierte los errores del backend en `ApiError` y, ante
+  un `401`, renueva la sesión una vez y reintenta. Cada recurso tiene su módulo en `services/`
+  (`eventos.js`, `categorias.js`, `organizadores.js`, ...).
+- Las **lecturas** pasan por hooks de TanStack Query de cada dominio (`useBusquedaEventos`,
+  `useEvento`, `useMisEventos`, `useOrganizadores`, ...). La caché evita que una respuesta vieja
+  pise a una nueva cuando se arrastra el mapa.
+- Las **escrituras** (crear, editar, cancelar u ocultar un evento, resolver una solicitud) llaman
+  al servicio desde la página o el componente y después invalidan las claves de la caché afectadas
+  (por ejemplo, todas las de eventos después de crear uno), así las listas se vuelven a pedir.
+- El mapa y la lista de `/explorar` comparten el mismo `useBusquedaEventos`, así nunca muestran
+  resultados distintos. El viewport y los filtros quedan en la URL.
+
+**Sesión:**
+- El access token vive **solo en memoria** (no en `localStorage`), para que un script inyectado no
+  pueda leerlo. Al recargar la página, `AuthContext` lo recupera con la cookie `httpOnly` del
+  refresh token (`POST /auth/verify-session`) y pide el usuario con sus roles (`GET /auth/me`).
+- `useAuth()` expone el usuario, `login`, `logout` y `refrescarUsuario`. Las guardas de `routes/`
+  usan esos roles: `PrivateRoute` exige sesión, `OrganizadorRoute` un perfil de organizador
+  `APROBADO` y `AdminRoute` ser administrador. El backend valida igual cada request.
+- La cookie del refresh token tiene path `/auth` en el backend. Como el navegador ve esas rutas como
+  `/api/auth`, el proxy reescribe el path: Vite en desarrollo y nginx en producción. Por eso front y
+  API tienen que estar bajo el mismo origen.
+
+El detalle de cada pantalla y de las decisiones tomadas está en
+[`docs/08-hoja-de-ruta-frontend.md`](docs/08-hoja-de-ruta-frontend.md).
