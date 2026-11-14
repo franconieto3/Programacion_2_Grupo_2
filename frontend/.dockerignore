@@ -1,0 +1,13 @@
+# Lo que NO se copia a la imagen.
+
+# Dependencias y build locales: se generan dentro de la imagen
+node_modules/
+dist/
+dist-ssr/
+
+# Configuracion local (por ejemplo .env.local con API_PROXY_TARGET)
+*.local
+
+# Editor
+.vscode/
+.idea/

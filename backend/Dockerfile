@@ -16,4 +16,7 @@ EXPOSE 8000
 
 # Al iniciar: aplica las migraciones pendientes y despues levanta la API.
 # --host 0.0.0.0 para que acepte conexiones desde fuera del contenedor.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# El puerto sale de PORT si el proveedor (Render, Railway) lo inyecta; si no, 8000.
+# --proxy-headers: detras del proxy del PaaS y de nginx, toma la IP y el
+# esquema reales de los headers X-Forwarded-*.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
