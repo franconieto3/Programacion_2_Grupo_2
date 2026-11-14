@@ -18,6 +18,10 @@ class Administrador(Base):
 
     __tablename__ = 'administradores'
 
+    # La app genera el id (uuid4). En PostgreSQL la columna ademas tiene
+    # DEFAULT gen_random_uuid() (migracion 0005) para los INSERT hechos a
+    # mano en la consola SQL. No se declara como server_default aca porque
+    # los tests crean el esquema en SQLite, donde esa funcion no existe.
     id_admin: Mapped[uuid.UUID] = mapped_column(
         primary_key=True, default=uuid.uuid4
     )

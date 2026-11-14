@@ -16,7 +16,7 @@ y desplegarlos en un PaaS.
   aprobación, rechazo y suspensión de organizadores), categorías, eventos (búsqueda por viewport,
   ficha de detalle, mis eventos, alta, edición, cancelación y ocultamiento por un administrador),
   geocodificación (búsqueda de lugares en Nominatim) y configuración (ubicación por defecto), más un
-  script de seed de eventos. Hay 4 migraciones (`0001_auth_tables` a `0004_eventos`).
+  script de seed de eventos. Hay 5 migraciones (`0001_auth_tables` a `0005_administradores_id_default`).
 - **Frontend:** registro y login, exploración con mapa y lista sincronizados, filtros, buscador de
   lugar, ficha de detalle, solicitud de organizador, alta/edición/cancelación de eventos, mis
   eventos y administración (ocultar eventos y gestionar organizadores). El detalle de cada pantalla
