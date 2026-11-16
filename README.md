@@ -177,3 +177,16 @@ frontend/src/
 
 El detalle de cada pantalla y de las decisiones tomadas está en
 [`docs/08-hoja-de-ruta-frontend.md`](docs/08-hoja-de-ruta-frontend.md).
+
+## Documentación
+
+Diagramas de diseño en Mermaid (GitHub los muestra renderizados):
+
+- [`docs/05-diagrama-de-clases-auth.md`](docs/05-diagrama-de-clases-auth.md): clases del módulo de
+  autenticación (Strategy, Decorator, Observer y Factory).
+- [`docs/06-diagrama-de-clases-eventos.md`](docs/06-diagrama-de-clases-eventos.md): clases que
+  intervienen en el alta de un evento.
+- [`docs/09-modelo-de-datos.md`](docs/09-modelo-de-datos.md): diagrama entidad-relación de la base,
+  tipos enumerados, máquinas de estado, decisiones del modelo y migraciones.
+- [`docs/10-diagramas-de-clases-modulos.md`](docs/10-diagramas-de-clases-modulos.md): entidades
+  del dominio, organizadores y administradores, búsqueda y gestión de eventos, y geocodificación.
