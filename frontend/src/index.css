@@ -1,30 +1,55 @@
-/* Paleta de la app (escala slate). Los componentes usan solo estas variables,
-   nunca colores fijos: así el modo oscuro se resuelve redefiniéndolas abajo. */
+/* ==========================================================================
+   SpotOn — Design tokens
+   Fuente de verdad visual de la app. Los componentes usan SOLO variables
+   semánticas (--bg, --primary, --text-h...), nunca colores fijos: el modo
+   oscuro y cualquier ajuste de marca se resuelven redefiniéndolas acá.
+   ========================================================================== */
+
 :root {
-  /* Base */
-  --bg: #ffffff;
-  --text: #475569; /* texto común */
-  --text-h: #0f172a; /* títulos, etiquetas y texto de los campos */
-  --muted: #94a3b8; /* placeholders e íconos secundarios */
-  --border: #e2e8f0;
-  --code-bg: #f1f5f9;
-  --ring: #0f172a; /* anillo de foco */
+  /* ---- 1. Paleta de marca (valores crudos, no usar directo en componentes) */
+  --brand-navy: #1b2a47; /* primario: texto fuerte, botones, barra */
+  --brand-navy-700: #14203a; /* hover del primario */
+  --brand-navy-900: #0f1726; /* fondo en modo oscuro */
+  --brand-orange: #ff5a36; /* acento: CTA, pin, estados activos */
+  --brand-orange-600: #e8492a; /* hover del acento */
+  --brand-orange-700: #c93d1c; /* acento como TEXTO sobre fondo claro (AA 5:1) */
+  --brand-orange-50: #fff1ec; /* tinte suave para chips / fondos activos */
+  --brand-cream: #faf7f0; /* lienzo de la app */
+  --brand-grey: #7a7f87; /* muted grey: texto secundario */
+  --brand-slate: #2e3a40; /* dark slate: superficies en modo oscuro */
 
-  /* Botones */
-  --primary: #0f172a;
-  --primary-fg: #f8fafc;
-  --primary-hover: #1e293b;
-  --secondary: #f1f5f9;
-  --secondary-fg: #0f172a;
-  --secondary-hover: #e2e8f0;
-  --accent: #f1f5f9; /* hover de los botones outline y ghost */
-  --accent-fg: #0f172a;
-  --destructive: #ef4444;
-  --destructive-fg: #f8fafc;
-  --destructive-hover: #dc2626;
+  /* ---- 2. Tokens semánticos: base */
+  --bg: var(--brand-cream); /* lienzo de página */
+  --surface: #ffffff; /* tarjetas, diálogos, barra, inputs */
+  --surface-2: #f3efe6; /* superficie hundida: hover de filas, código */
+  --text: #4a5468; /* texto común (5.9:1 sobre cream) */
+  --text-h: var(--brand-navy); /* títulos, etiquetas, texto de campos */
+  --muted: #8a8f98; /* placeholders e íconos secundarios */
+  --border: #e6e1d6; /* borde cálido, sutil sobre cream */
+  --border-strong: #d4cdbf; /* inputs / separadores con más peso */
+  --code-bg: var(--surface-2);
+  --ring: var(--brand-orange); /* anillo de foco */
 
-  /* Mensajes */
-  --error: #dc2626; /* error bajo un campo y borde del campo inválido */
+  /* ---- 3. Botones */
+  --primary: var(--brand-navy);
+  --primary-fg: #ffffff;
+  --primary-hover: var(--brand-navy-700);
+  --brand: var(--brand-orange); /* CTA de marca ("Crear evento", "Ingresar") */
+  --brand-fg: #ffffff; /* usar con texto ≥ 600/16px (3.1:1, AA texto grande) */
+  --brand-hover: var(--brand-orange-600);
+  --brand-text: var(--brand-orange-700); /* links y acentos en texto */
+  --brand-subtle: var(--brand-orange-50);
+  --secondary: #efeae0;
+  --secondary-fg: var(--brand-navy);
+  --secondary-hover: #e6e0d3;
+  --accent: #f3efe6; /* hover de los botones outline y ghost */
+  --accent-fg: var(--brand-navy);
+  --destructive: #dc2626;
+  --destructive-fg: #ffffff;
+  --destructive-hover: #b91c1c;
+
+  /* ---- 4. Mensajes */
+  --error: #dc2626;
   --error-bg: #fef2f2;
   --error-border: #fecaca;
   --error-text: #b91c1c;
@@ -34,22 +59,71 @@
   --warning-bg: #fffbeb;
   --warning-border: #fde68a;
   --warning-text: #b45309;
-  --info-bg: #eff6ff;
-  --info-border: #bfdbfe;
-  --info-text: #1d4ed8;
+  --info-bg: #eef2f9;
+  --info-border: #c9d4e8;
+  --info-text: var(--brand-navy);
 
-  /* Fondo detrás de los diálogos */
-  --overlay: rgba(2, 8, 23, 0.45);
+  /* ---- 5. Elevación (sombras tintadas en navy, suaves) */
+  --overlay: rgba(15, 23, 38, 0.5);
+  --shadow-xs: 0 1px 2px rgba(27, 42, 71, 0.06);
+  --shadow-sm: 0 1px 3px rgba(27, 42, 71, 0.08), 0 1px 2px rgba(27, 42, 71, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(27, 42, 71, 0.1), 0 2px 4px -2px rgba(27, 42, 71, 0.06);
+  --shadow-lg: 0 12px 28px -6px rgba(27, 42, 71, 0.16), 0 4px 8px -4px rgba(27, 42, 71, 0.08);
+  --shadow: var(--shadow-lg); /* alias legado: diálogos, popups del mapa */
 
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* ---- 6. Radios (geometría redondeada del logo / app icon) */
+  --radius-xs: 0.375rem; /* 6px  — badges cuadrados, esqueletos */
+  --radius-sm: 0.5rem; /* 8px  — inputs, botones chicos */
+  --radius-md: 0.75rem; /* 12px — botones, selects */
+  --radius-lg: 1rem; /* 16px — tarjetas, paneles */
+  --radius-xl: 1.5rem; /* 24px — diálogos, hero, app icon */
+  --radius-full: 9999px; /* chips, avatares, píldoras */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* ---- 7. Espaciado (escala 4px) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  /* ---- 8. Tipografía
+     Plus Jakarta Sans: geométrica, terminaciones redondeadas como el wordmark
+     "SpotOn". Inter queda de fallback métrico cercano. */
+  --sans: 'Plus Jakarta Sans', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: var(--sans);
+  --mono: ui-monospace, 'JetBrains Mono', Consolas, monospace;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800; /* solo wordmark / display */
+
+  /* Escala ~1.25 (major third), base 16px */
+  --fs-xs: 0.75rem; /* 12 — metadatos, badges */
+  --fs-sm: 0.875rem; /* 14 — labels, texto secundario */
+  --fs-base: 1rem; /* 16 — cuerpo */
+  --fs-lg: 1.125rem; /* 18 — lead */
+  --fs-xl: 1.25rem; /* 20 — h3 / título de tarjeta */
+  --fs-2xl: 1.5rem; /* 24 — h2 */
+  --fs-3xl: 2rem; /* 32 — h1 móvil */
+  --fs-4xl: 2.75rem; /* 44 — h1 desktop */
+
+  --lh-tight: 1.15;
+  --lh-snug: 1.3;
+  --lh-normal: 1.55;
+
+  /* ---- 9. Movimiento */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration: 150ms;
+
+  font: var(--fw-regular) var(--fs-base) / var(--lh-normal) var(--sans);
+  letter-spacing: -0.005em;
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
@@ -57,65 +131,80 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
+/* Modo oscuro: alineado con el "Dark mode app icon" del brand board
+   (lienzo navy profundo, superficies navy, naranja como primario). */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #020817;
-    --text: #94a3b8;
-    --text-h: #f8fafc;
-    --muted: #64748b;
-    --border: #1e293b;
-    --code-bg: #1e293b;
-    --ring: #cbd5e1;
+    --bg: var(--brand-navy-900);
+    --surface: var(--brand-navy);
+    --surface-2: #233457;
+    --text: #b8bfcc;
+    --text-h: #f5f2ea;
+    --muted: #7d879a;
+    --border: #2a3a5c;
+    --border-strong: #36476b;
+    --ring: #ff6b4a;
 
-    --primary: #f8fafc;
-    --primary-fg: #0f172a;
-    --primary-hover: #e2e8f0;
-    --secondary: #1e293b;
-    --secondary-fg: #f8fafc;
-    --secondary-hover: #334155;
-    --accent: #1e293b;
-    --accent-fg: #f8fafc;
+    --primary: var(--brand-orange); /* en oscuro el CTA principal es naranja */
+    --primary-fg: var(--brand-navy-900); /* 6.4:1 */
+    --primary-hover: #ff7556;
+    --brand: var(--brand-orange);
+    --brand-fg: var(--brand-navy-900);
+    --brand-hover: #ff7556;
+    --brand-text: #ff7a5c;
+    --brand-subtle: rgba(255, 90, 54, 0.14);
+    --secondary: #233457;
+    --secondary-fg: #f5f2ea;
+    --secondary-hover: #2c3f66;
+    --accent: #233457;
+    --accent-fg: #f5f2ea;
     --destructive: #dc2626;
-    --destructive-fg: #f8fafc;
+    --destructive-fg: #ffffff;
     --destructive-hover: #b91c1c;
 
     --error: #f87171;
-    --error-bg: #450a0a;
+    --error-bg: #3b0d12;
     --error-border: #7f1d1d;
     --error-text: #fca5a5;
     --success-bg: #052e16;
     --success-border: #14532d;
     --success-text: #86efac;
-    --warning-bg: #451a03;
+    --warning-bg: #3a1e06;
     --warning-border: #78350f;
     --warning-text: #fcd34d;
-    --info-bg: #172554;
-    --info-border: #1e3a8a;
-    --info-text: #93c5fd;
+    --info-bg: #1a2a4a;
+    --info-border: #2f4675;
+    --info-text: #a9c1ee;
 
-    --overlay: rgba(0, 0, 0, 0.6);
-
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    --overlay: rgba(5, 9, 18, 0.7);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.55), 0 4px 8px -4px rgba(0, 0, 0, 0.35);
   }
 }
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 body {
   margin: 0;
 }
 
-/* Silueta gris que late mientras carga un contenido (listas, chips...).
+::selection {
+  background: var(--brand-subtle);
+  color: var(--text-h);
+}
+
+/* Silueta que late mientras carga un contenido (listas, chips...).
    El tamaño lo pone quien la usa. */
 .esqueleto {
   display: block;
   height: 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-xs);
   background-color: var(--secondary);
   animation: esqueleto 1.4s ease-in-out infinite;
 }
@@ -159,45 +248,62 @@ body {
   min-height: 100svh;
 }
 
+/* ---- Jerarquía tipográfica */
 h1,
-h2 {
+h2,
+h3 {
   font-family: var(--heading);
-  font-weight: 500;
   color: var(--text-h);
+  text-wrap: balance;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.03em;
+  margin: var(--space-8) 0;
   @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    font-size: var(--fs-3xl);
+    margin: var(--space-5) 0;
   }
 }
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-2);
   @media (max-width: 1024px) {
-    font-size: 20px;
+    font-size: var(--fs-xl);
   }
+}
+h3 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-2);
 }
 p {
   margin: 0;
+}
+
+a {
+  color: var(--brand-text);
+  text-underline-offset: 3px;
 }
 
 code,
 .counter {
   font-family: var(--mono);
   display: inline-flex;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: var(--text-h);
 }
 
 code {
-  font-size: 15px;
+  font-size: var(--fs-sm);
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
