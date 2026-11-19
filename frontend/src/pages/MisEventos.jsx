@@ -10,7 +10,7 @@ import { useMisEventos } from "../features/eventos/hooks/useMisEventos";
 import { permisosSobre } from "../features/eventos/permisos";
 import "./MisEventos.css";
 
-const CLASES_BOTON = "btn-base btn-variant-default btn-size-default";
+const CLASES_BOTON = "btn-base btn-variant-brand btn-size-default";
 const CLASES_ICONO = "btn-base btn-variant-ghost btn-size-icon";
 
 // "Mis eventos" del organizador (RF-02.5): todos sus eventos con su estado,

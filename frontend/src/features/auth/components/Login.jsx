@@ -6,6 +6,8 @@ import PasswordInput from "../../../components/ui/PasswordInput";
 import SubmitButton from "../../../components/ui/SubmitButton";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { useAuth } from "../context/AuthContext";
+import Logo from "../../../components/brand/Logo";
+import Pie from "../../../components/brand/Pie";
 import "./Auth.css";
 
 export function Login() {
@@ -24,34 +26,47 @@ export function Login() {
   if (user) return <Navigate to={destino} replace />;
 
   return (
-    <div className="auth">
-      <h2>Iniciar sesión</h2>
-      {aviso && (
-        <p className="auth-aviso" role="status">
-          {aviso}
+    <div className="auth-pantalla">
+      <div className="auth">
+        <Logo size={44} className="auth-logo" />
+        <div className="auth-tarjeta">
+          <h2 className="auth-titulo">Iniciar sesión</h2>
+          <p className="auth-subtitulo">Encontrá los eventos que pasan cerca tuyo.</p>
+          {aviso && (
+            <p className="auth-aviso" role="status">
+              {aviso}
+            </p>
+          )}
+          <form className="auth-form" onSubmit={submit}>
+            <FormField label="Email" error={errores.email}>
+              <Input
+                name="email"
+                type="email"
+                autoComplete="email"
+                defaultValue={location.state?.email}
+                required
+              />
+            </FormField>
+            <FormField label="Contraseña" error={errores.password}>
+              <PasswordInput name="password" autoComplete="current-password" required />
+            </FormField>
+            <FormError mensaje={errorGeneral} />
+            <SubmitButton
+              variant="brand"
+              size="lg"
+              className="auth-submit"
+              enviando={enviando}
+              textoEnviando="Ingresando..."
+            >
+              Ingresar
+            </SubmitButton>
+          </form>
+        </div>
+        <p className="auth-pie">
+          ¿No tenés cuenta? <Link to="/registro">Registrate</Link>
         </p>
-      )}
-      <form className="auth-form" onSubmit={submit}>
-        <FormField label="Email" error={errores.email}>
-          <Input
-            name="email"
-            type="email"
-            autoComplete="email"
-            defaultValue={location.state?.email}
-            required
-          />
-        </FormField>
-        <FormField label="Contraseña" error={errores.password}>
-          <PasswordInput name="password" autoComplete="current-password" required />
-        </FormField>
-        <FormError mensaje={errorGeneral} />
-        <SubmitButton className="auth-submit" enviando={enviando} textoEnviando="Ingresando...">
-          Ingresar
-        </SubmitButton>
-      </form>
-      <p className="auth-pie">
-        ¿No tenés cuenta? <Link to="/registro">Registrate</Link>
-      </p>
+      </div>
+      <Pie className="auth-footer" />
     </div>
   );
 }

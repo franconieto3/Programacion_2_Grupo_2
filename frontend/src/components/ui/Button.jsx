@@ -1,5 +1,6 @@
 import "./Button.css";
 
+// variant: default | brand | destructive | outline | secondary | ghost
 const Button = ({ 
   children, 
   variant = "default", 

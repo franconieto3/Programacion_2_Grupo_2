@@ -73,7 +73,7 @@
   flex-shrink: 0;
   width: 3.25rem;
   height: 3.5rem;
-  border-radius: 0.625rem;
+  border-radius: var(--radius-md);
 }
 
 .lista-eventos-esqueleto-cuerpo {

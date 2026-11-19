@@ -2,14 +2,25 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Favicon: misma ruta que <Logo /> (src/components/brand/marca.js). -->
+    <link rel="icon" type="image/svg+xml" href="/brand/spoton-mark.svg" />
+    <link rel="apple-touch-icon" href="/brand/spoton-mark.svg" />
+    <!-- Tipografía de marca (tokens en src/index.css: --sans / --heading) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <meta name="theme-color" content="#FAF7F0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F1726" media="(prefers-color-scheme: dark)" />
     <!-- Íconos: Material Symbols con el eje FILL variable (contorno o relleno), ver components/ui/Icono.jsx -->
     <link
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block"
       rel="stylesheet"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Eventos</title>
+    <title>SpotOn</title>
   </head>
   <body>
     <div id="root"></div>

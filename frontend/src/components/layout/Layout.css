@@ -26,6 +26,11 @@
   }
 }
 
+/* Explorar ocupa toda la altura (lista + mapa): ahí el footer sobra. */
+.layout-contenido:has(> .explorar) > .layout-pie {
+  display: none;
+}
+
 /* Contenedor estándar de una página (las que no ocupan todo el ancho, como el mapa). */
 .pagina {
   max-width: 48rem;
@@ -41,9 +46,9 @@
 }
 
 .pagina-titulo {
-  margin: 0 0 1.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  margin: 0 0 var(--space-6);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: var(--lh-tight);
 }

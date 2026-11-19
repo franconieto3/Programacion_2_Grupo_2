@@ -238,7 +238,7 @@ const FormularioEvento = ({
 
       <FormError mensaje={errorGeneral} />
       <div className="formulario-evento-acciones">
-        <SubmitButton enviando={enviando} textoEnviando={textoEnviando}>
+        <SubmitButton variant="brand" enviando={enviando} textoEnviando={textoEnviando}>
           {textoEnviar}
         </SubmitButton>
         {children}

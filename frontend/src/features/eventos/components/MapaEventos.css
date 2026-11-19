@@ -1,7 +1,7 @@
 .mapa-eventos {
   position: relative;
   overflow: hidden;
-  border-radius: 1rem;
+  border-radius: var(--radius-lg);
 }
 
 .mapa-eventos-mapa {
@@ -20,9 +20,9 @@
   gap: 0.5rem;
   padding: 0.375rem 0.875rem;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  background-color: var(--bg);
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-md);
   color: var(--text-h);
   font-size: 0.8125rem;
   font-weight: 500;

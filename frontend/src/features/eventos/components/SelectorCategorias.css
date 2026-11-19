@@ -28,25 +28,26 @@
   height: 2rem;
   padding: 0 0.875rem;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  background-color: var(--bg);
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
   color: var(--text-h);
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-    color 0.15s ease-in-out;
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
 }
 
 .chip:hover {
+  border-color: var(--border-strong);
   background-color: var(--accent);
 }
 
 .chip:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
 }
 
 .chip-activo,

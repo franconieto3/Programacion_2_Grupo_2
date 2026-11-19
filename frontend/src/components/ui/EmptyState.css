@@ -4,8 +4,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 4rem 1.5rem;
-  border: 1px dashed var(--border);
-  border-radius: 1rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
   text-align: center;
 }
 
@@ -16,9 +17,9 @@
   width: 4rem;
   height: 4rem;
   margin-bottom: 0.5rem;
-  border-radius: 9999px;
-  background-color: var(--secondary);
-  color: var(--secondary-fg);
+  border-radius: var(--radius-full);
+  background-color: var(--brand-subtle);
+  color: var(--brand-text);
 }
 
 .empty-state-icono .icono {
@@ -27,8 +28,8 @@
 
 .empty-state-titulo {
   color: var(--text-h);
-  font-size: 1.0625rem;
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
 }
 
 .empty-state-texto {
