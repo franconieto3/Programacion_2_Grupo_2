@@ -6,7 +6,7 @@ import { useAuth } from "../features/auth/context/AuthContext";
 import FormularioSolicitud from "../features/organizadores/components/FormularioSolicitud";
 import "./SolicitudOrganizador.css";
 
-const CLASES_BOTON = "btn-base btn-variant-default btn-size-default";
+const CLASES_BOTON = "btn-base btn-variant-brand btn-size-default";
 const CLASES_BOTON_OUTLINE = "btn-base btn-variant-outline btn-size-default";
 
 // Solicitud de perfil de organizador (RF-01.6, CU-04). Lo que se muestra

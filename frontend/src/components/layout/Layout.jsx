@@ -1,14 +1,18 @@
 import { Outlet } from "react-router-dom";
 import BarraNavegacion from "./BarraNavegacion";
+import Pie from "../brand/Pie";
 import "./Layout.css";
 
 // Estructura de las páginas con sesión: la barra de navegación y el contenido.
 // Como ruta contenedora (dentro de PrivateRoute) muestra la ruta hija en
-// <Outlet />; también se puede usar directo con `children` (p. ej. la 404).
+// <Outlet />, seguida del footer; también se puede usar directo con `children` (p. ej. la 404).
 const Layout = ({ children }) => (
   <div className="layout">
     <BarraNavegacion />
-    <main className="layout-contenido">{children ?? <Outlet />}</main>
+    <main className="layout-contenido">
+      {children ?? <Outlet />}
+      <Pie className="layout-pie" />
+    </main>
   </div>
 );
 

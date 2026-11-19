@@ -19,7 +19,7 @@
   height: 18rem;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-md);
 }
 
 @media (min-width: 768px) {
@@ -56,7 +56,7 @@
   font-size: 1.75rem;
   pointer-events: none;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 0 2px var(--bg));
+  filter: drop-shadow(0 0 2px var(--surface));
 }
 
 .selector-ubicacion-mira .icono {

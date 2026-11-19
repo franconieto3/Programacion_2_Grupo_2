@@ -74,6 +74,7 @@ const FormularioSolicitud = ({ nombreAnterior = "", onEnviada }) => {
       </FormField>
       <FormError mensaje={errorGeneral} />
       <SubmitButton
+        variant="brand"
         className="formulario-solicitud-enviar"
         enviando={enviando}
         textoEnviando="Enviando..."

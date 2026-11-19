@@ -1,0 +1,13 @@
+<!-- PLACEHOLDER de la marca SpotOn: reemplazar este archivo por el isotipo
+     oficial (mismo nombre) y se actualizan el favicon, la barra y el footer. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 60" fill="none">
+  <defs>
+    <clipPath id="pin"><path d="M24 58 9.86 36.14A20 20 0 1 1 38.14 36.14Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#pin)">
+    <rect width="24" height="60" fill="#1B2A47"/>
+    <rect x="24" width="24" height="60" fill="#FF5A36"/>
+  </g>
+  <path d="M30 15.5c-1.6-1.6-3.7-2.5-6-2.5-4 0-7 2.3-7 5.4 0 7 13 3.6 13 10.1 0 3.1-3 5.5-7 5.5-2.5 0-4.8-1-6.4-2.7"
+        stroke="#FAF7F0" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

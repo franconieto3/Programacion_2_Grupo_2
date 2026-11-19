@@ -7,6 +7,8 @@ import SubmitButton from "../../../components/ui/SubmitButton";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { registrar } from "../../../services/auth";
 import { useAuth } from "../context/AuthContext";
+import Logo from "../../../components/brand/Logo";
+import Pie from "../../../components/brand/Pie";
 import "./Auth.css";
 
 // Validaciones que el navegador no hace solo con required/minLength.
@@ -48,40 +50,53 @@ export function Registro() {
   if (user) return <Navigate to="/explorar" replace />;
 
   return (
-    <div className="auth">
-      <h2>Crear cuenta</h2>
-      <form className="auth-form" onSubmit={submit}>
-        <div className="auth-fila">
-          <FormField label="Nombre" error={errores.nombre}>
-            <Input name="nombre" autoComplete="given-name" maxLength={255} required />
-          </FormField>
-          <FormField label="Apellido" error={errores.apellido}>
-            <Input name="apellido" autoComplete="family-name" maxLength={255} required />
-          </FormField>
+    <div className="auth-pantalla">
+      <div className="auth">
+        <Logo size={44} className="auth-logo" />
+        <div className="auth-tarjeta">
+          <h2 className="auth-titulo">Crear cuenta</h2>
+          <p className="auth-subtitulo">Sumate para descubrir y organizar eventos.</p>
+          <form className="auth-form" onSubmit={submit}>
+            <div className="auth-fila">
+              <FormField label="Nombre" error={errores.nombre}>
+                <Input name="nombre" autoComplete="given-name" maxLength={255} required />
+              </FormField>
+              <FormField label="Apellido" error={errores.apellido}>
+                <Input name="apellido" autoComplete="family-name" maxLength={255} required />
+              </FormField>
+            </div>
+            <FormField label="Email" error={errores.email}>
+              <Input name="email" type="email" autoComplete="email" required />
+            </FormField>
+            <FormField label="Contraseña" error={errores.password}>
+              <PasswordInput
+                name="password"
+                autoComplete="new-password"
+                minLength={8}
+                maxLength={128}
+                required
+              />
+            </FormField>
+            <FormField label="Repetir contraseña" error={errores.password_confirmacion}>
+              <PasswordInput name="password_confirmacion" autoComplete="new-password" required />
+            </FormField>
+            <FormError mensaje={errorGeneral} />
+            <SubmitButton
+              variant="brand"
+              size="lg"
+              className="auth-submit"
+              enviando={enviando}
+              textoEnviando="Creando cuenta..."
+            >
+              Crear cuenta
+            </SubmitButton>
+          </form>
         </div>
-        <FormField label="Email" error={errores.email}>
-          <Input name="email" type="email" autoComplete="email" required />
-        </FormField>
-        <FormField label="Contraseña" error={errores.password}>
-          <PasswordInput
-            name="password"
-            autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
-            required
-          />
-        </FormField>
-        <FormField label="Repetir contraseña" error={errores.password_confirmacion}>
-          <PasswordInput name="password_confirmacion" autoComplete="new-password" required />
-        </FormField>
-        <FormError mensaje={errorGeneral} />
-        <SubmitButton className="auth-submit" enviando={enviando} textoEnviando="Creando cuenta...">
-          Crear cuenta
-        </SubmitButton>
-      </form>
-      <p className="auth-pie">
-        ¿Ya tenés cuenta? <Link to="/ingresar">Iniciá sesión</Link>
-      </p>
+        <p className="auth-pie">
+          ¿Ya tenés cuenta? <Link to="/ingresar">Iniciá sesión</Link>
+        </p>
+      </div>
+      <Pie className="auth-footer" />
     </div>
   );
 }

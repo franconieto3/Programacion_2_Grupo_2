@@ -40,6 +40,7 @@ const CatalogoComponentes = () => {
       <Seccion titulo="Button">
         <div className="catalogo-fila">
           <Button>Default</Button>
+          <Button variant="brand">Brand</Button>
           <Button variant="secondary">Secondary</Button>
           <Button variant="outline">Outline</Button>
           <Button variant="ghost">Ghost</Button>

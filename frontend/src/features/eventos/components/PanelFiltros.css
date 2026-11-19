@@ -21,14 +21,14 @@
   height: 2rem;
   padding: 0 0.625rem 0 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 9999px;
-  background-color: var(--bg);
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
   color: var(--text-h);
   font-family: inherit;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
+  transition: background-color var(--duration) var(--ease);
 }
 
 .panel-filtros-toggle span:not(.icono) {
@@ -43,7 +43,7 @@
 
 .panel-filtros-toggle:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
 }
 
 .panel-filtros-toggle .icono {
@@ -51,7 +51,8 @@
 }
 
 .panel-filtros-toggle-activo {
-  border-color: var(--text-h);
+  border-color: var(--brand);
+  background-color: var(--brand-subtle);
 }
 
 .panel-filtros-chevron {
@@ -67,7 +68,9 @@
   gap: 1rem;
   padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-xs);
 }
 
 .panel-filtros-seccion[hidden] {

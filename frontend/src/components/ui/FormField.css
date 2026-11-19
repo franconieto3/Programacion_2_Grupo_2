@@ -6,8 +6,8 @@
 }
 
 .form-field-label {
-  font-size: 0.875rem; /* text-sm */
-  font-weight: 500;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
   color: var(--text-h);
 }
 

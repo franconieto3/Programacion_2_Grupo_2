@@ -2,11 +2,13 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../features/auth/context/AuthContext";
 import Avatar from "../ui/Avatar";
 import Icono from "../ui/Icono";
+import Logo from "../brand/Logo";
+import { NOMBRE_APP } from "../brand/marca";
 import MenuCuenta from "./MenuCuenta";
 import "./BarraNavegacion.css";
 
-// Nombre provisorio del producto (planning.md, pendiente 7).
-export const NOMBRE_APP = "Eventos";
+// Se mantiene el export por compatibilidad; la fuente es brand/marca.js.
+export { NOMBRE_APP };
 
 // Ítems según los roles del usuario (GET /auth/me). El backend igual valida
 // cada acción: esto es para no ofrecer lo que va a responder 403.
@@ -60,9 +62,8 @@ const BarraNavegacion = () => {
 
   return (
     <nav className="barra" aria-label="Principal">
-      <Link to="/explorar" className="barra-marca">
-        <Icono nombre="location_on" relleno />
-        <span className="barra-marca-nombre">{NOMBRE_APP}</span>
+      <Link to="/explorar" className="barra-marca" aria-label={`${NOMBRE_APP}, ir a Explorar`}>
+        <Logo size={34} textoClassName="barra-marca-nombre" />
       </Link>
 
       <ul className="barra-items">

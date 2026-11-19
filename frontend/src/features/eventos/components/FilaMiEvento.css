@@ -5,8 +5,8 @@
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  border-radius: 0.75rem;
-  transition: background-color 0.15s ease-in-out;
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration) var(--ease);
 }
 
 .fila-mi-evento:not(.fila-mi-evento-oculto):hover {

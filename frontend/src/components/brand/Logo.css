@@ -1,0 +1,33 @@
+.logo {
+  --logo-alto: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--logo-alto) * 0.3);
+  line-height: 1;
+}
+
+.logo picture {
+  display: contents;
+}
+
+.logo-isotipo,
+.logo-imagen {
+  display: block;
+  height: var(--logo-alto);
+  width: auto;
+  flex-shrink: 0;
+}
+
+/* Wordmark: "Spot" en navy, "On" en naranja, como en el brand board. */
+.logo-texto {
+  color: var(--text-h);
+  font-family: var(--heading);
+  font-size: calc(var(--logo-alto) * 0.72);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: -0.035em;
+  white-space: nowrap;
+}
+
+.logo-texto-acento {
+  color: var(--brand);
+}

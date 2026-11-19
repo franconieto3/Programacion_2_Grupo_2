@@ -46,7 +46,7 @@
 
 .mis-eventos-grupo-cantidad {
   padding: 0 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background-color: var(--secondary);
   color: var(--secondary-fg);
   font-size: 0.75rem;
@@ -91,7 +91,7 @@
   flex-shrink: 0;
   width: 3.25rem;
   height: 3.5rem;
-  border-radius: 0.625rem;
+  border-radius: var(--radius-md);
 }
 
 .mis-eventos-esqueleto-cuerpo {
