@@ -1,57 +1,176 @@
-/* Mobile-first: hasta 1024px se ve la lista o el mapa (?vista=mapa) y se
-   alterna con el botón flotante. Desde 1024px van lado a lado: el panel a la
-   izquierda con su propio scroll y el mapa a la derecha, de toda la altura.
-   Las medidas de la barra de navegación vienen de Layout.css. */
+/* Map-first: el mapa ocupa todo el alto debajo de la barra superior
+   (--alto-barra, ver Layout.css) y todo lo demás flota encima.
+   - Celular: se ve el mapa; la lista (?vista=lista) lo cubre entera y se
+     alterna con el botón flotante de abajo.
+   - Desde 1024px: panel flotante a la izquierda con filtros y resultados,
+     colapsable; cerrado, queda una tarjeta "Ver lista". */
 
 .explorar {
-  --alto-disponible: calc(100svh - var(--alto-barra-inferior) - env(safe-area-inset-bottom));
+  --ancho-panel: clamp(22rem, 30vw, 27rem);
+  --separacion: 0.75rem; /* distancia de lo flotante al borde del mapa */
+
+  position: relative;
+  height: calc(100svh - var(--alto-barra));
+  overflow: hidden;
 }
 
-.explorar-encabezado {
+/* ---------- Mapa (fondo, a sangre) ---------- */
+
+.explorar-mapa {
+  position: absolute;
+  inset: 0;
+  z-index: 0; /* encierra los z-index de Leaflet: lo flotante queda arriba */
+}
+
+.explorar-mapa-eventos,
+.explorar-mapa-esqueleto {
+  width: 100%;
+  height: 100%;
+}
+
+.explorar .mapa-eventos {
+  border-radius: 0;
+}
+
+.explorar-mapa-esqueleto {
+  border-radius: 0;
+}
+
+/* El zoom pasa arriba a la derecha: a la izquierda va el panel. */
+.explorar .leaflet-top.leaflet-left {
+  right: 0;
+  left: auto;
+}
+
+.explorar .leaflet-top.leaflet-left .leaflet-control {
+  float: right;
+  margin: var(--separacion) var(--separacion) 0 0;
+}
+
+/* Fuera del layout (sin ranura en la barra), el buscador flota sobre el mapa. */
+.explorar-buscador-flotante {
+  position: absolute;
+  top: var(--separacion);
+  left: 50%;
+  z-index: 30;
+  width: min(30rem, calc(100% - 2 * var(--separacion)));
+  transform: translateX(-50%);
+}
+
+/* ---------- Panel de filtros y resultados ---------- */
+
+.explorar-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem 1rem 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: var(--bg);
 }
 
-.explorar-titulo {
+.explorar-panel-encabezado {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  background-color: inherit;
+}
+
+.explorar-panel-titulo {
   margin: 0;
-  font-size: var(--fs-3xl);
+  font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
-  letter-spacing: -0.03em;
-  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+}
+
+.explorar-panel-colapsar {
+  display: none; /* en el celular se cierra con el botón flotante "Mapa" */
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.explorar-panel-colapsar:hover {
+  background-color: var(--accent);
+}
+
+.explorar-panel-colapsar:focus-visible,
+.explorar-panel-abrir:focus-visible,
+.explorar-alternar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+}
+
+.explorar-panel-colapsar .icono {
+  font-size: 1.375rem;
+}
+
+.explorar-panel-filtros {
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border);
 }
 
 .explorar-lista {
-  padding: 1.5rem 1rem 6rem; /* abajo: lugar para el botón flotante */
+  flex: 1;
+  padding: var(--space-4) var(--space-4) 6rem; /* abajo: lugar para el botón flotante */
 }
 
-/* ---------- Aviso de ubicación (RF-03.8) ---------- */
+/* Celular, con el mapa a la vista: la lista no se muestra. */
+.explorar-vista-mapa .explorar-panel {
+  display: none;
+}
+
+/* ---------- Aviso de ubicación (RF-03.8), tarjeta flotante ---------- */
 
 .explorar-aviso {
+  position: absolute;
+  right: var(--separacion);
+  bottom: calc(4.5rem + env(safe-area-inset-bottom)); /* sobre el botón flotante */
+  left: var(--separacion);
+  z-index: 20;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.625rem;
-  padding: 0.625rem 0.5rem 0.625rem 0.875rem;
-  border: 1px solid var(--info-border);
-  border-radius: var(--radius-md);
-  background-color: var(--info-bg);
-  font-size: 0.875rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-sm);
   line-height: 1.4;
+  animation: explorar-flotar 0.25s var(--ease);
+}
+
+.explorar-vista-lista .explorar-aviso {
+  display: none;
 }
 
 .explorar-aviso p {
   flex: 1;
-  margin: 0.0625rem 0 0;
+  margin: 0;
 }
 
-.explorar-aviso-corto {
+.explorar-aviso-largo {
   display: none;
 }
 
 .explorar-aviso strong {
   color: var(--text-h);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .explorar-aviso-icono {
@@ -76,7 +195,7 @@
 }
 
 .explorar-aviso-cerrar:hover {
-  background-color: var(--surface);
+  background-color: var(--accent);
   color: var(--text-h);
 }
 
@@ -89,83 +208,16 @@
   font-size: 1.125rem;
 }
 
-/* ---------- Mapa ---------- */
-
-.explorar-mapa-eventos,
-.explorar-mapa-esqueleto {
-  width: 100%;
-  height: 100%;
-}
-
-/* Con la lista a la vista el mapa sigue montado, oculto pero con tamaño
-   real: así su viewport (y la búsqueda de la lista) sigue siendo válido. */
-.explorar-vista-lista .explorar-mapa {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-/* Con el mapa a la vista: el encabezado arriba y el mapa ocupa el resto de
-   la pantalla, sin scroll de la página. */
-.explorar-vista-mapa {
-  display: flex;
-  flex-direction: column;
-  height: var(--alto-disponible);
-}
-
-.explorar-vista-mapa .explorar-encabezado {
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-}
-
-.explorar-vista-mapa .explorar-titulo {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.explorar-vista-mapa .explorar-lista {
-  display: none;
-}
-
-.explorar-vista-mapa .explorar-aviso {
-  align-items: center;
-  padding-block: 0.375rem;
-}
-
-.explorar-vista-mapa .explorar-aviso-largo {
-  display: none;
-}
-
-.explorar-vista-mapa .explorar-aviso-corto {
-  display: block;
-  margin: 0;
-}
-
-.explorar-vista-mapa .explorar-mapa {
-  flex: 1;
-  min-height: 0;
-}
-
-.explorar-vista-mapa .mapa-eventos {
-  border-radius: 0;
-}
-
-/* ---------- Botón flotante Mapa / Lista ---------- */
+/* ---------- Botón flotante Mapa / Lista (celular) ---------- */
 
 .explorar-alternar {
-  position: fixed;
-  bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom) + 1rem);
+  position: absolute;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
   left: 50%;
-  z-index: 1050; /* sobre los controles de Leaflet, bajo las sugerencias del buscador */
+  z-index: 20;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   height: 2.75rem;
   padding: 0 1.25rem;
   border: none;
@@ -175,7 +227,8 @@
   color: var(--primary-fg);
   font-family: inherit;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
   cursor: pointer;
   transform: translateX(-50%);
   -webkit-tap-highlight-color: transparent;
@@ -185,103 +238,145 @@
   transform: translateX(-50%) scale(0.97);
 }
 
-.explorar-alternar:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
-}
-
 .explorar-alternar .icono {
   font-size: 1.25rem;
 }
 
-/* ---------- Desde 768px: la barra pasa a la izquierda ---------- */
+/* Tarjeta "Ver lista" con el panel colapsado: solo en pantallas anchas. */
+.explorar-panel-abrir {
+  display: none;
+}
 
-@media (min-width: 768px) {
-  .explorar {
-    --alto-disponible: 100svh;
-  }
-
-  .explorar-encabezado {
-    padding: 2.5rem 2rem 0;
-  }
-
-  .explorar-lista {
-    padding: 1.5rem 2rem 6rem;
-  }
-
-  .explorar-vista-mapa .explorar-encabezado {
-    padding: 1rem 1.5rem;
-  }
-
-  /* Centrado en el contenido, no en la ventana (la barra ocupa la izquierda). */
-  .explorar-alternar {
-    bottom: 1.5rem;
-    left: calc(50% + var(--ancho-columna) / 2);
+@keyframes explorar-flotar {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
   }
 }
 
-/* ---------- Desde 1024px: panel y mapa lado a lado ---------- */
+@keyframes explorar-panel-entrar {
+  from {
+    opacity: 0;
+    transform: translateX(-1rem);
+  }
+}
+
+/* ---------- Desde 1024px: panel flotante a la izquierda ---------- */
 
 @media (min-width: 1024px) {
-  .explorar,
-  .explorar-vista-mapa {
-    display: grid;
-    /* El panel crece con la pantalla, pero el mapa se queda con la mayor parte. */
-    grid-template-columns: clamp(21rem, 34%, 28rem) 1fr;
-    height: 100svh;
+  .explorar {
+    --separacion: 1rem;
   }
 
-  .explorar-panel {
-    overflow-y: auto;
-    border-right: 1px solid var(--border);
+  .explorar-panel,
+  .explorar-vista-mapa .explorar-panel {
+    top: var(--separacion);
+    right: auto;
+    bottom: var(--separacion);
+    left: var(--separacion);
+    display: flex;
+    width: var(--ancho-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--surface);
+    box-shadow: var(--shadow-lg);
+    animation: explorar-panel-entrar 0.2s var(--ease);
   }
 
-  /* Lo de la vista del celular no aplica: se ve todo siempre. */
-  .explorar-vista-mapa .explorar-encabezado,
-  .explorar-encabezado {
-    gap: 1rem;
-    padding: 2rem 1.5rem 0;
+  /* Colapsado: solo el mapa. Va después para ganarle a la regla de arriba. */
+  .explorar-panel-cerrado .explorar-panel {
+    display: none;
   }
 
-  .explorar-vista-mapa .explorar-titulo {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
+  .explorar-panel-encabezado {
+    padding: var(--space-4) var(--space-3) var(--space-3) var(--space-5);
   }
 
-  .explorar-vista-mapa .explorar-lista,
+  .explorar-panel-colapsar {
+    display: inline-flex;
+  }
+
+  .explorar-panel-filtros {
+    padding: 0 var(--space-5) var(--space-4);
+  }
+
   .explorar-lista {
-    display: block;
-    padding: 1.5rem 1.5rem 2rem;
+    padding: var(--space-4) var(--space-5) var(--space-6);
   }
 
-  .explorar-vista-lista .explorar-mapa,
-  .explorar-mapa {
-    position: static;
-    z-index: auto;
-    min-height: 0;
-    padding: 0.75rem;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
-  .explorar-vista-mapa .mapa-eventos {
+  .explorar-panel-abrir {
+    position: absolute;
+    top: var(--separacion);
+    left: var(--separacion);
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.625rem var(--space-4) 0.625rem var(--space-3);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
+    background-color: var(--surface);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-h);
+    font-family: inherit;
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+    text-align: left;
+    cursor: pointer;
+    animation: explorar-flotar 0.2s var(--ease);
+    transition: box-shadow var(--duration) var(--ease);
   }
 
-  .explorar-vista-mapa .explorar-aviso {
+  .explorar-panel-abrir:hover {
+    box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-strong);
+  }
+
+  .explorar-panel-abrir > .icono {
+    color: var(--brand-text);
+    font-size: 1.375rem;
+  }
+
+  .explorar-panel-abrir > span {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+
+  .explorar-panel-abrir-total {
+    color: var(--text);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+  }
+
+  .explorar-panel-abrir-filtros {
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-full);
+    background-color: var(--brand-subtle);
+    color: var(--brand-text);
+    font-size: var(--fs-xs);
+  }
+
+  /* Aviso: abajo, a la derecha del panel (o del borde, si está cerrado). */
+  .explorar-aviso,
+  .explorar-vista-lista .explorar-aviso {
+    right: auto;
+    bottom: 1.5rem;
+    left: calc(var(--ancho-panel) + 2 * var(--separacion));
+    display: flex;
+    max-width: 28rem;
     align-items: flex-start;
     padding-block: 0.625rem;
   }
 
-  .explorar-vista-mapa .explorar-aviso-largo {
+  .explorar-panel-cerrado .explorar-aviso {
+    left: var(--separacion);
+  }
+
+  .explorar-aviso-largo {
     display: block;
   }
 
-  .explorar-vista-mapa .explorar-aviso-corto {
+  .explorar-aviso-corto {
     display: none;
   }
 

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRanuraBarra } from "../components/layout/ranuraBarra";
 import Icono from "../components/ui/Icono";
 import ListaEventos from "../features/eventos/components/ListaEventos";
 import MapaEventos from "../features/eventos/components/MapaEventos";
@@ -10,10 +12,15 @@ import BuscadorLugar from "../features/ubicacion/components/BuscadorLugar";
 import { useUbicacionInicial } from "../features/ubicacion/hooks/useUbicacionInicial";
 import "./Explorar.css";
 
-// Descubrimiento de eventos (CU-01, CU-02). Mapa y lista muestran la misma
-// búsqueda (RF-03.2): useBusquedaEventos con lo que se ve en el mapa y los
-// filtros. Desde 1024px van lado a lado; más chico, se alterna entre los dos
-// con el botón flotante "Mapa" / "Lista".
+// Descubrimiento de eventos (CU-01, CU-02), map-first: el mapa ocupa todo el
+// alto debajo de la barra y mapa y lista muestran la misma búsqueda
+// (RF-03.2): useBusquedaEventos con lo que se ve en el mapa y los filtros.
+// - El buscador de lugares va en el centro de la barra superior (portal a la
+//   ranura del Layout) y mueve el mapa.
+// - Desde 1024px, filtros y resultados van en un panel flotante a la
+//   izquierda, que se puede colapsar para ver solo el mapa.
+// - Más chico, se ve el mapa y la lista se abre encima con el botón flotante
+//   "Lista" / "Mapa" (?vista=lista).
 //
 // Dónde abre el mapa:
 // 1. Si la URL trae la posición (se vuelve de la ficha de un evento), ahí.
@@ -40,6 +47,12 @@ const Explorar = () => {
   // tarde no lo saca de donde está.
   const movido = useRef(false);
   const [avisoCerrado, setAvisoCerrado] = useState(false);
+  // Panel de resultados en pantallas anchas (en el celular manda `vista`).
+  const [panelAbierto, setPanelAbierto] = useState(true);
+  const botonColapsarRef = useRef(null);
+  const botonAbrirRef = useRef(null);
+  const idPanel = useId();
+  const ranura = useRanuraBarra();
   const avisoVisible = inicial.origen === "defecto" && !avisoCerrado;
 
   // El usuario aceptó el permiso después de que el mapa abrió en la
@@ -82,41 +95,41 @@ const Explorar = () => {
     window.scrollTo({ top: 0 });
   };
 
+  // Al colapsar o abrir el panel, el foco pasa al botón que queda visible.
+  const colapsarPanel = () => {
+    setPanelAbierto(false);
+    requestAnimationFrame(() => botonAbrirRef.current?.focus());
+  };
+  const abrirPanel = () => {
+    setPanelAbierto(true);
+    requestAnimationFrame(() => botonColapsarRef.current?.focus());
+  };
+
+  const buscador = (
+    <BuscadorLugar ref={buscadorRef} onSeleccionar={irALugar} destacado={avisoVisible} />
+  );
+
+  // "12 eventos" para los botones que abren la lista (null mientras carga).
+  const textoTotal = busqueda.cargando
+    ? null
+    : `${busqueda.total} ${busqueda.total === 1 ? "evento" : "eventos"}`;
+
   return (
-    <div className={`explorar explorar-vista-${vista}`}>
-      <div className="explorar-panel">
-        <div className="explorar-encabezado">
-          <h1 className="explorar-titulo">Explorar</h1>
-          <BuscadorLugar ref={buscadorRef} onSeleccionar={irALugar} destacado={avisoVisible} />
-          {avisoVisible && (
-            <AvisoUbicacion
-              nombre={ubicacion.nombre}
-              motivo={inicial.motivo}
-              onCerrar={(conTeclado) => {
-                setAvisoCerrado(true);
-                // El botón desaparece: el foco pasa al buscador en vez de
-                // perderse. Solo con teclado, para no abrir el teclado del
-                // celular al tocar la X.
-                if (conTeclado) buscadorRef.current?.focus();
-              }}
-            />
-          )}
-          <PanelFiltros
-            filtros={filtros}
-            onCambiar={cambiar}
-            onLimpiar={limpiar}
-            hayFiltros={hayFiltros}
-          />
-        </div>
-        <div className="explorar-lista">
-          <ListaEventos
-            busqueda={busqueda}
-            hayFiltros={hayFiltros}
-            onLimpiarFiltros={limpiar}
-            porZona
-          />
-        </div>
-      </div>
+    <div
+      className={[
+        "explorar",
+        `explorar-vista-${vista}`,
+        panelAbierto ? "explorar-panel-abierto" : "explorar-panel-cerrado",
+      ].join(" ")}
+    >
+      <h1 className="sr-only">Explorar eventos</h1>
+
+      {/* El buscador va en la barra superior; fuera del layout, sobre el mapa. */}
+      {ranura ? (
+        createPortal(buscador, ranura)
+      ) : (
+        <div className="explorar-buscador-flotante">{buscador}</div>
+      )}
 
       <div className="explorar-mapa">
         {centro ? (
@@ -135,9 +148,77 @@ const Explorar = () => {
         )}
       </div>
 
+      <aside id={idPanel} className="explorar-panel" aria-label="Filtros y resultados">
+        <div className="explorar-panel-encabezado">
+          <h2 className="explorar-panel-titulo">Eventos en esta zona</h2>
+          <button
+            ref={botonColapsarRef}
+            type="button"
+            className="explorar-panel-colapsar"
+            aria-label="Ocultar la lista y ver solo el mapa"
+            aria-controls={idPanel}
+            aria-expanded={panelAbierto}
+            title="Ocultar la lista"
+            onClick={colapsarPanel}
+          >
+            <Icono nombre="left_panel_close" />
+          </button>
+        </div>
+        <div className="explorar-panel-filtros">
+          <PanelFiltros
+            filtros={filtros}
+            onCambiar={cambiar}
+            onLimpiar={limpiar}
+            hayFiltros={hayFiltros}
+          />
+        </div>
+        <div className="explorar-lista">
+          <ListaEventos
+            busqueda={busqueda}
+            hayFiltros={hayFiltros}
+            onLimpiarFiltros={limpiar}
+            porZona
+          />
+        </div>
+      </aside>
+
+      {/* Pantallas anchas, con el panel colapsado: tarjeta para volver a abrirlo. */}
+      {!panelAbierto && (
+        <button
+          ref={botonAbrirRef}
+          type="button"
+          className="explorar-panel-abrir"
+          aria-controls={idPanel}
+          aria-expanded={false}
+          onClick={abrirPanel}
+        >
+          <Icono nombre="left_panel_open" />
+          <span>
+            Ver lista
+            {textoTotal && <span className="explorar-panel-abrir-total">{textoTotal}</span>}
+          </span>
+          {hayFiltros && <span className="explorar-panel-abrir-filtros">Con filtros</span>}
+        </button>
+      )}
+
+      {avisoVisible && (
+        <AvisoUbicacion
+          nombre={ubicacion.nombre}
+          motivo={inicial.motivo}
+          onCerrar={(conTeclado) => {
+            setAvisoCerrado(true);
+            // El botón desaparece: el foco pasa al buscador en vez de
+            // perderse. Solo con teclado, para no abrir el teclado del
+            // celular al tocar la X.
+            if (conTeclado) buscadorRef.current?.focus();
+          }}
+        />
+      )}
+
+      {/* Celular: alterna entre el mapa y la lista. */}
       <button type="button" className="explorar-alternar" onClick={alternarVista}>
         <Icono nombre={vista === "mapa" ? "view_list" : "map"} />
-        {vista === "mapa" ? "Lista" : "Mapa"}
+        {vista === "mapa" ? ["Lista", textoTotal].filter(Boolean).join(" · ") : "Mapa"}
       </button>
     </div>
   );
@@ -150,8 +231,8 @@ const TEXTOS_MOTIVO = {
   "no-soportado": "Tu navegador no comparte la ubicación",
 };
 
-// Con el mapa a la vista en el celular se muestra la versión corta, para no
-// quitarle lugar al mapa.
+// Tarjeta flotante sobre el mapa. En el celular se muestra la versión corta,
+// para no quitarle lugar al mapa.
 const AvisoUbicacion = ({ nombre, motivo, onCerrar }) => (
   <div className="explorar-aviso" role="status">
     <Icono nombre="location_off" className="explorar-aviso-icono" />

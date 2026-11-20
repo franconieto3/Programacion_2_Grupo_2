@@ -1,32 +1,23 @@
 .layout {
-  --alto-barra-inferior: 3.25rem;
-  --ancho-columna: 4.5rem;
-  --ancho-barra: 15.25rem;
+  --alto-barra: 3.5rem;
 
+  display: flex;
+  flex-direction: column;
   min-height: 100svh;
 }
 
-/* El contenido deja libre el lugar de la barra: abajo en el celular, a la
-   izquierda desde 768px. */
-.layout-contenido {
-  min-width: 0;
-  padding-bottom: calc(var(--alto-barra-inferior) + env(safe-area-inset-bottom));
-}
-
 @media (min-width: 768px) {
-  .layout-contenido {
-    margin-left: var(--ancho-columna);
-    padding-bottom: 0;
+  .layout {
+    --alto-barra: 4rem;
   }
 }
 
-@media (min-width: 1264px) {
-  .layout-contenido {
-    margin-left: var(--ancho-barra);
-  }
+.layout-contenido {
+  flex: 1;
+  min-width: 0;
 }
 
-/* Explorar ocupa toda la altura (lista + mapa): ahí el footer sobra. */
+/* Explorar ocupa todo el alto debajo de la barra (mapa): ahí el footer sobra. */
 .layout-contenido:has(> .explorar) > .layout-pie {
   display: none;
 }
