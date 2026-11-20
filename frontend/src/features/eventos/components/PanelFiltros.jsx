@@ -4,12 +4,14 @@ import FormField from "../../../components/ui/FormField";
 import Icono from "../../../components/ui/Icono";
 import Input from "../../../components/ui/Input";
 import { bloqueFecha } from "../formato";
+import CalendarioRango from "./CalendarioRango";
 import SelectorCategorias from "./SelectorCategorias";
 import "./PanelFiltros.css";
 
 // Filtros del descubrimiento: categorías (RF-03.6) siempre a la vista, y
-// fechas (RF-03.4) y horario (RF-03.5) en una sección que se despliega. Cada
-// cambio se aplica enseguida, sin botón "Aplicar".
+// fechas (RF-03.4) y horario (RF-03.5) en una sección que se despliega: un
+// calendario para elegir un día o un rango con clics y, debajo, el rango de
+// la hora de inicio. Cada cambio se aplica enseguida, sin botón "Aplicar".
 // - filtros: los de useFiltrosBusqueda(). onCambiar(cambios), onLimpiar().
 const PanelFiltros = ({ filtros, onCambiar, onLimpiar, hayFiltros }) => {
   const { desde, hasta, hora_desde, hora_hasta, categorias } = filtros;
@@ -17,11 +19,6 @@ const PanelFiltros = ({ filtros, onCambiar, onLimpiar, hayFiltros }) => {
   const [abierto, setAbierto] = useState(fechaHoraActivos);
   const idSeccion = useId();
   const cruzaMedianoche = hora_desde && hora_hasta && hora_desde > hora_hasta;
-
-  // Si "desde" queda después de "hasta", "hasta" se borra en vez de dejar un
-  // rango imposible (el backend lo rechazaría).
-  const cambiarDesde = (valor) =>
-    onCambiar(hasta && valor > hasta ? { desde: valor, hasta: "" } : { desde: valor });
 
   return (
     <section className="panel-filtros" aria-label="Filtros">
@@ -52,24 +49,10 @@ const PanelFiltros = ({ filtros, onCambiar, onLimpiar, hayFiltros }) => {
       </div>
 
       <div id={idSeccion} className="panel-filtros-seccion" hidden={!abierto}>
-        <fieldset className="panel-filtros-grupo">
+        <fieldset className="panel-filtros-grupo panel-filtros-grupo-fechas">
           <legend>Fechas</legend>
-          <FormField label="Desde">
-            <Input
-              type="date"
-              value={desde}
-              max={hasta || undefined}
-              onChange={(e) => cambiarDesde(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Hasta">
-            <Input
-              type="date"
-              value={hasta}
-              min={desde || undefined}
-              onChange={(e) => onCambiar({ hasta: e.target.value })}
-            />
-          </FormField>
+          {/* El calendario nunca deja desde > hasta (el backend lo rechazaría). */}
+          <CalendarioRango desde={desde} hasta={hasta} onCambiar={onCambiar} />
         </fieldset>
 
         <fieldset className="panel-filtros-grupo">

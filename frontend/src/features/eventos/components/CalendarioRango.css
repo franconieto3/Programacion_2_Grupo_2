@@ -1,0 +1,159 @@
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.calendario-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendario-mes {
+  color: var(--text-h);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+/* "noviembre de 2026" -> "Noviembre de 2026" */
+.calendario-mes::first-letter {
+  text-transform: uppercase;
+}
+
+.calendario-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.calendario-nav:hover {
+  background-color: var(--accent);
+}
+
+.calendario-nav .icono {
+  font-size: 1.25rem;
+}
+
+.calendario-grilla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+  table-layout: fixed;
+}
+
+.calendario-grilla th {
+  padding-bottom: var(--space-1);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.calendario-grilla td {
+  padding: 0;
+  text-align: center;
+}
+
+/* Banda del rango: el fondo va en la celda para que quede continua. */
+.calendario-grilla td[aria-selected="true"] {
+  background-color: var(--brand-subtle);
+}
+
+.calendario-grilla td:has(.calendario-dia-inicio) {
+  border-radius: var(--radius-full) 0 0 var(--radius-full);
+}
+
+.calendario-grilla td:has(.calendario-dia-fin) {
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+}
+
+.calendario-grilla td:has(.calendario-dia-inicio.calendario-dia-fin) {
+  border-radius: var(--radius-full);
+}
+
+.calendario-dia {
+  width: 100%;
+  max-width: 2.375rem;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--text-h);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease);
+}
+
+.calendario-dia:hover {
+  background-color: var(--accent);
+}
+
+.calendario-dia:focus-visible,
+.calendario-nav:focus-visible,
+.calendario-borrar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ring);
+}
+
+.calendario-dia-fuera {
+  color: var(--muted);
+}
+
+.calendario-dia-hoy {
+  font-weight: var(--fw-bold);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.calendario-dia-rango:hover {
+  background-color: color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+.calendario-dia-inicio,
+.calendario-dia-fin,
+.calendario-dia-inicio:hover,
+.calendario-dia-fin:hover {
+  background-color: var(--brand);
+  color: var(--brand-fg);
+  font-weight: var(--fw-semibold);
+}
+
+.calendario-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 1.5rem;
+}
+
+.calendario-ayuda {
+  color: var(--text);
+  font-size: var(--fs-xs);
+}
+
+.calendario-borrar {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--brand-text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.calendario-borrar:hover {
+  text-decoration: underline;
+}
