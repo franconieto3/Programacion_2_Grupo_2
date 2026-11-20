@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 
 // Lo que /explorar guarda en la URL además de los filtros
 // (useFiltrosBusqueda): dónde estaba el mapa (?lat=&lng=&zoom=) y, en el
-// celular, si se veía el mapa o la lista (?vista=mapa). Así, al volver de la
+// celular, si se veía el mapa o la lista (?vista=lista). Así, al volver de la
 // ficha de un evento con "atrás", la página queda como estaba.
 //
 //   const { posicionInicial, guardarPosicion, vista, cambiarVista } =
@@ -14,7 +14,7 @@ import { useSearchParams } from 'react-router-dom'
 //   el mapa solo usa la posición al montarse.
 // - guardarPosicion({ lat, lng }, zoom): cada vez que el mapa termina de
 //   moverse.
-// - vista: 'lista' o 'mapa'.
+// - vista: 'mapa' (por defecto) o 'lista'.
 //
 // Todo se escribe con `replace`: mover el mapa no agrega entradas al
 // historial, así "atrás" sale de la página en vez de deshacer movimientos.
@@ -68,9 +68,10 @@ export function useEstadoExplorar() {
     [actualizar],
   )
 
-  const vista = params.get('vista') === 'mapa' ? 'mapa' : 'lista'
+  // Map-first: sin ?vista se ve el mapa; ?vista=lista abre la lista.
+  const vista = params.get('vista') === 'lista' ? 'lista' : 'mapa'
   const cambiarVista = useCallback(
-    (nueva) => actualizar({ vista: nueva === 'mapa' ? 'mapa' : null }),
+    (nueva) => actualizar({ vista: nueva === 'lista' ? 'lista' : null }),
     [actualizar],
   )
 
