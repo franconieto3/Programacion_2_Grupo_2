@@ -77,11 +77,12 @@
   display: none;
 }
 
-@media (min-width: 640px) {
-  .panel-filtros-seccion {
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
+/* Una sola columna en todos los tamaños: el panel de Explorar es angosto
+   (~27rem) y dos columnas de inputs no entraban. Calendario arriba, horario
+   debajo, separados por una línea. */
+.panel-filtros-seccion > .panel-filtros-grupo + .panel-filtros-grupo {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .panel-filtros-grupo {
@@ -92,6 +93,11 @@
   margin: 0;
   padding: 0;
   border: none;
+}
+
+/* El calendario ocupa todo el ancho del grupo. */
+.panel-filtros-grupo-fechas {
+  grid-template-columns: 1fr;
 }
 
 .panel-filtros-grupo legend {
